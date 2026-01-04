@@ -15,7 +15,7 @@
             基于 YOLOv12 与 Retinex 图像增强技术，支持极端低光照场景，识别率高达 99.9%。
           </p>
           <div class="hero-actions">
-            <button class="btn btn-primary" @click="$router.push('/register')">
+            <button class="btn btn-primary" @click="appStore.showRegisterModal">
               {{ $t('home.getStarted') }}
               <el-icon class="icon"><Right /></el-icon>
             </button>
@@ -181,7 +181,7 @@
             <p>立即注册体验免费额度，或联系我们获取企业级解决方案。</p>
           </div>
           <div class="cta-actions">
-            <button class="btn btn-white" @click="$router.push('/register')">免费试用</button>
+            <button class="btn btn-white" @click="appStore.showRegisterModal">免费试用</button>
             <button class="btn btn-outline-white" @click="$router.push('/contact')">联系销售</button>
           </div>
         </div>
@@ -192,6 +192,9 @@
 
 <script setup lang="ts">
 import { Right, Camera, Picture, VideoCamera, DataAnalysis, Aim, Sunny, Lightning, Monitor, Lock, DataLine } from '@element-plus/icons-vue'
+import { useAppStore } from '@/store/app'
+
+const appStore = useAppStore()
 </script>
 
 <style scoped lang="scss">

@@ -34,7 +34,7 @@
                 v-for="lang in languages" 
                 :key="lang.value"
                 :command="lang.value"
-                :class="{ 'is-active': currentLocale.value === lang.value }"
+                :class="{ 'is-active': currentLocale === lang.value }"
               >
                 {{ lang.label }}
               </el-dropdown-item>
@@ -45,10 +45,10 @@
         <div class="divider"></div>
 
         <template v-if="!isLoggedIn">
-          <router-link to="/login" class="login-link">
+          <div class="login-link" @click="appStore.showLoginModal" style="cursor: pointer;">
             {{ $t('nav.login') }}
-          </router-link>
-          <button class="register-btn" @click="$router.push('/register')">
+          </div>
+          <button class="register-btn" @click="appStore.showRegisterModal">
             {{ $t('nav.register') }}
           </button>
         </template>
