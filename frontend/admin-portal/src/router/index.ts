@@ -1,5 +1,6 @@
 import type { App } from "vue";
 import { createRouter, createWebHashHistory, type RouteRecordRaw } from "vue-router";
+import { lprRoutes } from './lpr-routes'
 
 export const Layout = () => import("@/layouts/index.vue");
 
@@ -72,6 +73,7 @@ export const constantRoutes: RouteRecordRaw[] = [
       },
     ],
   },
+  ...lprRoutes, // LPR Admin Routes
 ];
 
 /**
