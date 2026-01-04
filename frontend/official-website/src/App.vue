@@ -1,14 +1,30 @@
 <template>
   <div id="app">
-    <router-view />
+    <Header v-if="showHeader" />
+    <main class="main-content">
+      <router-view />
+    </main>
+    <Footer v-if="showFooter" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted } from 'vue'
+import { computed, onMounted } from 'vue'
+import { useRoute } from 'vue-router'
 import { useUserStore } from '@/store/user'
+import Header from '@/components/layout/Header.vue'
+import Footer from '@/components/layout/Footer.vue'
 
+const route = useRoute()
 const userStore = useUserStore()
+
+const showHeader = computed(() => {
+  return !['/login', '/register'].includes(route.path)
+})
+
+const showFooter = computed(() => {
+  return !['/login', '/register'].includes(route.path)
+})
 
 onMounted(() => {
   userStore.initUserInfo()
@@ -17,14 +33,14 @@ onMounted(() => {
 
 <style>
 #app {
-  font-family: Avenir, Helvetica, Arial, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+.main-content {
+  flex: 1;
+  width: 100%;
 }
 </style>
