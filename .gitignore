@@ -1,0 +1,246 @@
+# ==================== Dependencies ====================
+node_modules/
+**/node_modules/
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+.tox/
+.nox/
+.coverage
+.coverage.*
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Virtual environments
+venv/
+env/
+ENV/
+.venv/
+.virtualenv/
+pyenv/
+
+# ==================== Build outputs ====================
+dist/
+build/
+*.egg-info/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg
+MANIFEST
+
+# Frontend build
+frontend/**/dist/
+frontend/**/build/
+*.local
+
+# ==================== Environment variables ====================
+.env
+.env.local
+.env.*.local
+.env.production
+!.env.example
+*.key
+*.pem
+*.crt
+secrets/
+config/local.py
+
+# ==================== IDE & Editors ====================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+*.sublime-project
+
+# ==================== OS ====================
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# ==================== Logs ====================
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Python logs
+*.log
+local_settings.py
+instance/
+.webassets-cache
+
+# ==================== AI Models & Data ====================
+# 模型权重文件（太大不上传）
+*.pt
+*.pth
+*.onnx
+*.h5
+*.pb
+*.weights
+ai-service/models/**/weights/*.pt
+ai-service/models/**/weights/*.pth
+!ai-service/models/**/weights/.gitkeep
+
+# 训练数据
+datasets/
+data/train/
+data/test/
+data/raw/
+*.csv
+*.json
+*.xml
+!**/sample.json
+!**/config.json
+
+# ==================== Database ====================
+*.db
+*.sqlite
+*.sqlite3
+db.sqlite3
+db.sqlite3-journal
+*.sql
+
+# ==================== Uploads & Media ====================
+uploads/
+media/
+temp/
+tmp/
+cache/
+.cache/
+user_uploads/
+static/uploads/
+
+# ==================== Storage ====================
+storage/
+minio-data/
+oss-cache/
+
+# ==================== Docker ====================
+.dockerignore
+docker-compose.override.yml
+*.tar
+
+# ==================== SSL Certificates ====================
+*.pem
+*.key
+*.crt
+*.cert
+*.ca-bundle
+nginx/ssl/*.pem
+nginx/ssl/*.key
+nginx/ssl/*.crt
+!nginx/ssl/.gitkeep
+
+# ==================== Backend specific ====================
+# Alembic
+alembic/versions/*.pyc
+
+# Celery
+celerybeat-schedule
+celerybeat.pid
+
+# Redis
+dump.rdb
+
+# ==================== Frontend specific ====================
+# Dependency directories
+.npm
+.eslintcache
+.stylelintcache
+
+# Production
+/build
+
+# Testing
+/coverage
+
+# Misc
+.sass-cache/
+connect.lock
+typings/
+
+# Auto-generated files
+frontend/**/src/auto-imports.d.ts
+frontend/**/src/components.d.ts
+*.tsbuildinfo
+
+# ==================== Tauri Desktop Client ====================
+desktop-client/src-tauri/target/
+desktop-client/src-tauri/WixTools/
+desktop-client/src-tauri/Cargo.lock
+
+# ==================== Mobile App ====================
+mobile-app/unpackage/
+mobile-app/.hbuilderx/
+
+# ==================== Documentation ====================
+docs/_build/
+docs/.doctrees/
+site/
+
+# ==================== Backup files ====================
+*.bak
+*.backup
+*.old
+*.orig
+*~
+
+# ==================== Testing ====================
+.pytest_cache/
+.coverage
+htmlcov/
+coverage/
+*.cover
+.hypothesis/
+
+# ==================== Deployment ====================
+.terraform/
+*.tfstate
+*.tfstate.backup
+.terraform.lock.hcl
+
+# Kubernetes secrets
+deployment/kubernetes/secrets/
+*.secret.yaml
+
+# ==================== Monitoring ====================
+prometheus_data/
+grafana_data/
+
+# ==================== Misc ====================
+.vscode-test
+.turbo
+.vercel
+.output
+.nuxt
+.next
+.svelte-kit
