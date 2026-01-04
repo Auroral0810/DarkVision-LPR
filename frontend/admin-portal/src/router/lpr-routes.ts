@@ -1,5 +1,6 @@
-import { Layout } from './index'
 import { RouteRecordRaw } from 'vue-router'
+
+const Layout = () => import("@/layouts/index.vue");
 
 const Placeholder = () => import('@/views/error/Placeholder.vue')
 

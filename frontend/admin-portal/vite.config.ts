@@ -54,7 +54,15 @@ export default defineConfig(({ mode }: ConfigEnv): UserConfig => {
     },
     plugins: [
       vue(),
-      ...(env.VITE_MOCK_DEV_SERVER === "true" ? [mockDevServerPlugin()] : []),
+      ...(env.VITE_MOCK_DEV_SERVER === "true"
+        ? [
+            mockDevServerPlugin({
+              prefix: env.VITE_APP_BASE_API || "/dev-api",
+              include: ["mock/**/*.mock.{ts,js,cjs,mjs,json,json5}"],
+              log: true, // 启用日志以便调试
+            }),
+          ]
+        : []),
       UnoCSS(),
       // API 自动导入
       AutoImport({
