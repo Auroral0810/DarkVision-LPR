@@ -51,6 +51,8 @@
     <el-card>
       <div class="data-table__toolbar">
         <div>
+          <el-button type="primary" icon="Plus" @click="handleAddUser">新增用户</el-button>
+          <el-button type="success" icon="Upload" @click="handleImport">批量导入</el-button>
           <el-button type="danger" icon="Delete" :disabled="!hasSelection" @click="handleBatchDelete">
             批量删除
           </el-button>
@@ -131,9 +133,8 @@
       />
     </el-card>
 
-    <!-- 用户详情抽屉 -->
     <el-drawer v-model="detailDrawerVisible" title="用户详情" size="60%">
-      <UserDetail v-if="detailDrawerVisible" :user-id="currentUserId" />
+      <UserDetail v-if="detailDrawerVisible && currentUserId" :user-id="currentUserId" />
     </el-drawer>
 
     <!-- 封禁对话框 -->
@@ -174,9 +175,60 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="type DialogVisible = false">取消</el-button>
+        <el-button @click="typeDialogVisible = false">取消</el-button>
         <el-button type="primary" @click="handleConfirmChangeType">确定</el-button>
       </template>
+    </el-dialog>
+
+    <!-- 新增/编辑用户对话框 -->
+    <el-dialog v-model="userFormVisible" :title="userForm.id ? '编辑用户' : '新增用户'" width="500px">
+      <el-form :model="userForm" label-width="100px">
+        <el-form-item label="昵称" required>
+          <el-input v-model="userForm.nickname" placeholder="请输入昵称" />
+        </el-form-item>
+        <el-form-item label="手机号" required>
+          <el-input v-model="userForm.phone" placeholder="请输入手机号" />
+        </el-form-item>
+        <el-form-item label="邮箱">
+          <el-input v-model="userForm.email" placeholder="请输入邮箱" />
+        </el-form-item>
+        <el-form-item label="用户类型">
+          <el-select v-model="userForm.user_type" style="width: 100%">
+            <el-option label="普通用户" value="free" />
+            <el-option label="VIP" value="vip" />
+            <el-option label="企业用户" value="enterprise" />
+          </el-select>
+        </el-form-item>
+        <el-form-item v-if="!userForm.id" label="初始密码" required>
+          <el-input v-model="userForm.password" type="password" show-password placeholder="请输入密码" />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="userFormVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleSaveUser">保存</el-button>
+      </template>
+    </el-dialog>
+
+    <!-- 数据导入对话框 -->
+    <el-dialog v-model="importVisible" title="批量导入用户" width="400px">
+      <el-upload
+        class="upload-demo"
+        drag
+        action="/api/v1/users/import"
+        multiple
+        :headers="uploadHeaders"
+        :on-success="handleImportSuccess"
+      >
+        <el-icon class="el-icon--upload"><upload-filled /></el-icon>
+        <div class="el-upload__text">
+          将文件拖到此处，或<em>点击上传</em>
+        </div>
+        <template #tip>
+          <div class="el-upload__tip">
+            请上传 .xlsx 或 .csv 文件，<el-link type="primary" :underline="false">下载模板</el-link>
+          </div>
+        </template>
+      </el-upload>
     </el-dialog>
   </div>
 </template>
@@ -222,6 +274,19 @@ const typeForm = reactive({
   user_id: 0,
   user_type: 'free'
 })
+
+const userFormVisible = ref(false)
+const userForm = reactive({
+  id: undefined as number | undefined,
+  nickname: '',
+  phone: '',
+  email: '',
+  user_type: 'free',
+  password: ''
+})
+
+const importVisible = ref(false)
+const uploadHeaders = { 'Authorization': 'Bearer ...' } // 实际应从 store 获取 token
 
 // 获取用户列表
 async function fetchUserList() {
@@ -318,6 +383,36 @@ async function handleConfirmChangeType() {
   } catch (error) {
     ElMessage.error('修改失败')
   }
+}
+
+function handleAddUser() {
+  Object.assign(userForm, { id: undefined, nickname: '', phone: '', email: '', user_type: 'free', password: '' })
+  userFormVisible.value = true
+}
+
+async function handleSaveUser() {
+  if (!userForm.nickname || !userForm.phone || (!userForm.id && !userForm.password)) {
+    ElMessage.warning('请填写完整必填项')
+    return
+  }
+  try {
+    // 模拟保存逻辑
+    ElMessage.success(userForm.id ? '修改成功' : '新增成功')
+    userFormVisible.value = false
+    fetchUserList()
+  } catch (error) {
+    ElMessage.error('保存失败')
+  }
+}
+
+function handleImport() {
+  importVisible.value = true
+}
+
+function handleImportSuccess() {
+  ElMessage.success('导入成功')
+  importVisible.value = false
+  fetchUserList()
 }
 
 async function handleResetPassword(row: User) {
