@@ -53,7 +53,7 @@
       
       <div class="footer-bottom">
         <div class="copyright">
-          © 2024 DarkVision LPR System. All Rights Reserved.
+          © 2026 DarkVision LPR System. All Rights Reserved.
         </div>
         <div class="stats">
           <span class="label">累计服务请求:</span>

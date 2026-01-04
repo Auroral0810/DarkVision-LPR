@@ -19,21 +19,21 @@
               <div class="icon"><Message /></div>
               <div>
                 <strong>邮箱</strong>
-                <p>support@darkvision-lpr.com</p>
+                <p>15968588744@163.com</p>
               </div>
             </div>
             <div class="info-item">
               <div class="icon"><Phone /></div>
               <div>
                 <strong>电话</strong>
-                <p>400-888-8888</p>
+                <p>1596-858-8744</p>
               </div>
             </div>
             <div class="info-item">
               <div class="icon"><Location /></div>
               <div>
                 <strong>地址</strong>
-                <p>北京市海淀区中关村大街1号</p>
+                <p>江苏南京市浦口区雨山西路86号</p>
               </div>
             </div>
           </div>

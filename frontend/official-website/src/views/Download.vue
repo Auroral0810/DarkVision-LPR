@@ -68,8 +68,8 @@
         <div class="download-card linux">
           <div class="os-icon">
             <svg viewBox="0 0 24 24" width="64" height="64" class="svg-icon">
-              <path fill="#FCC624" d="M12 0c6.627 0 12 5.373 12 12s-5.373 12-12 12S0 18.627 0 12 5.373 0 12 0z"/>
-              <path fill="#000" d="M15.5 15.5c-1 0-1.5.5-1.5 1s.5 1 1.5 1 1.5-.5 1.5-1-.5-1-1.5-1zm-7 0c-1 0-1.5.5-1.5 1s.5 1 1.5 1 1.5-.5 1.5-1-.5-1-1.5-1zM12 4.5c-3 0-5 2.5-5 6.5s2 6.5 5 6.5 5-2.5 5-6.5-2-6.5-5-6.5z"/>
+              <!-- Tux Icon -->
+              <path fill="#000" d="M12.14 3a2.6 2.6 0 0 0-2.56 2.65c0 1.14 0 3.06 1.48 4.28 0 0 2.22 1.51 2.69 4.41.06.33.2 1.6-1.55 1.76-1.74.16-1.63 1.77-.38 1.94 1.25.17 2.06-.54 2.24-.96.18-.42.92-2 .88-3.17-.03-.7-.34-3.41-1.66-4.63C12.18 8.16 12.14 7.6 12.14 3zM9.46 8.68c-.7.65-2.06 2.37-2.14 5.34-.02.73 1.94.88 1.94.88s.22 1.15-1.12 1.24c-1.34.09-1.92-.78-2.02-1.78-.1-1 .36-4.52 1.86-6.38.38-.47 1.1.13 1.48.7zm7.64 5.42c-.08-2.97-1.44-4.69-2.14-5.34.38-.57 1.1-1.17 1.48-.7 1.5 1.86 1.96 5.38 1.86 6.38-.1 1-1.38 1.68-2.02 1.78-1.34-.09-1.12-1.24-1.12-1.24s1.96-.15 1.94-.88z" transform="scale(1.5) translate(-4, -1)"/>
             </svg>
           </div>
           <h2>{{ $t('download.linux') }}</h2>
@@ -91,6 +91,69 @@
             <el-icon><Download /></el-icon>
             {{ $t('download.download') }}
           </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Features Section -->
+    <div class="client-features">
+      <div class="container">
+        <h2 class="section-title">为什么选择桌面客户端？</h2>
+        <div class="features-grid">
+          <div class="feature-item">
+            <div class="icon-box">🚀</div>
+            <h3>原生性能</h3>
+            <p>深度适配系统硬件，支持 CUDA 与 Metal 加速，推理速度提升 300%。</p>
+          </div>
+          <div class="feature-item">
+            <div class="icon-box">🔒</div>
+            <h3>隐私安全</h3>
+            <p>所有数据本地处理，无需上传云端，完全掌控您的数据主权。</p>
+          </div>
+          <div class="feature-item">
+            <div class="icon-box">📂</div>
+            <h3>批量处理</h3>
+            <p>支持文件夹拖拽导入，一键处理万张图片，自动导出 CSV/Excel 报表。</p>
+          </div>
+          <div class="feature-item">
+            <div class="icon-box">🔌</div>
+            <h3>离线运行</h3>
+            <p>无网络环境也能稳定运行，适合地下车库、偏远地区等场景。</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Install Guide -->
+    <div class="install-guide">
+      <div class="container">
+        <h2 class="section-title">安装说明</h2>
+        <div class="guide-tabs">
+          <div class="guide-card">
+            <h3>Windows</h3>
+            <ol>
+              <li>下载 <code>.exe</code> 安装包</li>
+              <li>双击运行安装程序</li>
+              <li>按照提示完成安装</li>
+              <li>首次运行需联网激活</li>
+            </ol>
+          </div>
+          <div class="guide-card">
+            <h3>macOS</h3>
+            <ol>
+              <li>下载 <code>.dmg</code> 镜像文件</li>
+              <li>将 DarkVision 拖入 Applications</li>
+              <li>首次打开若提示安全拦截，请在"系统设置 > 隐私与安全性"中允许运行</li>
+            </ol>
+          </div>
+          <div class="guide-card">
+            <h3>Linux</h3>
+            <ol>
+              <li>下载 <code>.AppImage</code> 文件</li>
+              <li>赋予执行权限: <code>chmod +x DarkVision*.AppImage</code></li>
+              <li>直接运行即可</li>
+            </ol>
+          </div>
         </div>
       </div>
     </div>
@@ -267,5 +330,139 @@ const handleDownload = (os: string) => {
   &.windows:hover { border-color: #0078d4; }
   &.macos:hover { border-color: #999999; }
   &.linux:hover { border-color: #fcc624; }
+}
+
+.client-features {
+  padding: 80px 0;
+  background: white;
+
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  .section-title {
+    text-align: center;
+    font-size: 32px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 60px;
+  }
+
+  .features-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 40px;
+
+    .feature-item {
+      text-align: center;
+      
+      .icon-box {
+        width: 64px;
+        height: 64px;
+        background: #f8fafc;
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 32px;
+        margin: 0 auto 20px;
+        transition: transform 0.3s;
+
+        &:hover {
+          transform: scale(1.1);
+          background: #eff6ff;
+        }
+      }
+
+      h3 {
+        font-size: 18px;
+        font-weight: 600;
+        color: #0f172a;
+        margin-bottom: 12px;
+      }
+
+      p {
+        color: #64748b;
+        font-size: 14px;
+        line-height: 1.6;
+      }
+    }
+  }
+}
+
+.install-guide {
+  padding: 80px 0 100px;
+  background: #f8fafc;
+  
+  .container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 24px;
+  }
+
+  .section-title {
+    text-align: center;
+    font-size: 32px;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 60px;
+  }
+
+  .guide-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 32px;
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  .guide-card {
+    background: white;
+    padding: 32px;
+    border-radius: 16px;
+    border: 1px solid #e2e8f0;
+
+    h3 {
+      font-size: 20px;
+      font-weight: 600;
+      color: #0f172a;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      
+      &::before {
+        content: '';
+        width: 4px;
+        height: 16px;
+        background: #2563eb;
+        border-radius: 2px;
+      }
+    }
+
+    ol {
+      padding-left: 20px;
+      color: #64748b;
+      font-size: 14px;
+      line-height: 1.8;
+
+      li {
+        margin-bottom: 8px;
+      }
+    }
+
+    code {
+      background: #f1f5f9;
+      padding: 2px 6px;
+      border-radius: 4px;
+      color: #0f172a;
+      font-family: monospace;
+      font-size: 12px;
+    }
+  }
 }
 </style>

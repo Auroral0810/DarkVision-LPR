@@ -407,8 +407,8 @@ chore: 更新依赖版本
 ## 📞 联系我们
 
 ### 开发团队
-- **项目负责人**: [Your Name]
-- **技术支持**: support@darkvision-lpr.com
+- **项目负责人**: [Yunfeng Yu]
+- **技术支持**: 15968588744@163.com
 - **商务合作**: business@darkvision-lpr.com
 
 ### 社交媒体
@@ -416,28 +416,28 @@ chore: 更新依赖版本
 - 📧 邮箱: contact@darkvision-lpr.com
 - 💬 微信: DarkVision-LPR
 - 🐦 Twitter: @DarkVisionLPR
-- 📱 GitHub: https://github.com/your-org/DarkVision-LPR
+- 📱 GitHub: https://github.com/Auroral0810/DarkVision-LPR
 
 ### 问题反馈
-- [GitHub Issues](https://github.com/your-org/DarkVision-LPR/issues)
-- [讨论区](https://github.com/your-org/DarkVision-LPR/discussions)
+- [GitHub Issues](https://github.com/Auroral0810/DarkVision-LPR/issues)
+- [讨论区](https://github.com/Auroral0810/DarkVision-LPR/discussions)
 
 ---
 
 ## 🌟 Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=your-org/DarkVision-LPR&type=Date)](https://star-history.com/#your-org/DarkVision-LPR&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=Auroral0810/DarkVision-LPR&type=Date)](https://star-history.com/#Auroral0810/DarkVision-LPR&Date)
 
 ---
 
 ## 📈 项目统计
 
-![GitHub stars](https://img.shields.io/github/stars/your-org/DarkVision-LPR?style=social)
-![GitHub forks](https://img.shields.io/github/forks/your-org/DarkVision-LPR?style=social)
-![GitHub watchers](https://img.shields.io/github/watchers/your-org/DarkVision-LPR?style=social)
-![GitHub issues](https://img.shields.io/github/issues/your-org/DarkVision-LPR)
-![GitHub pull requests](https://img.shields.io/github/issues-pr/your-org/DarkVision-LPR)
-![GitHub last commit](https://img.shields.io/github/last-commit/your-org/DarkVision-LPR)
+![GitHub stars](https://img.shields.io/github/stars/Auroral0810/DarkVision-LPR?style=social)
+![GitHub forks](https://img.shields.io/github/forks/Auroral0810/DarkVision-LPR?style=social)
+![GitHub watchers](https://img.shields.io/github/watchers/Auroral0810/DarkVision-LPR?style=social)
+![GitHub issues](https://img.shields.io/github/issues/Auroral0810/DarkVision-LPR)
+![GitHub pull requests](https://img.shields.io/github/issues-pr/Auroral0810/DarkVision-LPR)
+![GitHub last commit](https://img.shields.io/github/last-commit/Auroral0810/DarkVision-LPR)
 
 ---
 
