@@ -93,14 +93,21 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import type { SystemConfig } from '@/types/website'
+import request from '@/utils/request'
 
 const totalRecognition = ref(125680)
 
-onMounted(() => {
-  // Mock fetching system config
-  // In real app: fetch('/api/v1/system/configs/public')
-  // const config = configs.find(c => c.config_key === 'total_recognition_count')
-  // if (config) totalRecognition.value = parseInt(config.config_value)
+onMounted(async () => {
+  try {
+    const { data } = await request.get('/website/content')
+    if (data && data.configs) {
+      const configs = data.configs as SystemConfig[]
+      const config = configs.find(c => c.config_key === 'total_recognition_count')
+      if (config) totalRecognition.value = parseInt(config.config_value)
+    }
+  } catch (error) {
+    console.error('Failed to fetch configs:', error)
+  }
 })
 </script>
 

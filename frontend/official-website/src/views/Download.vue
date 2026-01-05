@@ -112,6 +112,7 @@ import { ref, onMounted } from 'vue'
 import { Download } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { ClientDownload } from '@/types/website'
+import request from '@/utils/request'
 
 // Import icons for dynamic use
 import windowsIcon from '@/assets/icons/windows.svg'
@@ -120,37 +121,15 @@ import linuxIcon from '@/assets/icons/linux.svg'
 
 const downloads = ref<ClientDownload[]>([])
 
-onMounted(() => {
-  // Mock Data
-  downloads.value = [
-    {
-      id: 1,
-      os: 'windows',
-      version: 'v1.0.0',
-      download_url: 'https://github.com/Auroral0810/EasyRename/releases/download/v1.0.0/EasyRename_1.0.0_x64_zh%2DCN.msi',
-      changelog: 'Initial release',
-      release_date: '2026-01-01',
-      is_latest: true
-    },
-    {
-      id: 2,
-      os: 'macos',
-      version: 'v1.0.0',
-      download_url: 'https://github.com/Auroral0810/EasyRename/releases/download/v1.0.0/EasyRename_1.0.0_aarch64.dmg',
-      changelog: 'Initial release',
-      release_date: '2026-01-01',
-      is_latest: true
-    },
-    {
-      id: 3,
-      os: 'linux',
-      version: 'v1.0.0',
-      download_url: 'https://github.com/Auroral0810/EasyRename/releases/download/v1.0.0/easy%2Drename_1.0.0_amd64.deb',
-      changelog: 'Initial release',
-      release_date: '2026-01-01',
-      is_latest: true
+onMounted(async () => {
+  try {
+    const { data } = await request.get('/website/content')
+    if (data && data.downloads) {
+      downloads.value = data.downloads
     }
-  ]
+  } catch (error) {
+    console.error('Failed to fetch downloads:', error)
+  }
 })
 
 const getIconPath = (os: string) => {

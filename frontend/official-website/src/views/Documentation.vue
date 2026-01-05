@@ -67,40 +67,22 @@ import { ref, computed, onMounted } from 'vue'
 import { Document as DocumentIcon } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
 import type { Document } from '@/types/website'
+import request from '@/utils/request'
 
 const { t } = useI18n()
 const currentDocType = ref<string | null>(null)
 const documents = ref<Document[]>([])
 const loading = ref(false)
 
-onMounted(() => {
-  // Mock Data
-  documents.value = [
-    {
-      id: 1,
-      title: 'Technical Documentation',
-      doc_type: 'tech',
-      content: 'Here is the technical documentation content...',
-      version: '1.0.0',
-      is_current: true
-    },
-    {
-      id: 2,
-      title: 'Service Agreement',
-      doc_type: 'service_agreement',
-      content: 'Here is the service agreement...',
-      version: '1.0.0',
-      is_current: true
-    },
-    {
-      id: 3,
-      title: 'Privacy Policy',
-      doc_type: 'privacy_policy',
-      content: 'Here is the privacy policy...',
-      version: '1.0.0',
-      is_current: true
+onMounted(async () => {
+  try {
+    const { data } = await request.get('/website/content')
+    if (data && data.documents) {
+      documents.value = data.documents
     }
-  ]
+  } catch (error) {
+    console.error('Failed to fetch documents:', error)
+  }
 })
 
 const currentDocContent = computed(() => {

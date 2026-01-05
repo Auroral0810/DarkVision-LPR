@@ -258,10 +258,10 @@
 </template>
 
 <script setup lang="ts">
-// @ts-nocheck
 import { ref, onMounted } from 'vue'
 import { Right, Camera, Picture, VideoCamera, DataAnalysis, Aim, Sunny, Lightning, Monitor, Lock, DataLine, Bell, Close } from '@element-plus/icons-vue'
 import type { Carousel, Announcement } from '@/types/website'
+import request from '@/utils/request'
 
 const portalBase = (import.meta as any)?.env?.VITE_APP_PORTAL_URL || 'http://localhost:3001'
 const goPortalRegister = () => {
@@ -273,48 +273,24 @@ const carousels = ref<Carousel[]>([])
 const announcements = ref<Announcement[]>([])
 const activeAnnouncement = ref<Announcement | null>(null)
 
-// Simulate fetching data (Replace with actual API call)
-onMounted(() => {
-  // Mock Data matching DB structure
-  carousels.value = [
-    {
-      id: 1,
-      title: '智能感知，精准识别',
-      image_url: 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80',
-      link_url: null,
-      sort_order: 1,
-      is_enabled: true
-    },
-    {
-      id: 2,
-      title: '夜间识别，清晰如昼',
-      image_url: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80',
-      link_url: null,
-      sort_order: 2,
-      is_enabled: true
+onMounted(async () => {
+  try {
+    const { data } = await request.get('/website/content')
+    if (data && data.carousels) {
+      carousels.value = data.carousels
     }
-  ]
-
-  announcements.value = [
-    {
-      id: 1,
-      title: '系统维护通知',
-      content: 'DarkVision LPR 将于本周六凌晨 2:00 进行系统升级，预计耗时 2 小时。',
-      display_position: 'banner',
-      start_time: '2026-01-01 00:00:00',
-      end_time: '2026-01-10 00:00:00',
-      is_enabled: true
+    if (data && data.announcements) {
+      announcements.value = data.announcements
+      // Find active banner announcement
+      const now = new Date()
+      // Note: Backend might filter date already, but double check
+      activeAnnouncement.value = announcements.value.find(a => 
+        a.display_position === 'banner'
+      ) || null
     }
-  ]
-
-  // Find active banner announcement
-  const now = new Date()
-  activeAnnouncement.value = announcements.value.find(a => 
-    a.is_enabled && 
-    a.display_position === 'banner' &&
-    (!a.start_time || new Date(a.start_time) <= now) &&
-    (!a.end_time || new Date(a.end_time) >= now)
-  ) || null
+  } catch (error) {
+    console.error('Failed to fetch website content:', error)
+  }
 })
 
 const closeAnnouncement = () => {
@@ -445,16 +421,25 @@ const closeAnnouncement = () => {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(15, 23, 42, 0.6); // Darken image
+    background: linear-gradient(180deg, rgba(15, 23, 42, 0.4) 0%, rgba(15, 23, 42, 0.8) 100%);
     z-index: 1;
-  }
+}
 
-  .hero-container {
+.hero-container {
     position: relative;
     z-index: 2;
-    // Reuse existing hero styles
+    // 修复 SCSS 语法：@extend 不能写在注释里，且需要确保 .hero-container 基础样式已定义
     @extend .hero-container;
-  }
+    
+    .hero-title, 
+    .hero-description {
+      color: #ffffff !important; // 强制设置为纯白色，!important 确保覆盖其他样式
+      text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5); // 保留阴影增强可读性
+      // 可选：添加字体透明度/抗锯齿优化
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+}
 }
 
 /* Hero Section */
@@ -487,47 +472,95 @@ const closeAnnouncement = () => {
     padding: 0 24px;
   }
 
-  .hero-badge {
-    display: inline-block;
-    padding: 6px 16px;
-    background: rgba(37, 99, 235, 0.1);
-    color: #2563eb;
-    border-radius: 50px;
-    font-size: 13px;
-    font-weight: 600;
-    margin-bottom: 24px;
-    letter-spacing: 0.5px;
-    border: 1px solid rgba(37, 99, 235, 0.2);
-  }
-
-  .hero-title {
-    font-size: 56px;
-    line-height: 1.1;
-    font-weight: 800;
-    color: #0f172a;
-    margin-bottom: 24px;
-    letter-spacing: -0.02em;
-
-    .highlight {
-      background: linear-gradient(135deg, #2563eb 0%, #9333ea 100%);
-      background-clip: text;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-  }
-
-  .hero-description {
-    font-size: 20px;
-    color: #64748b;
-    line-height: 1.6;
-    margin-bottom: 40px;
-  }
-
-  .hero-actions {
+  .hero-content {
+    position: relative;
+    z-index: 2;
+    max-width: 800px;
+    margin: 0 auto;
     display: flex;
-    justify-content: center;
-    gap: 16px;
-    margin-bottom: 64px;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+
+    .hero-badge {
+      display: inline-block;
+      padding: 8px 20px;
+      background: rgba(37, 99, 235, 0.2);
+      backdrop-filter: blur(8px);
+      color: #60a5fa;
+      border-radius: 50px;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 32px;
+      letter-spacing: 1px;
+      border: 1px solid rgba(96, 165, 250, 0.3);
+      text-transform: uppercase;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .hero-title {
+      font-size: 64px;
+      line-height: 1.1;
+      font-weight: 800;
+      color: #ffffff;
+      margin-bottom: 24px;
+      letter-spacing: -0.02em;
+      text-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+
+      .highlight {
+        background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+        background-clip: text;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        text-shadow: none; /* Gradient text doesn't work well with text-shadow */
+      }
+    }
+
+    .hero-description {
+      font-size: 22px;
+      color: #e2e8f0;
+      line-height: 1.6;
+      margin-bottom: 48px;
+      max-width: 680px;
+      text-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+      font-weight: 400;
+    }
+
+    .hero-actions {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 80px;
+
+      .btn {
+        padding: 16px 36px;
+        font-size: 18px;
+        
+        &.btn-primary {
+          background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+          border: none;
+          box-shadow: 0 8px 20px rgba(37, 99, 235, 0.4);
+          
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 12px 24px rgba(37, 99, 235, 0.5);
+          }
+        }
+
+        &.btn-secondary {
+          background: rgba(255, 255, 255, 0.9);
+          backdrop-filter: blur(4px);
+          color: #0f172a;
+          border: none;
+          
+          &:hover {
+            background: #ffffff;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+          }
+        }
+      }
+    }
   }
 
   .hero-stats {

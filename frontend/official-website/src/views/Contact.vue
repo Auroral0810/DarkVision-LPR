@@ -89,46 +89,15 @@ import type { Faq } from '@/types/website'
 
 const faqs = ref<Faq[]>([])
 
-onMounted(() => {
-  // Mock Data
-  faqs.value = [
-    {
-      id: 1,
-      category_id: 1,
-      question: '如何开始使用系统？',
-      answer: '注册账号后即可开始使用，普通用户每日有20次免费识别机会。您可以在控制台查看详细的使用指南。',
-      sort_order: 1,
-      view_count: 100,
-      is_hot: true
-    },
-    {
-      id: 2,
-      category_id: 1,
-      question: '支持哪些图片格式？',
-      answer: '支持 JPG、PNG、BMP 等常见图片格式。单张图片建议在 5MB 以内，VIP 用户支持最大 10MB 的高清图片。',
-      sort_order: 2,
-      view_count: 90,
-      is_hot: false
-    },
-    {
-      id: 3,
-      category_id: 2,
-      question: '如何升级到 VIP？',
-      answer: '在价格页面选择 VIP 方案，点击购买并完成支付后，您的账号将立即升级，享受更多权益。',
-      sort_order: 3,
-      view_count: 80,
-      is_hot: true
-    },
-    {
-      id: 4,
-      category_id: 2,
-      question: '是否提供 API 接口？',
-      answer: '是的，VIP 用户和企业用户可以使用 RESTful API 接口。我们提供完善的 API 文档和多语言 SDK。',
-      sort_order: 4,
-      view_count: 70,
-      is_hot: false
+onMounted(async () => {
+  try {
+    const { data } = await request.get('/website/content')
+    if (data && data.faqs) {
+      faqs.value = data.faqs
     }
-  ]
+  } catch (error) {
+    console.error('Failed to fetch FAQs:', error)
+  }
 })
 
 const form = ref({
