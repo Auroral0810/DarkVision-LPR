@@ -59,8 +59,8 @@
               />
             </el-form-item>
             <el-form-item>
-              <button class="submit-btn" @click.prevent="handleSubmit">
-                {{ $t('contact.send') }}
+              <button class="submit-btn" :disabled="loading" @click.prevent="handleSubmit">
+                {{ loading ? '发送中...' : $t('contact.send') }}
               </button>
             </el-form-item>
           </el-form>
@@ -96,6 +96,7 @@
 import { ref } from 'vue'
 import { Message, Phone, Location } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import request from '@/utils/request'
 
 const form = ref({
   name: '',
@@ -103,16 +104,35 @@ const form = ref({
   message: ''
 })
 
-const handleSubmit = () => {
+const loading = ref(false)
+
+const handleSubmit = async () => {
   if (!form.value.name || !form.value.email || !form.value.message) {
     ElMessage.warning('请填写完整信息')
     return
   }
-  ElMessage.success('提交成功，我们会尽快回复您！')
-  form.value = {
-    name: '',
-    email: '',
-    message: ''
+
+  // 简单的邮箱格式验证
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+  if (!emailRegex.test(form.value.email)) {
+    ElMessage.warning('请输入有效的邮箱地址')
+    return
+  }
+  
+  loading.value = true
+  try {
+    await request.post('/contact/submit', form.value)
+    ElMessage.success('提交成功，我们会尽快回复您！')
+    form.value = {
+      name: '',
+      email: '',
+      message: ''
+    }
+  } catch (error) {
+    console.error('提交咨询失败:', error)
+    // 错误处理已在 request 拦截器中统一处理，这里不需要重复提示
+  } finally {
+    loading.value = false
   }
 }
 </script>
@@ -261,6 +281,11 @@ const handleSubmit = () => {
 
       &:hover {
         background: #1d4ed8;
+      }
+
+      &:disabled {
+        background: #94a3b8;
+        cursor: not-allowed;
       }
     }
   }
