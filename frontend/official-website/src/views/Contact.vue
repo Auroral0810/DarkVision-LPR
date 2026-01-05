@@ -82,23 +82,14 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
 import { Message, Phone, Location } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
-import type { Faq } from '@/types/website'
+import { useWebsiteStore } from '@/store/website'
 
-const faqs = ref<Faq[]>([])
-
-onMounted(async () => {
-  try {
-    const { data } = await request.get('/website/content')
-    if (data && data.faqs) {
-      faqs.value = data.faqs
-    }
-  } catch (error) {
-    console.error('Failed to fetch FAQs:', error)
-  }
-})
+const websiteStore = useWebsiteStore()
+const { faqs } = storeToRefs(websiteStore)
 
 const form = ref({
   name: '',

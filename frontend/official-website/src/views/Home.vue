@@ -258,38 +258,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, computed, watchEffect } from 'vue'
+import { storeToRefs } from 'pinia'
 import { Right, Camera, Picture, VideoCamera, DataAnalysis, Aim, Sunny, Lightning, Monitor, Lock, DataLine, Bell, Close } from '@element-plus/icons-vue'
-import type { Carousel, Announcement } from '@/types/website'
-import request from '@/utils/request'
+import { useWebsiteStore } from '@/store/website'
+import type { Announcement } from '@/types/website'
 
 const portalBase = (import.meta as any)?.env?.VITE_APP_PORTAL_URL || 'http://localhost:3001'
 const goPortalRegister = () => {
   window.location.href = `${portalBase}/register`
 }
 
-// State for dynamic content
-const carousels = ref<Carousel[]>([])
-const announcements = ref<Announcement[]>([])
+const websiteStore = useWebsiteStore()
+const { carousels, announcements } = storeToRefs(websiteStore)
 const activeAnnouncement = ref<Announcement | null>(null)
 
-onMounted(async () => {
-  try {
-    const { data } = await request.get('/website/content')
-    if (data && data.carousels) {
-      carousels.value = data.carousels
-    }
-    if (data && data.announcements) {
-      announcements.value = data.announcements
-      // Find active banner announcement
-      const now = new Date()
-      // Note: Backend might filter date already, but double check
-      activeAnnouncement.value = announcements.value.find(a => 
-        a.display_position === 'banner'
-      ) || null
-    }
-  } catch (error) {
-    console.error('Failed to fetch website content:', error)
+// 使用 watchEffect 动态更新 activeAnnouncement
+// 只要 announcements 发生变化（例如从 API 加载回来），这里就会自动执行
+watchEffect(() => {
+  if (announcements.value.length > 0) {
+    activeAnnouncement.value = announcements.value.find(a => 
+      a.display_position === 'banner'
+    ) || null
   }
 })
 

@@ -109,28 +109,19 @@
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
 import { Download } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { ClientDownload } from '@/types/website'
-import request from '@/utils/request'
+import { useWebsiteStore } from '@/store/website'
 
 // Import icons for dynamic use
 import windowsIcon from '@/assets/icons/windows.svg'
 import macosIcon from '@/assets/icons/macos.svg'
 import linuxIcon from '@/assets/icons/linux.svg'
 
-const downloads = ref<ClientDownload[]>([])
-
-onMounted(async () => {
-  try {
-    const { data } = await request.get('/website/content')
-    if (data && data.downloads) {
-      downloads.value = data.downloads
-    }
-  } catch (error) {
-    console.error('Failed to fetch downloads:', error)
-  }
-})
+const websiteStore = useWebsiteStore()
+const { downloads } = storeToRefs(websiteStore)
 
 const getIconPath = (os: string) => {
   switch (os) {

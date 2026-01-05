@@ -91,22 +91,19 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, watchEffect } from 'vue'
+import { storeToRefs } from 'pinia'
 import type { SystemConfig } from '@/types/website'
-import request from '@/utils/request'
+import { useWebsiteStore } from '@/store/website'
 
 const totalRecognition = ref(125680)
+const websiteStore = useWebsiteStore()
+const { configs } = storeToRefs(websiteStore)
 
-onMounted(async () => {
-  try {
-    const { data } = await request.get('/website/content')
-    if (data && data.configs) {
-      const configs = data.configs as SystemConfig[]
-      const config = configs.find(c => c.config_key === 'total_recognition_count')
-      if (config) totalRecognition.value = parseInt(config.config_value)
-    }
-  } catch (error) {
-    console.error('Failed to fetch configs:', error)
+watchEffect(() => {
+  if (configs.value.length > 0) {
+    const config = configs.value.find(c => c.config_key === 'total_recognition_count')
+    if (config) totalRecognition.value = parseInt(config.config_value)
   }
 })
 </script>

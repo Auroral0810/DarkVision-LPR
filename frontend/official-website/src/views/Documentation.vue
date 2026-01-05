@@ -64,30 +64,18 @@
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import { storeToRefs } from 'pinia'
 import { Document as DocumentIcon } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
-import type { Document } from '@/types/website'
-import request from '@/utils/request'
+import { useWebsiteStore } from '@/store/website'
 
 const { t } = useI18n()
 const currentDocType = ref<string | null>(null)
-const documents = ref<Document[]>([])
-const loading = ref(false)
-
-onMounted(async () => {
-  try {
-    const { data } = await request.get('/website/content')
-    if (data && data.documents) {
-      documents.value = data.documents
-    }
-  } catch (error) {
-    console.error('Failed to fetch documents:', error)
-  }
-})
+const websiteStore = useWebsiteStore()
+const { documents } = storeToRefs(websiteStore)
 
 const currentDocContent = computed(() => {
   if (!currentDocType.value) return null
-  // In real app, might fetch by API here
   return documents.value.find(d => d.doc_type === currentDocType.value && d.is_current)
 })
 
