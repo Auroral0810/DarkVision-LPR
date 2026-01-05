@@ -42,3 +42,7 @@ export function sendEmailCode(email: string, scene: string): Promise<UnifiedResp
   return request.post('/auth/email/send', { email, scene })
 }
 
+export function resetPassword(data: any): Promise<UnifiedResponse> {
+  return request.post('/auth/password/reset', data)
+}
+

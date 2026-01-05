@@ -1,10 +1,14 @@
 <template>
   <div class="auth-page">
+    <div class="return-home" @click="goHome">
+      <el-icon><Back /></el-icon>
+      <span>返回官网</span>
+    </div>
     <div class="login-layout">
       <div class="login-side">
         <div class="brand-content">
           <div class="brand-logo">
-            <span class="logo-text">DV</span>
+            <img :src="logoIcon" alt="Logo" class="logo-img"/>
           </div>
           <h2>DarkVision LPR</h2>
           <p class="slogan">极速、精准、企业级的车牌识别平台</p>
@@ -176,7 +180,7 @@
                   round
                 >
                   登录
-                </el-button>
+        </el-button>
               </el-form>
             </el-tab-pane>
           </el-tabs>
@@ -187,14 +191,20 @@
         </div>
 
         <div class="third-party-buttons">
-          <div class="icon-btn wechat" @click="handleThirdPartyLogin('wechat')" title="微信登录">
-            <i class="iconfont icon-wechat"></i>
+          <div class="icon-btn" @click="handleThirdPartyLogin('wechat')" title="微信登录">
+            <img :src="wechatIcon" alt="WeChat" />
           </div>
-          <div class="icon-btn qq" @click="handleThirdPartyLogin('qq')" title="QQ登录">
-            <i class="iconfont icon-qq"></i>
+          <div class="icon-btn" @click="handleThirdPartyLogin('qq')" title="QQ登录">
+            <img :src="qqIcon" alt="QQ" />
           </div>
-          <div class="icon-btn github" @click="handleThirdPartyLogin('github')" title="GitHub登录">
-            <i class="iconfont icon-github"></i>
+          <div class="icon-btn" @click="handleThirdPartyLogin('google')" title="Google登录">
+            <img :src="googleIcon" alt="Google" />
+          </div>
+          <div class="icon-btn" @click="handleThirdPartyLogin('github')" title="GitHub登录">
+            <img :src="githubIcon" alt="GitHub" />
+          </div>
+          <div class="icon-btn" @click="handleThirdPartyLogin('weibo')" title="微博登录">
+            <img :src="weiboIcon" alt="Weibo" />
           </div>
         </div>
 
@@ -214,10 +224,16 @@
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
-import { Lock, Key, User, Check } from '@element-plus/icons-vue'
+import { Lock, Key, User, Check, Back } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { loginByPhone, loginByEmail, sendSmsCode, sendEmailCode } from '@/api/auth'
+import { loginByPhone, loginByEmail, sendSmsCode, sendEmailCode, resetPassword } from '@/api/auth'
+import wechatIcon from '@/assets/icons/微信.svg'
+import qqIcon from '@/assets/icons/QQ.svg'
+import githubIcon from '@/assets/icons/github.svg'
+import googleIcon from '@/assets/icons/gogle.svg'
+import weiboIcon from '@/assets/icons/微博.svg'
+import logoIcon from '@/assets/icons/logo.svg'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -434,11 +450,35 @@ const handleResetPassword = async () => {
   if (!forgotFormRef.value) return
   await forgotFormRef.value.validate(async (valid) => {
     if (valid) {
-      ElMessage.success('密码重置成功，请使用新密码登录')
-      showForgot.value = false
-      loginType.value = 'password'
+      try {
+        loading.value = true
+        await resetPassword({
+          account: forgotForm.value.account,
+          code: forgotForm.value.code,
+          new_password: forgotForm.value.newPassword,
+          confirm_password: forgotForm.value.confirmPassword
+        })
+        ElMessage.success('密码重置成功，请使用新密码登录')
+        showForgot.value = false
+        loginType.value = 'password'
+        // 清空表单
+        forgotForm.value = {
+          account: '',
+          code: '',
+          newPassword: '',
+          confirmPassword: ''
+        }
+      } catch (error) {
+        console.error(error)
+      } finally {
+        loading.value = false
+      }
     }
   })
+}
+
+const goHome = () => {
+  window.location.href = 'http://localhost:3000'
 }
 </script>
 
@@ -450,6 +490,34 @@ const handleResetPassword = async () => {
   align-items: center;
   justify-content: center;
   padding: 32px;
+  position: relative;
+}
+
+.return-home {
+  position: absolute;
+  top: 32px;
+  left: 32px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: #64748b;
+  font-size: 16px;
+  font-weight: 500;
+  transition: all 0.2s;
+  z-index: 10;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+
+  &:hover {
+    color: #2563eb;
+    transform: translateX(-4px);
+    background: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
 }
 
 .login-layout {
@@ -489,21 +557,17 @@ const handleResetPassword = async () => {
     z-index: 2;
     
     .brand-logo {
-      width: 64px;
-      height: 64px;
-      background: rgba(255, 255, 255, 0.2);
-      backdrop-filter: blur(10px);
-      border-radius: 16px;
+      width: 80px;
+      height: 80px;
       display: flex;
       align-items: center;
       justify-content: center;
       margin-bottom: 24px;
-      border: 1px solid rgba(255, 255, 255, 0.3);
       
-      .logo-text {
-        font-size: 24px;
-        font-weight: 800;
-        color: white;
+      .logo-img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
       }
     }
     
@@ -614,7 +678,7 @@ const handleResetPassword = async () => {
       width: 100%;
       height: 46px;
       border-radius: 12px;
-      font-size: 16px;
+        font-size: 16px;
       font-weight: 600;
       background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
       border: none;
@@ -640,14 +704,14 @@ const handleResetPassword = async () => {
       right: 0;
       height: 1px;
       background: #e2e8f0;
-    }
-    
-    span {
+      }
+      
+      span {
       position: relative;
       background: white;
       padding: 0 16px;
       color: #94a3b8;
-      font-size: 12px;
+        font-size: 12px;
     }
   }
   
@@ -668,17 +732,19 @@ const handleResetPassword = async () => {
       justify-content: center;
       cursor: pointer;
       transition: all 0.2s;
-      color: #64748b;
+      padding: 10px;
+      
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
       
       &:hover {
         transform: translateY(-2px);
         background: white;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
       }
-      
-      &.wechat:hover { color: #07c160; border-color: #07c160; }
-      &.qq:hover { color: #12b7f5; border-color: #12b7f5; }
-      &.github:hover { color: #24292e; border-color: #24292e; }
     }
   }
   

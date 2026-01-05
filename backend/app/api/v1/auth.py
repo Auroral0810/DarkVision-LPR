@@ -9,6 +9,7 @@ from app.schemas.user import (
     UserRegister, UserLoginByPhone, UserLoginByEmail,
     SMSCodeRequest, EmailCodeRequest, LoginResponse
 )
+from app.schemas.password import ResetPasswordRequest
 from app.services.auth import (
     register_user,
     authenticate_by_phone_password,
@@ -20,7 +21,8 @@ from app.services.auth import (
     get_user_detail_info,
     create_user_token,
     get_user_by_id,
-    logout_user
+    logout_user,
+    reset_password
 )
 from app.services.verification import verification_service
 from app.core.exceptions import UnauthorizedException, TokenInvalidException, ParameterException
@@ -297,3 +299,23 @@ def logout(
             logout_user(user_id)
     
     return success(message="登出成功")
+
+
+@router.post("/password/reset", response_model=UnifiedResponse, summary="重置密码", tags=["认证"])
+def reset_password_endpoint(
+    reset_data: ResetPasswordRequest,
+    db: Session = Depends(get_db)
+):
+    """
+    重置用户密码
+    
+    - **account**: 手机号或邮箱
+    - **code**: 验证码（手机或邮箱）
+    - **new_password**: 新密码
+    - **confirm_password**: 确认新密码
+    
+    重置成功后，该用户的所有登录状态（Token）将失效，需重新登录。
+    """
+    reset_password(db, reset_data)
+    
+    return success(message="密码重置成功，请重新登录")

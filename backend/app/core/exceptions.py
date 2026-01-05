@@ -146,6 +146,12 @@ class ParameterException(APIException):
         super().__init__(ResponseCode.INVALID_PARAMETER, message)
 
 
+class VerificationException(APIException):
+    """验证异常"""
+    def __init__(self, message: str = None):
+        super().__init__(ResponseCode.INVALID_PARAMETER, message)
+
+
 # ===== 服务器异常 =====
 class DatabaseException(APIException):
     """数据库异常"""

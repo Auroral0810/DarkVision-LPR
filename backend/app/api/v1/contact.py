@@ -45,23 +45,72 @@ async def submit_contact(
     return success_response(message="提交成功，我们会尽快回复您！")
 
 def send_notification_email(name: str, email: str, message: str):
-    """发送通知邮件给管理员"""
-    subject = f"【DarkVision-LPR】收到新的在线咨询 - 来自 {name}"
+    """发送极具科技感的通知邮件给管理员"""
+    subject = f"🔔 [DarkVision AI] 新咨询提醒：{name}"
+    
+    # 模拟当前时间
+    from datetime import datetime
+    now = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
     content = f"""
-    <h3>收到新的在线咨询</h3>
-    <p><strong>姓名:</strong> {name}</p>
-    <p><strong>邮箱:</strong> {email}</p>
-    <p><strong>咨询内容:</strong></p>
-    <div style="background: #f4f4f5; padding: 15px; border-radius: 5px; margin-top: 10px;">
-        {message}
+    <div style="background-color: #0f172a; padding: 40px 20px; font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #f8fafc; line-height: 1.6;">
+        <div style="max-width: 600px; margin: 0 auto; background-color: #1e293b; border-radius: 12px; overflow: hidden; border: 1px solid #334155; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3);">
+            
+            <!-- 头部装饰条 -->
+            <div style="background: linear-gradient(90deg, #3b82f6 0%, #8b5cf6 100%); height: 6px;"></div>
+            
+            <!-- 主体内容 -->
+            <div style="padding: 30px;">
+                <h2 style="margin-top: 0; color: #ffffff; font-size: 24px; font-weight: 600; letter-spacing: -0.025em;">
+                    🚀 收到新的在线咨询
+                </h2>
+                <p style="color: #94a3b8; font-size: 14px; margin-bottom: 24px;">
+                    系统时间：{now} (UTC+8)
+                </p>
+                
+                <!-- 用户信息卡片 -->
+                <div style="background-color: #0f172a; border-radius: 8px; padding: 20px; margin-bottom: 24px; border: 1px solid #334155;">
+                    <div style="margin-bottom: 12px;">
+                        <span style="color: #64748b; font-size: 12px; text-transform: uppercase; font-weight: 700; display: block; margin-bottom: 4px;">咨询客户</span>
+                        <strong style="color: #f8fafc; font-size: 16px;">{name}</strong>
+                    </div>
+                    <div>
+                        <span style="color: #64748b; font-size: 12px; text-transform: uppercase; font-weight: 700; display: block; margin-bottom: 4px;">联系邮箱</span>
+                        <a href="mailto:{email}" style="color: #3b82f6; text-decoration: none; font-size: 16px;">{email}</a>
+                    </div>
+                </div>
+                
+                <!-- 消息内容 -->
+                <div style="margin-bottom: 30px;">
+                    <span style="color: #64748b; font-size: 12px; text-transform: uppercase; font-weight: 700; display: block; margin-bottom: 10px;">详情内容</span>
+                    <div style="background-color: rgba(59, 130, 246, 0.05); border-left: 4px solid #3b82f6; padding: 15px 20px; font-size: 15px; color: #e2e8f0; white-space: pre-wrap;">{message}</div>
+                </div>
+                
+                <!-- 交互按钮 -->
+                <div style="text-align: center;">
+                    <a href="mailto:{email}" style="display: inline-block; background: #3b82f6; color: white; padding: 12px 30px; border-radius: 6px; font-weight: 600; text-decoration: none; transition: background 0.2s;">
+                        立即回复客户
+                    </a>
+                </div>
+            </div>
+            
+            <!-- 页脚 -->
+            <div style="background-color: #111827; padding: 20px; text-align: center; border-top: 1px solid #334155;">
+                <p style="margin: 0; color: #64748b; font-size: 12px;">
+                    此邮件由 <strong>DarkVision-LPR</strong> 智能监测系统自动发送
+                </p>
+                <p style="margin: 5px 0 0; color: #475569; font-size: 11px;">
+                    © 2026 DarkVision AI Technology. All rights reserved.
+                </p>
+            </div>
+        </div>
     </div>
-    <p style="color: #999; font-size: 12px; margin-top: 20px;">请及时在后台进行处理回复。</p>
     """
-    # 发送给管理员 (这里配置为您的邮箱)
+    
     admin_email = "15968588744@163.com"
     try:
         email_service.send_email([admin_email], subject, content)
-        logger.info(f"Contact notification email sent to {admin_email}")
+        logger.info(f"高级感通知邮件已发送至 {admin_email}")
     except Exception as e:
-        logger.error(f"Failed to send contact notification email: {e}")
+        logger.error(f"邮件发送失败: {e}")
 

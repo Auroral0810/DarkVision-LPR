@@ -1,10 +1,14 @@
 <template>
   <div class="auth-page">
+    <div class="return-home" @click="goHome">
+      <el-icon><Back /></el-icon>
+      <span>返回官网</span>
+    </div>
     <div class="register-layout">
       <div class="register-side">
         <div class="brand-content">
           <div class="brand-logo">
-            <span class="logo-text">DV</span>
+            <img :src="logoIcon" alt="Logo" class="logo-img"/>
           </div>
           <h2>DarkVision LPR</h2>
           <p class="slogan">下一代智能车牌识别系统</p>
@@ -164,17 +168,20 @@
           </div>
           
           <div class="third-party-icons">
-            <div class="icon-btn wechat" title="微信注册">
-              <i class="iconfont icon-wechat"></i>
+            <div class="icon-btn" title="微信注册">
+              <img :src="wechatIcon" alt="WeChat" />
             </div>
-            <div class="icon-btn qq" title="QQ注册">
-              <i class="iconfont icon-qq"></i>
+            <div class="icon-btn" title="QQ注册">
+              <img :src="qqIcon" alt="QQ" />
             </div>
-            <div class="icon-btn weibo" title="微博注册">
-              <i class="iconfont icon-weibo"></i>
+            <div class="icon-btn" title="Google注册">
+              <img :src="googleIcon" alt="Google" />
             </div>
-            <div class="icon-btn github" title="Github注册">
-              <i class="iconfont icon-github"></i>
+            <div class="icon-btn" title="Github注册">
+              <img :src="githubIcon" alt="GitHub" />
+            </div>
+            <div class="icon-btn" title="微博注册">
+              <img :src="weiboIcon" alt="Weibo" />
             </div>
           </div>
         </el-form>
@@ -188,12 +195,18 @@ import { ref, computed, watch, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { 
   Iphone, User, Message, Lock, Key, Picture, 
-  Loading, Check 
+  Loading, Check, Back 
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { getCaptcha, verifyCaptcha } from '@/api/captcha'
 import { sendSmsCode, sendEmailCode, register } from '@/api/auth'
+import wechatIcon from '@/assets/icons/微信.svg'
+import qqIcon from '@/assets/icons/QQ.svg'
+import githubIcon from '@/assets/icons/github.svg'
+import googleIcon from '@/assets/icons/gogle.svg'
+import weiboIcon from '@/assets/icons/微博.svg'
+import logoIcon from '@/assets/icons/logo.svg'
 
 const router = useRouter()
 
@@ -401,6 +414,10 @@ watch(
   },
   { immediate: true }
 )
+
+const goHome = () => {
+  window.location.href = 'http://localhost:3000'
+}
 </script>
 
 <style scoped lang="scss">
@@ -411,6 +428,34 @@ watch(
   align-items: center;
   justify-content: center;
   padding: 32px;
+  position: relative;
+}
+
+.return-home {
+  position: absolute;
+  top: 32px;
+  left: 32px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  color: #64748b;
+  font-size: 16px;
+  font-weight: 500;
+  transition: all 0.2s;
+  z-index: 10;
+  padding: 8px 16px;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(8px);
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+
+  &:hover {
+    color: #2563eb;
+    transform: translateX(-4px);
+    background: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
 }
 
 .register-layout {
@@ -448,24 +493,20 @@ watch(
       position: relative;
       z-index: 2;
       
-      .brand-logo {
-        width: 64px;
-        height: 64px;
-        background: rgba(255, 255, 255, 0.2);
-        backdrop-filter: blur(10px);
-        border-radius: 16px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 24px;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        
-        .logo-text {
-          font-size: 24px;
-          font-weight: 800;
-          color: white;
-        }
+    .brand-logo {
+      width: 80px;
+      height: 80px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 24px;
+      
+      .logo-img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
       }
+    }
       
       h2 {
         font-size: 32px;
@@ -657,37 +698,32 @@ watch(
       justify-content: center;
       gap: 24px;
       
-      .icon-btn {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        background: #f8fafc;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.3s;
-        border: 1px solid #f1f5f9;
-        
-        i {
-          font-size: 20px;
-          color: #64748b;
-          font-style: normal;
-        }
-        
-        &.wechat:hover { background: #e0f2e9; i { color: #07c160; } }
-        &.qq:hover { background: #eef9fe; i { color: #12b7f5; } }
-        &.weibo:hover { background: #fef0ea; i { color: #eb4f38; } }
-        &.github:hover { background: #24292e; i { color: white; } }
-        
-        i { display: none; }
-        
-        &.wechat::after { content: '微信'; font-size: 10px; transform: scale(0.8); }
-        &.qq::after { content: 'QQ'; font-size: 10px; transform: scale(0.8); }
-        &.weibo::after { content: '微博'; font-size: 10px; transform: scale(0.8); }
-        &.github::after { content: 'Git'; font-size: 10px; transform: scale(0.8); }
+    .icon-btn {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      padding: 10px;
+      
+      img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+      }
+      
+      &:hover {
+        transform: translateY(-2px);
+        background: white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
       }
     }
+  }
   }
 }
 

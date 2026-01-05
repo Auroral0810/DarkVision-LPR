@@ -198,6 +198,61 @@ def update_login_info(db: Session, user: User, ip_address: Optional[str] = None)
     db.commit()
 
 
+from app.schemas.password import ResetPasswordRequest
+from app.core.exceptions import ResourceNotFoundException, VerificationException
+
+def reset_password(db: Session, reset_data: ResetPasswordRequest) -> User:
+    """
+    重置用户密码
+    
+    Args:
+        db: 数据库会话
+        reset_data: 重置密码请求数据
+        
+    Returns:
+        User: 更新后的用户对象
+        
+    Raises:
+        ParameterException: 参数错误
+        ResourceNotFoundException: 用户不存在
+        VerificationException: 验证码错误
+    """
+    # 1. 验证两次密码是否一致
+    if reset_data.new_password != reset_data.confirm_password:
+        raise ParameterException("两次输入的密码不一致")
+        
+    # 2. 判断账号类型 (手机/邮箱) 并验证验证码
+    is_email = '@' in reset_data.account
+    scene = "reset_password"
+    
+    user = None
+    if is_email:
+        # 验证邮箱验证码
+        if not verification_service.verify_code(scene, reset_data.account, reset_data.code):
+            raise VerificationException("验证码无效或已过期")
+        # 查找用户
+        user = db.query(User).filter(User.email == reset_data.account).first()
+    else:
+        # 验证短信验证码
+        if not verification_service.verify_code(scene, reset_data.account, reset_data.code):
+            raise VerificationException("验证码无效或已过期")
+        # 查找用户
+        user = db.query(User).filter(User.phone == reset_data.account).first()
+        
+    if not user:
+        raise ResourceNotFoundException("该账号未注册")
+        
+    # 3. 更新密码
+    user.password_hash = get_password_hash(reset_data.new_password)
+    db.add(user)
+    db.commit()
+    db.refresh(user)
+    
+    # 4. 清除用户所有登录 Token (登出)
+    logout_user(user.id)
+    
+    return user
+
 def get_user_detail_info(db: Session, user_id: int) -> UserDetailInfo:
     """
     获取用户详细信息（包含会员、额度、认证状态等）
