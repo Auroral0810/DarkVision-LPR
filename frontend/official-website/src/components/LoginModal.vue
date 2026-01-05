@@ -237,7 +237,7 @@ const loginType = ref<'code' | 'password'>('code')
 const showForgot = ref(false)
 const loading = ref(false)
 const sendingCode = ref(false)
-const rememberMe = ref(false)
+const rememberMe = ref(true)
 const codeDisabled = ref(false)
 const countdown = ref(0)
 
@@ -358,7 +358,7 @@ const sendLoginCode = async () => {
 
 const redirectAfterLogin = () => {
   const portal = import.meta.env.VITE_APP_PORTAL_URL || 'http://localhost:3001'
-  window.location.href = portal
+  window.location.href = `${portal}/dashboard/overview`
 }
 
 const handleCodeLogin = async () => {
@@ -374,7 +374,7 @@ const handleCodeLogin = async () => {
           : await loginByPhone({ phone: codeForm.value.account, sms_code: codeForm.value.code })
         const token = res.data?.access_token || res.data?.token || ''
         const userInfo = res.data?.user_info || res.data?.user || {}
-        userStore.login(token, userInfo)
+        userStore.login(token, userInfo, rememberMe.value)
         ElMessage.success('登录成功')
         dialogVisible.value = false
         redirectAfterLogin()
@@ -401,7 +401,7 @@ const handlePasswordLogin = async () => {
           : await loginByPhone({ phone: account, password: passwordForm.value.password })
         const token = res.data?.access_token || res.data?.token || ''
         const userInfo = res.data?.user_info || res.data?.user || {}
-        userStore.login(token, userInfo)
+        userStore.login(token, userInfo, rememberMe.value)
         ElMessage.success('登录成功')
         dialogVisible.value = false
         redirectAfterLogin()

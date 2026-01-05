@@ -7,11 +7,6 @@ const routes: Array<RouteRecordRaw> = [
     redirect: '/dashboard'
   },
   {
-    path: '/login',
-    name: 'Login',
-    component: () => import('@/views/Login.vue')
-  },
-  {
     path: '/dashboard',
     component: DashboardLayout,
     redirect: '/dashboard/overview',

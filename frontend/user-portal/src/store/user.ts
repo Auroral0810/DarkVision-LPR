@@ -50,7 +50,7 @@ export interface ThirdPartyLogin {
   bound: boolean
 }
 
-// Mock initial state
+// Mock / fallback initial state
 const defaultUser: UserInfo = {
   id: '1',
   phone: '13800138000',
@@ -88,7 +88,10 @@ const defaultVerification: Verification = {
 }
 
 export const useUserStore = defineStore('user', () => {
-  const token = ref<string | null>(localStorage.getItem('token'))
+  // 读取官网存储的 token / userInfo，官网与门户使用相同 key：token、userInfo
+  const token = ref<string | null>(
+    sessionStorage.getItem('token') || localStorage.getItem('token')
+  )
   const userInfo = ref<UserInfo>({ ...defaultUser })
   const userProfile = ref<UserProfile>({ ...defaultProfile })
   const membership = ref<Membership>({ ...defaultMembership })
@@ -160,39 +163,31 @@ export const useUserStore = defineStore('user', () => {
     }
   })
 
-  function login(role: UserRole = 'FREE') {
-    token.value = 'mock-token-' + role.toLowerCase()
-    localStorage.setItem('token', token.value)
-    
-    // Simulate fetching user info
+  /**
+   * 登录后写入（从官网带过来的 token/user_info）
+   */
+  function login(newToken: string, payloadUser: any) {
+    token.value = newToken
+    localStorage.setItem('token', newToken)
+
+    const normalizedRole = (payloadUser?.user_type || payloadUser?.role || 'free').toUpperCase() as UserRole
+
     userInfo.value = {
       ...defaultUser,
-      role,
-      nickname: `${role} User`
+      ...payloadUser,
+      role: normalizedRole as UserRole,
+      user_type: (payloadUser?.user_type || 'free') as UserType,
     }
-    
-    if (role === 'VIP') {
-      membership.value = {
-        membership_type: 'vip_monthly',
-        start_date: '2026-01-01 00:00:00',
-        expire_date: '2026-02-01 00:00:00',
-        is_active: true
-      }
-      verification.value.status = 'approved'
-    } else if (role === 'COMPANY') {
-      membership.value = {
-        membership_type: 'enterprise_custom',
-        start_date: '2026-01-01 00:00:00',
-        expire_date: null,
-        is_active: true
-      }
-      verification.value.status = 'approved'
-    }
+
+    localStorage.setItem('userInfo', JSON.stringify(userInfo.value))
   }
 
   function logout() {
     token.value = null
     localStorage.removeItem('token')
+    sessionStorage.removeItem('token')
+    localStorage.removeItem('userInfo')
+    sessionStorage.removeItem('userInfo')
     userInfo.value = { ...defaultUser }
     userProfile.value = { ...defaultProfile }
     membership.value = { ...defaultMembership }
@@ -233,6 +228,27 @@ export const useUserStore = defineStore('user', () => {
       verification.value.status = 'pending'
     }
   }
+
+  // 初始化：若官网已登录则自动同步 token/userInfo
+  ;(() => {
+    const savedToken = sessionStorage.getItem('token') || localStorage.getItem('token')
+    const savedUserInfo = sessionStorage.getItem('userInfo') || localStorage.getItem('userInfo')
+    if (savedToken) token.value = savedToken
+    if (savedUserInfo) {
+      try {
+        const parsed = JSON.parse(savedUserInfo)
+        const normalizedRole = (parsed?.user_type || parsed?.role || 'free').toUpperCase()
+        userInfo.value = {
+          ...defaultUser,
+          ...parsed,
+          role: normalizedRole,
+          user_type: parsed?.user_type || 'free',
+        }
+      } catch (e) {
+        console.error('Failed to parse saved userInfo', e)
+      }
+    }
+  })()
 
   return {
     token,

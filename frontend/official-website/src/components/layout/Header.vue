@@ -124,10 +124,11 @@ const handleLanguageChange = (lang: string) => {
 const handleUserAction = (command: string) => {
   if (command === 'logout') {
     userStore.logout()
-    router.push('/')
-    ElMessage.success(t('common.success'))
+    // 退出后回到官网首页
+    window.location.href = 'http://localhost:3000'
   } else if (command === 'profile') {
-    router.push('/user/profile')
+    // 跳转到用户中心（门户）
+    window.location.href = 'http://localhost:3001/dashboard/settings'
   }
 }
 

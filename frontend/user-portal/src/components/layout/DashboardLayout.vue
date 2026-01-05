@@ -138,7 +138,8 @@ const roleText = computed(() => {
 const handleProfileCommand = (command: string) => {
   if (command === 'logout') {
     userStore.logout()
-    router.push('/login')
+    // 退出后回到官网首页
+    window.location.href = 'http://localhost:3000'
     ElMessage.success('已退出登录')
   }
 }
