@@ -1,43 +1,110 @@
 <template>
   <div class="home">
-    <!-- Hero Section -->
-    <section class="hero">
-      <div class="hero-bg"></div>
-      <div class="hero-container">
-        <div class="hero-content">
-          <div class="hero-badge">New Generation LPR</div>
-          <h1 class="hero-title">
-            智能感知，<span class="highlight">精准识别</span><br>
-            让车牌识别更简单
-          </h1>
-          <p class="hero-description">
-            {{ $t('home.description') }}<br>
-            基于 YOLOv12 与 Retinex 图像增强技术，支持极端低光照场景，识别率高达 99.9%。
-          </p>
-          <div class="hero-actions">
-            <button class="btn btn-primary" @click="goPortalRegister">
-              {{ $t('home.getStarted') }}
-              <el-icon class="icon"><Right /></el-icon>
-            </button>
-            <button class="btn btn-secondary" @click="$router.push('/contact')">
-              {{ $t('home.consultation') }}
-            </button>
+    <!-- Announcement Bar -->
+    <div v-if="activeAnnouncement" class="announcement-bar">
+      <div class="container">
+        <el-icon><Bell /></el-icon>
+        <span>{{ activeAnnouncement.content }}</span>
+        <el-icon class="close-btn" @click="closeAnnouncement"><Close /></el-icon>
+      </div>
+    </div>
+
+    <!-- Hero Section / Carousel -->
+    <section class="hero-section">
+      <el-carousel 
+        v-if="carousels.length > 0" 
+        height="800px" 
+        arrow="always" 
+        :interval="5000"
+        indicator-position="none"
+      >
+        <el-carousel-item v-for="item in carousels" :key="item.id">
+          <div class="carousel-slide" :style="{ backgroundImage: `url(${item.image_url})` }">
+            <div class="hero-overlay"></div>
+            <div class="hero-container">
+              <div class="hero-content">
+                <div class="hero-badge">New Generation LPR</div>
+                <h1 class="hero-title">{{ item.title }}</h1>
+                <!-- Fallback description if not in DB (DB only has title) -->
+                <p class="hero-description">
+                  {{ $t('home.description') }}<br>
+                  基于 YOLOv12 与 Retinex 图像增强技术，支持极端低光照场景。
+                </p>
+                <div class="hero-actions">
+                  <a v-if="item.link_url" :href="item.link_url" class="btn btn-primary">
+                    了解更多 <el-icon class="icon"><Right /></el-icon>
+                  </a>
+                  <button v-else class="btn btn-primary" @click="goPortalRegister">
+                    {{ $t('home.getStarted') }}
+                    <el-icon class="icon"><Right /></el-icon>
+                  </button>
+                  <button class="btn btn-secondary" @click="$router.push('/contact')">
+                    {{ $t('home.consultation') }}
+                  </button>
+                </div>
+                
+                <!-- Stats (Static for now as they are not in carousels table) -->
+                <div class="hero-stats">
+                  <div class="stat-item">
+                    <span class="num">99.9%</span>
+                    <span class="label">识别准确率</span>
+                  </div>
+                  <div class="divider"></div>
+                  <div class="stat-item">
+                    <span class="num">&lt;50ms</span>
+                    <span class="label">响应速度</span>
+                  </div>
+                  <div class="divider"></div>
+                  <div class="stat-item">
+                    <span class="num">24/7</span>
+                    <span class="label">全天候支持</span>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
-          
-          <div class="hero-stats">
-            <div class="stat-item">
-              <span class="num">99.9%</span>
-              <span class="label">识别准确率</span>
+        </el-carousel-item>
+      </el-carousel>
+
+      <!-- Fallback Static Hero if no carousels -->
+      <div v-else class="hero static-hero">
+        <div class="hero-bg"></div>
+        <div class="hero-container">
+          <div class="hero-content">
+            <div class="hero-badge">New Generation LPR</div>
+            <h1 class="hero-title">
+              智能感知，<span class="highlight">精准识别</span><br>
+              让车牌识别更简单
+            </h1>
+            <p class="hero-description">
+              {{ $t('home.description') }}<br>
+              基于 YOLOv12 与 Retinex 图像增强技术，支持极端低光照场景，识别率高达 99.9%。
+            </p>
+            <div class="hero-actions">
+              <button class="btn btn-primary" @click="goPortalRegister">
+                {{ $t('home.getStarted') }}
+                <el-icon class="icon"><Right /></el-icon>
+              </button>
+              <button class="btn btn-secondary" @click="$router.push('/contact')">
+                {{ $t('home.consultation') }}
+              </button>
             </div>
-            <div class="divider"></div>
-            <div class="stat-item">
-              <span class="num">&lt;50ms</span>
-              <span class="label">响应速度</span>
-            </div>
-            <div class="divider"></div>
-            <div class="stat-item">
-              <span class="num">24/7</span>
-              <span class="label">全天候支持</span>
+            
+            <div class="hero-stats">
+              <div class="stat-item">
+                <span class="num">99.9%</span>
+                <span class="label">识别准确率</span>
+              </div>
+              <div class="divider"></div>
+              <div class="stat-item">
+                <span class="num">&lt;50ms</span>
+                <span class="label">响应速度</span>
+              </div>
+              <div class="divider"></div>
+              <div class="stat-item">
+                <span class="num">24/7</span>
+                <span class="label">全天候支持</span>
+              </div>
             </div>
           </div>
         </div>
@@ -192,11 +259,66 @@
 
 <script setup lang="ts">
 // @ts-nocheck
-import { Right, Camera, Picture, VideoCamera, DataAnalysis, Aim, Sunny, Lightning, Monitor, Lock, DataLine } from '@element-plus/icons-vue'
+import { ref, onMounted } from 'vue'
+import { Right, Camera, Picture, VideoCamera, DataAnalysis, Aim, Sunny, Lightning, Monitor, Lock, DataLine, Bell, Close } from '@element-plus/icons-vue'
+import type { Carousel, Announcement } from '@/types/website'
 
 const portalBase = (import.meta as any)?.env?.VITE_APP_PORTAL_URL || 'http://localhost:3001'
 const goPortalRegister = () => {
   window.location.href = `${portalBase}/register`
+}
+
+// State for dynamic content
+const carousels = ref<Carousel[]>([])
+const announcements = ref<Announcement[]>([])
+const activeAnnouncement = ref<Announcement | null>(null)
+
+// Simulate fetching data (Replace with actual API call)
+onMounted(() => {
+  // Mock Data matching DB structure
+  carousels.value = [
+    {
+      id: 1,
+      title: '智能感知，精准识别',
+      image_url: 'https://images.unsplash.com/photo-1492144534655-ae79c964c9d7?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80',
+      link_url: null,
+      sort_order: 1,
+      is_enabled: true
+    },
+    {
+      id: 2,
+      title: '夜间识别，清晰如昼',
+      image_url: 'https://images.unsplash.com/photo-1469854523086-cc02fe5d8800?ixlib=rb-1.2.1&auto=format&fit=crop&w=1950&q=80',
+      link_url: null,
+      sort_order: 2,
+      is_enabled: true
+    }
+  ]
+
+  announcements.value = [
+    {
+      id: 1,
+      title: '系统维护通知',
+      content: 'DarkVision LPR 将于本周六凌晨 2:00 进行系统升级，预计耗时 2 小时。',
+      display_position: 'banner',
+      start_time: '2026-01-01 00:00:00',
+      end_time: '2026-01-10 00:00:00',
+      is_enabled: true
+    }
+  ]
+
+  // Find active banner announcement
+  const now = new Date()
+  activeAnnouncement.value = announcements.value.find(a => 
+    a.is_enabled && 
+    a.display_position === 'banner' &&
+    (!a.start_time || new Date(a.start_time) <= now) &&
+    (!a.end_time || new Date(a.end_time) >= now)
+  ) || null
+})
+
+const closeAnnouncement = () => {
+  activeAnnouncement.value = null
 }
 </script>
 
@@ -267,6 +389,71 @@ const goPortalRegister = () => {
       background: rgba(255, 255, 255, 0.1);
       border-color: rgba(255, 255, 255, 0.6);
     }
+  }
+}
+
+.announcement-bar {
+  background: #2563eb;
+  color: white;
+  padding: 10px 0;
+  font-size: 14px;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  
+  .container {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px;
+    position: relative;
+  }
+
+  .close-btn {
+    position: absolute;
+    right: 24px;
+    cursor: pointer;
+    opacity: 0.8;
+    &:hover { opacity: 1; }
+  }
+}
+
+.hero-section {
+  position: relative;
+  // If announcement bar is present, push down content (handled by padding-top in App usually, but here specific)
+  // For now we assume sticky header or fixed announcement
+}
+
+.carousel-slide {
+  width: 100%;
+  height: 100%;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  .hero-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.6); // Darken image
+    z-index: 1;
+  }
+
+  .hero-container {
+    position: relative;
+    z-index: 2;
+    // Reuse existing hero styles
+    @extend .hero-container;
   }
 }
 

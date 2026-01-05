@@ -47,11 +47,15 @@
         </div>
       </div>
 
-      <div class="doc-content-placeholder" v-if="currentDoc">
+      <div class="doc-content-placeholder" v-if="currentDocType">
         <div class="placeholder-box">
-          <el-icon :size="64" class="icon"><Document /></el-icon>
+          <el-icon :size="64" class="icon"><DocumentIcon /></el-icon>
           <h2>{{ currentDocTitle }}</h2>
-          <p>文档内容正在编写中，敬请期待...</p>
+          <div v-if="currentDocContent" class="doc-body">
+            <!-- Render actual content if available (supports HTML if trusted, or markdown) -->
+            {{ currentDocContent.content }}
+          </div>
+          <p v-else>文档内容正在编写中，敬请期待...</p>
         </div>
       </div>
     </div>
@@ -59,20 +63,59 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { Document } from '@element-plus/icons-vue'
+import { ref, computed, onMounted } from 'vue'
+import { Document as DocumentIcon } from '@element-plus/icons-vue'
 import { useI18n } from 'vue-i18n'
+import type { Document } from '@/types/website'
 
 const { t } = useI18n()
-const currentDoc = ref<string | null>(null)
+const currentDocType = ref<string | null>(null)
+const documents = ref<Document[]>([])
+const loading = ref(false)
+
+onMounted(() => {
+  // Mock Data
+  documents.value = [
+    {
+      id: 1,
+      title: 'Technical Documentation',
+      doc_type: 'tech',
+      content: 'Here is the technical documentation content...',
+      version: '1.0.0',
+      is_current: true
+    },
+    {
+      id: 2,
+      title: 'Service Agreement',
+      doc_type: 'service_agreement',
+      content: 'Here is the service agreement...',
+      version: '1.0.0',
+      is_current: true
+    },
+    {
+      id: 3,
+      title: 'Privacy Policy',
+      doc_type: 'privacy_policy',
+      content: 'Here is the privacy policy...',
+      version: '1.0.0',
+      is_current: true
+    }
+  ]
+})
+
+const currentDocContent = computed(() => {
+  if (!currentDocType.value) return null
+  // In real app, might fetch by API here
+  return documents.value.find(d => d.doc_type === currentDocType.value && d.is_current)
+})
 
 const currentDocTitle = computed(() => {
-  if (!currentDoc.value) return ''
-  return t(`documentation.${currentDoc.value}`)
+  if (!currentDocType.value) return ''
+  return t(`documentation.${currentDocType.value}`)
 })
 
 const handleDocClick = (type: string) => {
-  currentDoc.value = type
+  currentDocType.value = type
   // 简单的滚动逻辑，实际可能需要更复杂的定位
   setTimeout(() => {
     const el = document.querySelector('.doc-content-placeholder')

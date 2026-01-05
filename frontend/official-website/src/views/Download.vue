@@ -10,76 +10,31 @@
 
     <div class="page-container">
       <div class="download-cards">
-        <div class="download-card windows">
+        <div 
+          v-for="item in downloads" 
+          :key="item.id" 
+          class="download-card" 
+          :class="item.os"
+        >
           <div class="os-icon">
-            <img src="@/assets/icons/windows.svg" alt="Windows" class="svg-icon" />
+            <img :src="getIconPath(item.os)" :alt="item.os" class="svg-icon" />
           </div>
-          <h2>{{ $t('download.windows') }}</h2>
+          <h2>{{ formatOsName(item.os) }}</h2>
           <div class="version-info">
             <div class="info-row">
               <span class="label">{{ $t('download.version') }}</span>
-              <span class="value">v1.0.0</span>
+              <span class="value">{{ item.version }}</span>
             </div>
             <div class="info-row">
-              <span class="label">{{ $t('download.size') }}</span>
-              <span class="value">45.2 MB</span>
+              <span class="label">{{ $t('download.releaseDate') || '发布日期' }}</span>
+              <span class="value">{{ item.release_date }}</span>
             </div>
           </div>
           <div class="requirements">
             <p><strong>{{ $t('download.requirements') }}:</strong></p>
-            <p>Windows 10 / 11 (64-bit)</p>
+            <p>{{ getRequirements(item.os) }}</p>
           </div>
-          <button class="download-btn" @click="handleDownload('windows')">
-            <el-icon><Download /></el-icon>
-            {{ $t('download.download') }}
-          </button>
-        </div>
-
-        <div class="download-card macos">
-          <div class="os-icon">
-            <img src="@/assets/icons/macos.svg" alt="macOS" class="svg-icon" />
-          </div>
-          <h2>{{ $t('download.macos') }}</h2>
-          <div class="version-info">
-            <div class="info-row">
-              <span class="label">{{ $t('download.version') }}</span>
-              <span class="value">v1.0.0</span>
-            </div>
-            <div class="info-row">
-              <span class="label">{{ $t('download.size') }}</span>
-              <span class="value">52.8 MB</span>
-            </div>
-          </div>
-          <div class="requirements">
-            <p><strong>{{ $t('download.requirements') }}:</strong></p>
-            <p>macOS 11.0+ (Intel / Apple Silicon)</p>
-          </div>
-          <button class="download-btn" @click="handleDownload('macos')">
-            <el-icon><Download /></el-icon>
-            {{ $t('download.download') }}
-          </button>
-        </div>
-
-        <div class="download-card linux">
-          <div class="os-icon">
-            <img src="@/assets/icons/linux.svg" alt="Linux" class="svg-icon" />
-          </div>
-          <h2>{{ $t('download.linux') }}</h2>
-          <div class="version-info">
-            <div class="info-row">
-              <span class="label">{{ $t('download.version') }}</span>
-              <span class="value">v1.0.0</span>
-            </div>
-            <div class="info-row">
-              <span class="label">{{ $t('download.size') }}</span>
-              <span class="value">48.5 MB</span>
-            </div>
-          </div>
-          <div class="requirements">
-            <p><strong>{{ $t('download.requirements') }}:</strong></p>
-            <p>Ubuntu 20.04+ / CentOS 7+</p>
-          </div>
-          <button class="download-btn" @click="handleDownload('linux')">
+          <button class="download-btn" @click="handleDownload(item)">
             <el-icon><Download /></el-icon>
             {{ $t('download.download') }}
           </button>
@@ -153,21 +108,83 @@
 </template>
 
 <script setup lang="ts">
+import { ref, onMounted } from 'vue'
 import { Download } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import type { ClientDownload } from '@/types/website'
 
-const downloadUrls: Record<string, string> = {
-  windows: 'https://github.com/Auroral0810/EasyRename/releases/download/v1.0.0/EasyRename_1.0.0_x64_zh%2DCN.msi',
-  macos: 'https://github.com/Auroral0810/EasyRename/releases/download/v1.0.0/EasyRename_1.0.0_aarch64.dmg',
-  linux: 'https://github.com/Auroral0810/EasyRename/releases/download/v1.0.0/easy%2Drename_1.0.0_amd64.deb'
-  
+// Import icons for dynamic use
+import windowsIcon from '@/assets/icons/windows.svg'
+import macosIcon from '@/assets/icons/macos.svg'
+import linuxIcon from '@/assets/icons/linux.svg'
+
+const downloads = ref<ClientDownload[]>([])
+
+onMounted(() => {
+  // Mock Data
+  downloads.value = [
+    {
+      id: 1,
+      os: 'windows',
+      version: 'v1.0.0',
+      download_url: 'https://github.com/Auroral0810/EasyRename/releases/download/v1.0.0/EasyRename_1.0.0_x64_zh%2DCN.msi',
+      changelog: 'Initial release',
+      release_date: '2026-01-01',
+      is_latest: true
+    },
+    {
+      id: 2,
+      os: 'macos',
+      version: 'v1.0.0',
+      download_url: 'https://github.com/Auroral0810/EasyRename/releases/download/v1.0.0/EasyRename_1.0.0_aarch64.dmg',
+      changelog: 'Initial release',
+      release_date: '2026-01-01',
+      is_latest: true
+    },
+    {
+      id: 3,
+      os: 'linux',
+      version: 'v1.0.0',
+      download_url: 'https://github.com/Auroral0810/EasyRename/releases/download/v1.0.0/easy%2Drename_1.0.0_amd64.deb',
+      changelog: 'Initial release',
+      release_date: '2026-01-01',
+      is_latest: true
+    }
+  ]
+})
+
+const getIconPath = (os: string) => {
+  switch (os) {
+    case 'windows': return windowsIcon
+    case 'macos': return macosIcon
+    case 'linux': return linuxIcon
+    default: return ''
+  }
 }
 
-const handleDownload = (os: string) => {
-  const url = downloadUrls[os]
-  if (url) {
-    window.open(url, '_blank')
-    ElMessage.success(`正在跳转到 ${os} 版本下载页面`)
+const formatOsName = (os: string) => {
+  switch (os) {
+    case 'windows': return 'Windows'
+    case 'macos': return 'macOS'
+    case 'linux': return 'Linux'
+    default: return os
+  }
+}
+
+const getRequirements = (os: string) => {
+  // Could also be in DB or derived
+  switch (os) {
+    case 'windows': return 'Windows 10 / 11 (64-bit)'
+    case 'macos': return 'macOS 11.0+ (Intel / Apple Silicon)'
+    case 'linux': return 'Ubuntu 20.04+ / CentOS 7+'
+    default: return ''
+  }
+}
+
+const handleDownload = (item: ClientDownload) => {
+  if (item.download_url) {
+    window.open(item.download_url, '_blank')
+    ElMessage.success(`正在跳转到 ${formatOsName(item.os)} 版本下载页面`)
   } else {
     ElMessage.error('未找到对应的下载链接')
   }

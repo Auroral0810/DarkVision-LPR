@@ -70,21 +70,9 @@
       <div class="faq-section">
         <h2 class="section-title">常见问题</h2>
         <div class="faq-grid">
-          <div class="faq-item">
-            <h3>如何开始使用系统？</h3>
-            <p>注册账号后即可开始使用，普通用户每日有20次免费识别机会。您可以在控制台查看详细的使用指南。</p>
-          </div>
-          <div class="faq-item">
-            <h3>支持哪些图片格式？</h3>
-            <p>支持 JPG、PNG、BMP 等常见图片格式。单张图片建议在 5MB 以内，VIP 用户支持最大 10MB 的高清图片。</p>
-          </div>
-          <div class="faq-item">
-            <h3>如何升级到 VIP？</h3>
-            <p>在价格页面选择 VIP 方案，点击购买并完成支付后，您的账号将立即升级，享受更多权益。</p>
-          </div>
-          <div class="faq-item">
-            <h3>是否提供 API 接口？</h3>
-            <p>是的，VIP 用户和企业用户可以使用 RESTful API 接口。我们提供完善的 API 文档和多语言 SDK。</p>
+          <div v-for="faq in faqs" :key="faq.id" class="faq-item">
+            <h3>{{ faq.question }}</h3>
+            <p>{{ faq.answer }}</p>
           </div>
         </div>
       </div>
@@ -93,10 +81,55 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { Message, Phone, Location } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import request from '@/utils/request'
+import type { Faq } from '@/types/website'
+
+const faqs = ref<Faq[]>([])
+
+onMounted(() => {
+  // Mock Data
+  faqs.value = [
+    {
+      id: 1,
+      category_id: 1,
+      question: '如何开始使用系统？',
+      answer: '注册账号后即可开始使用，普通用户每日有20次免费识别机会。您可以在控制台查看详细的使用指南。',
+      sort_order: 1,
+      view_count: 100,
+      is_hot: true
+    },
+    {
+      id: 2,
+      category_id: 1,
+      question: '支持哪些图片格式？',
+      answer: '支持 JPG、PNG、BMP 等常见图片格式。单张图片建议在 5MB 以内，VIP 用户支持最大 10MB 的高清图片。',
+      sort_order: 2,
+      view_count: 90,
+      is_hot: false
+    },
+    {
+      id: 3,
+      category_id: 2,
+      question: '如何升级到 VIP？',
+      answer: '在价格页面选择 VIP 方案，点击购买并完成支付后，您的账号将立即升级，享受更多权益。',
+      sort_order: 3,
+      view_count: 80,
+      is_hot: true
+    },
+    {
+      id: 4,
+      category_id: 2,
+      question: '是否提供 API 接口？',
+      answer: '是的，VIP 用户和企业用户可以使用 RESTful API 接口。我们提供完善的 API 文档和多语言 SDK。',
+      sort_order: 4,
+      view_count: 70,
+      is_hot: false
+    }
+  ]
+})
 
 const form = ref({
   name: '',

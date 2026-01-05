@@ -91,9 +91,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import type { SystemConfig } from '@/types/website'
 
 const totalRecognition = ref(125680)
+
+onMounted(() => {
+  // Mock fetching system config
+  // In real app: fetch('/api/v1/system/configs/public')
+  // const config = configs.find(c => c.config_key === 'total_recognition_count')
+  // if (config) totalRecognition.value = parseInt(config.config_value)
+})
 </script>
 
 <style scoped lang="scss">
