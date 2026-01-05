@@ -135,8 +135,14 @@ class CaptchaService:
             logger.warning(f"Captcha expired or not found: {captcha_id}")
             return False
         
+        # 处理 Redis 返回类型（bytes 或 str）
+        if isinstance(stored_code, bytes):
+            stored_code_str = stored_code.decode('utf-8')
+        else:
+            stored_code_str = str(stored_code)
+            
         # 不区分大小写比较
-        if stored_code.decode('utf-8').upper() == code.upper():
+        if stored_code_str.upper() == code.upper():
             # 验证成功后删除验证码（一次性使用）
             redis_client.delete(key)
             logger.info(f"Captcha verified successfully: {captcha_id}")

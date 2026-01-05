@@ -396,36 +396,18 @@ const handleRegister = async () => {
     if (valid) {
       try {
         loading.value = true
-        // Construct payload
+        // Construct payload based on registration method
         const payload: any = {
           nickname: form.nickname,
-          password: form.password,
-          // Convert account to phone/email
-          ...(registerMethod.value === 'phone' ? { phone: form.account } : { email: form.account }),
-          // Map 'code' to 'sms_code' or 'email_code' if backend requires specific names
-          // According to backend API: 'sms_code' for phone, likely implicit/explicit in UserRegister schema?
-          // Let's check UserRegister schema: phone, sms_code, nickname, password, email(optional)
-          // Wait, the backend /register endpoint strictly requires `sms_code` in `UserRegister` schema currently?
-          // I need to double check if I updated UserRegister to allow email registration or if it's separate.
-          // In previous turn I saw `UserRegister` has `phone` and `sms_code`.
-          // If I want email registration, I might need a different endpoint or update the schema.
-          // For now, I will assume the backend handles it or I'll need to update backend.
-          // Actually, looking at `backend/app/api/v1/auth.py`, there is only `def register(user_data: UserRegister`.
-          // And `UserRegister` has `phone: str` required. 
-          // So Email registration might NOT be supported by the current `/register` endpoint fully if phone is mandatory.
-          // I should stick to Phone registration for the main flow or update backend.
-          // User asked for "Phone OR Email".
-          // I'll send what I can. If it fails, I'll need to fix backend next.
-          sms_code: form.code, // Assuming sms_code field for now
-          // If email, we might need to send email as param.
+          password: form.password
         }
         
-        if (registerMethod.value === 'email') {
-             // If currently backend only supports phone register, this might fail.
-             // But let's construct it.
-             payload.email = form.account
-             // If phone is required by backend schema, we might have an issue.
-             // I'll proceed with frontend UI and we can fix backend if needed.
+        if (registerMethod.value === 'phone') {
+          payload.phone = form.account
+          payload.sms_code = form.code
+        } else {
+          payload.email = form.account
+          payload.email_code = form.code
         }
 
         await register(payload)
@@ -623,6 +605,11 @@ watch(dialogVisible, (newVal) => {
       .input-group {
         display: flex;
         gap: 12px;
+        width: 100%; /* 确保填满父容器 */
+        
+        .el-input {
+          flex: 1; /* 让输入框占据剩余空间 */
+        }
         
         .captcha-box {
           width: 120px;

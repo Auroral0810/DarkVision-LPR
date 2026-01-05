@@ -111,11 +111,11 @@ def get_captcha_image(captcha_id: str):
 @router.post("/captcha/verify", response_model=UnifiedResponse, summary="验证图形验证码", tags=["验证码"])
 def verify_captcha(request: CaptchaVerifyRequest):
     """
-    验证图形验证码（可选接口）
+    验证图形验证码（在发送邮箱验证码前需校验图形验证码）
     
     **说明**:
     - 通常在注册/登录时会自动验证验证码
-    - 这个接口可用于提前验证（可选）
+    - 这个接口可用于提前验证
     - 验证成功后验证码会被删除（一次性使用）
     
     **请求参数**:

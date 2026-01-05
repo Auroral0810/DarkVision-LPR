@@ -22,7 +22,7 @@ export function getCaptcha(captchaId?: string) {
 }
 
 /**
- * 验证图形验证码（可选调用）
+ * 验证图形验证码
  * @param captchaId 验证码ID
  * @param code 用户输入的验证码
  */

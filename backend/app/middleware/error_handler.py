@@ -67,22 +67,39 @@ async def http_exception_handler(request: Request, exc: HTTPException) -> JSONRe
 
 async def validation_exception_handler(request: Request, exc: RequestValidationError) -> JSONResponse:
     """参数验证异常处理"""
-    errors = exc.errors()
-    logger.warning(f"Validation Error: {errors} | Path: {request.url.path}")
+    logger.warning(f"Validation Error: {exc} | Path: {request.url.path}")
     
+    errors = exc.errors()
     # 格式化验证错误信息
     error_messages = []
+    simplified_errors = []
+    
     for error in errors:
-        field = " -> ".join(str(loc) for loc in error["loc"][1:])  # 跳过 'body'
-        msg = error["msg"]
+        loc = error.get("loc", [])
+        # 跳过 'body' 前缀，获取字段名
+        field_parts = [str(l) for l in loc if l not in ('body',)]
+        field = " -> ".join(field_parts) if field_parts else "request"
+        
+        # 获取错误消息，处理可能的异常对象
+        msg = error.get("msg", "Unknown error")
+        if isinstance(msg, Exception):
+            msg = str(msg)
+        else:
+            msg = str(msg)
+        
         error_messages.append(f"{field}: {msg}")
+        simplified_errors.append({
+            "field": field,
+            "message": msg,
+            "type": error.get("type", "unknown")
+        })
     
     return JSONResponse(
         status_code=status.HTTP_400_BAD_REQUEST,
         content={
             "code": ResponseCode.VALIDATION_ERROR,
             "message": "; ".join(error_messages),
-            "data": errors
+            "data": simplified_errors
         }
     )
 

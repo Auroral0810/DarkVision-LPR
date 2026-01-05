@@ -130,7 +130,13 @@ class VerificationCodeService:
             logger.warning(f"Verification code expired or not found for {target}")
             return False
         
-        if stored_code.decode('utf-8') == code:
+        # 处理 Redis 返回类型（bytes 或 str）
+        if isinstance(stored_code, bytes):
+            stored_code_str = stored_code.decode('utf-8')
+        else:
+            stored_code_str = str(stored_code)
+        
+        if stored_code_str == code:
             # 验证成功后删除验证码
             redis_client.delete(key)
             logger.info(f"Verification code verified successfully for {target}")
