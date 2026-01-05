@@ -39,6 +39,18 @@ const routes: RouteRecordRaw[] = [
     meta: { title: '客户端下载' }
   },
   {
+    path: '/about',
+    name: 'About',
+    component: () => import('@/views/About.vue'),
+    meta: { title: '关于我们' }
+  },
+  {
+    path: '/careers',
+    name: 'Careers',
+    component: () => import('@/views/Careers.vue'),
+    meta: { title: '加入我们' }
+  },
+  {
     path: '/contact',
     name: 'Contact',
     component: () => import('@/views/Contact.vue'),
