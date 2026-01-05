@@ -110,9 +110,21 @@ onMounted(() => {
   .footer-brand {
     .logo {
       display: flex;
-      align-items: baseline;
-      gap: 8px;
+      align-items: center;
+      gap: 12px;
       margin-bottom: 16px;
+      
+      .footer-logo-img {
+        width: 32px;
+        height: 32px;
+        object-fit: contain;
+      }
+
+      .brand-text {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+      }
       
       .brand {
         font-size: 24px;

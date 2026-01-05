@@ -2,7 +2,9 @@
   <header class="header" :class="{ 'is-scrolled': isScrolled }">
     <div class="header-container">
       <div class="logo" @click="$router.push('/')">
-        <div class="logo-icon">DV</div>
+        <div class="logo-icon">
+          <img src="@/assets/icons/logo.svg" alt="DarkVision" />
+        </div>
         <div class="logo-text">
           <span class="brand">DarkVision</span>
           <span class="tag">LPR</span>
@@ -45,10 +47,10 @@
         <div class="divider"></div>
 
         <template v-if="!isLoggedIn">
-          <div class="login-link" @click="appStore.showLoginModal" style="cursor: pointer;">
+          <div class="login-link" @click="goPortalLogin" style="cursor: pointer;">
             {{ $t('nav.login') }}
           </div>
-          <button class="register-btn" @click="appStore.showRegisterModal">
+          <button class="register-btn" @click="goPortalRegister">
             {{ $t('nav.register') }}
           </button>
         </template>
@@ -77,19 +79,17 @@
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
-import { useUserStore } from '@/store/user'
-import { useAppStore } from '@/store/app'
 import { ArrowDown } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
 const router = useRouter()
 const { t, locale: currentLocale } = useI18n()
-const userStore = useUserStore()
-const appStore = useAppStore()
 
-const isLoggedIn = computed(() => userStore.isLoggedIn)
-const userInfo = computed(() => userStore.userInfo)
+// 官网不再存储登录信息，始终显示登录/注册按钮
+const isLoggedIn = computed(() => false)
+const userInfo = computed(() => null)
 const isScrolled = ref(false)
+const portalBase = (import.meta as any)?.env?.VITE_APP_PORTAL_URL || 'http://localhost:3001'
 
 const navItems = [
   { path: '/', key: 'home' },
@@ -121,15 +121,12 @@ const handleLanguageChange = (lang: string) => {
   ElMessage.success(t('common.success'))
 }
 
-const handleUserAction = (command: string) => {
-  if (command === 'logout') {
-    userStore.logout()
-    // 退出后回到官网首页
-    window.location.href = 'http://localhost:3000'
-  } else if (command === 'profile') {
-    // 跳转到用户中心（门户）
-    window.location.href = 'http://localhost:3001/dashboard/settings'
-  }
+const goPortalLogin = () => {
+  window.location.href = `${portalBase}/login`
+}
+
+const goPortalRegister = () => {
+  window.location.href = `${portalBase}/register`
 }
 
 const handleScroll = () => {
@@ -185,15 +182,12 @@ onUnmounted(() => {
   .logo-icon {
     width: 36px;
     height: 36px;
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-    border-radius: 8px;
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 800;
-    font-size: 14px;
-    letter-spacing: -0.5px;
+    
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
   }
 
   .logo-text {

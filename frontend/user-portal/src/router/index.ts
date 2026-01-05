@@ -1,10 +1,23 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import DashboardLayout from '@/components/layout/DashboardLayout.vue'
+import { useUserStore } from '@/store/user'
 
 const routes: Array<RouteRecordRaw> = [
   {
     path: '/',
     redirect: '/dashboard'
+  },
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('@/views/Login.vue'),
+    meta: { title: '登录' }
+  },
+  {
+    path: '/register',
+    name: 'Register',
+    component: () => import('@/views/Register.vue'),
+    meta: { title: '注册' }
   },
   {
     path: '/dashboard',
@@ -48,6 +61,26 @@ const routes: Array<RouteRecordRaw> = [
 const router = createRouter({
   history: createWebHistory(),
   routes
+})
+
+// 路由守卫：无 token 强制到 /login
+const whiteList = ['/login', '/register']
+router.beforeEach((to, _from, next) => {
+  const userStore = useUserStore()
+  const hasToken = userStore.token
+  if (whiteList.includes(to.path)) {
+    if (hasToken) {
+      next('/dashboard/overview')
+    } else {
+      next()
+    }
+    return
+  }
+  if (!hasToken) {
+    next('/login')
+  } else {
+    next()
+  }
 })
 
 export default router

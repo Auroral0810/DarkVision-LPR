@@ -1,16 +1,6 @@
 <template>
-  <el-dialog
-    v-model="dialogVisible"
-    title=""
-    width="900px"
-    class="register-modal-wrapper"
-    :append-to-body="true"
-    destroy-on-close
-    :show-close="true"
-    align-center
-  >
+  <div class="auth-page">
     <div class="register-layout">
-      <!-- Left Side: Image/Branding -->
       <div class="register-side">
         <div class="brand-content">
           <div class="brand-logo">
@@ -28,14 +18,12 @@
         <div class="side-bg-overlay"></div>
       </div>
 
-      <!-- Right Side: Form -->
       <div class="register-form-container">
         <div class="form-header">
-          <h2>{{ $t('register.title') }}</h2>
-          <p>创建您的账号，开启智能识别之旅</p>
+          <h2>创建您的账号</h2>
+          <p>开启智能识别之旅</p>
         </div>
 
-        <!-- Registration Method Tabs -->
         <div class="auth-tabs">
           <div 
             class="tab-item" 
@@ -54,8 +42,6 @@
         </div>
 
         <el-form :model="form" :rules="rules" ref="formRef" size="large" class="register-form">
-          
-          <!-- Phone/Email Input -->
           <el-form-item prop="account">
             <el-input 
               v-model="form.account" 
@@ -68,7 +54,6 @@
             </el-input>
           </el-form-item>
 
-          <!-- Nickname -->
           <el-form-item prop="nickname">
             <el-input v-model="form.nickname" placeholder="设置昵称">
               <template #prefix>
@@ -77,7 +62,6 @@
             </el-input>
           </el-form-item>
 
-          <!-- Graphic Captcha -->
           <el-form-item prop="captcha">
             <div class="input-group">
               <el-input v-model="form.captcha" placeholder="请输入图形验证码" maxlength="4">
@@ -103,7 +87,6 @@
             </div>
           </el-form-item>
 
-          <!-- SMS/Email Verification Code -->
           <el-form-item prop="code">
             <div class="input-group">
               <el-input v-model="form.code" :placeholder="registerMethod === 'phone' ? '短信验证码' : '邮箱验证码'" maxlength="6">
@@ -124,7 +107,6 @@
             </div>
           </el-form-item>
 
-          <!-- Password -->
           <el-form-item prop="password">
             <el-input
               v-model="form.password"
@@ -138,7 +120,6 @@
             </el-input>
           </el-form-item>
 
-          <!-- Confirm Password -->
           <el-form-item prop="confirmPassword">
             <el-input
               v-model="form.confirmPassword"
@@ -152,17 +133,15 @@
             </el-input>
           </el-form-item>
 
-          <!-- Agreement -->
           <el-form-item prop="agreement" class="agreement-item">
             <el-checkbox v-model="form.agreement">
               我已阅读并同意 
-              <el-link type="primary" :underline="false">{{ $t('register.terms') }}</el-link> 
+              <el-link type="primary" :underline="false">服务协议</el-link> 
               和 
-              <el-link type="primary" :underline="false">{{ $t('register.privacy') }}</el-link>
+              <el-link type="primary" :underline="false">隐私政策</el-link>
             </el-checkbox>
           </el-form-item>
 
-          <!-- Submit Button -->
           <el-button
             type="primary"
             class="submit-btn"
@@ -173,15 +152,13 @@
             立即注册
           </el-button>
 
-          <!-- Footer Links -->
           <div class="form-footer">
             <span>已有账号？</span>
-            <el-link type="primary" :underline="false" @click="switchToLogin">
+            <el-link type="primary" :underline="false" @click="goLogin">
               立即登录
             </el-link>
           </div>
 
-          <!-- Third Party Login -->
           <div class="divider">
             <span>其他方式注册</span>
           </div>
@@ -203,12 +180,12 @@
         </el-form>
       </div>
     </div>
-  </el-dialog>
+  </div>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, reactive } from 'vue'
-import { useUserStore } from '@/store/user'
+import { useRouter } from 'vue-router'
 import { 
   Iphone, User, Message, Lock, Key, Picture, 
   Loading, Check 
@@ -218,26 +195,22 @@ import type { FormInstance, FormRules } from 'element-plus'
 import { getCaptcha, verifyCaptcha } from '@/api/captcha'
 import { sendSmsCode, sendEmailCode, register } from '@/api/auth'
 
-const emit = defineEmits(['switch-to-login'])
-const dialogVisible = defineModel<boolean>('visible')
+const router = useRouter()
 
-const userStore = useUserStore()
 const formRef = ref<FormInstance>()
 const loading = ref(false)
 const registerMethod = ref<'phone' | 'email'>('phone')
 
-// Captcha State
 const captchaImage = ref('')
 const captchaId = ref('')
 const captchaLoading = ref(false)
 
-// Verification Code State
 const codeDisabled = ref(false)
 const countdown = ref(0)
 const sendingCode = ref(false)
 
 const form = reactive({
-  account: '', // shared for phone/email
+  account: '',
   nickname: '',
   captcha: '',
   code: '',
@@ -252,7 +225,6 @@ const codeButtonText = computed(() => {
   return countdown.value > 0 ? `${countdown.value}s 后重新获取` : '获取验证码'
 })
 
-// Validation Rules
 const validateAccount = (_rule: any, value: string, callback: any) => {
   if (!value) {
     callback(new Error(registerMethod.value === 'phone' ? '请输入手机号' : '请输入邮箱'))
@@ -264,7 +236,6 @@ const validateAccount = (_rule: any, value: string, callback: any) => {
         callback()
       }
     } else {
-      // Simple email regex
       if (!/^\w+([-+.]\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$/.test(value)) {
         callback(new Error('请输入正确的邮箱地址'))
       } else {
@@ -317,7 +288,6 @@ const rules = computed<FormRules>(() => ({
   ]
 }))
 
-// Methods
 const switchMethod = (method: 'phone' | 'email') => {
   registerMethod.value = method
   form.account = ''
@@ -332,7 +302,7 @@ const refreshCaptcha = async () => {
     if (res.code === 20000) {
       captchaImage.value = res.data.image_base64
       captchaId.value = res.data.captcha_id
-      form.captcha = '' // clear input
+      form.captcha = ''
     }
   } catch (error) {
     console.error(error)
@@ -342,10 +312,8 @@ const refreshCaptcha = async () => {
 }
 
 const handleSendCode = async () => {
-  // 1. Validate Account format first
   formRef.value?.validateField('account', async (valid) => {
     if (valid) {
-      // 2. Validate Graphic Captcha
       if (!form.captcha) {
         ElMessage.warning('请先输入图形验证码')
         return
@@ -353,10 +321,8 @@ const handleSendCode = async () => {
 
       try {
         sendingCode.value = true
-        // Verify Captcha with Backend
         await verifyCaptcha(captchaId.value, form.captcha)
         
-        // If verify success, send code
         if (registerMethod.value === 'phone') {
           await sendSmsCode(form.account, 'register')
         } else {
@@ -368,7 +334,6 @@ const handleSendCode = async () => {
         
       } catch (error: any) {
         console.error(error)
-        // Refresh captcha on failure to prevent reuse
         refreshCaptcha()
       } finally {
         sendingCode.value = false
@@ -396,7 +361,6 @@ const handleRegister = async () => {
     if (valid) {
       try {
         loading.value = true
-        // Construct payload based on registration method
         const payload: any = {
           nickname: form.nickname,
           password: form.password
@@ -412,8 +376,7 @@ const handleRegister = async () => {
 
         await register(payload)
         ElMessage.success('注册成功')
-        dialogVisible.value = false
-        emit('switch-to-login')
+        goLogin()
         
       } catch (error) {
         console.error(error)
@@ -424,41 +387,40 @@ const handleRegister = async () => {
   })
 }
 
-const switchToLogin = () => {
-  dialogVisible.value = false
-  emit('switch-to-login')
+const goLogin = () => {
+  router.push('/login')
 }
 
-// Watch dialog open
-watch(dialogVisible, (newVal) => {
-  if (newVal) {
-    refreshCaptcha()
-  }
-})
+watch(
+  () => true,
+  () => {
+    // init captcha on mount
+    if (!captchaId.value) {
+      refreshCaptcha()
+    }
+  },
+  { immediate: true }
+)
 </script>
 
 <style scoped lang="scss">
-.register-modal-wrapper {
-  :deep(.el-dialog) {
-    padding: 0;
-    border-radius: 20px;
-    overflow: hidden;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    background: #fff;
-    
-    .el-dialog__header {
-      display: none; // Custom header inside
-    }
-    
-    .el-dialog__body {
-      padding: 0;
-    }
-  }
+.auth-page {
+  min-height: 100vh;
+  background: #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
 }
 
 .register-layout {
   display: flex;
-  min-height: 600px;
+  width: 1000px;
+  min-height: 620px;
+  background: #fff;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
   
   .register-side {
     width: 360px;
@@ -605,15 +567,15 @@ watch(dialogVisible, (newVal) => {
       .input-group {
         display: flex;
         gap: 12px;
-        width: 100%; /* 确保填满父容器 */
+        width: 100%;
         
         .el-input {
-          flex: 1; /* 让输入框占据剩余空间 */
+          flex: 1;
         }
         
         .captcha-box {
           width: 120px;
-          height: 40px; // Match el-input large height usually 40px
+          height: 40px;
           border-radius: 4px;
           cursor: pointer;
           display: flex;
@@ -713,34 +675,52 @@ watch(dialogVisible, (newVal) => {
           font-style: normal;
         }
         
-        // Placeholder icons using text if font-icon not available, or standard classes
-        // For now using simple styling, assuming iconfont or similar might be needed.
-        // I will use pseudo-elements for placeholders if no font lib.
-        
         &.wechat:hover { background: #e0f2e9; i { color: #07c160; } }
         &.qq:hover { background: #eef9fe; i { color: #12b7f5; } }
         &.weibo:hover { background: #fef0ea; i { color: #eb4f38; } }
         &.github:hover { background: #24292e; i { color: white; } }
         
-        // Mock icons with text for now
+        i { display: none; }
+        
         &.wechat::after { content: '微信'; font-size: 10px; transform: scale(0.8); }
         &.qq::after { content: 'QQ'; font-size: 10px; transform: scale(0.8); }
         &.weibo::after { content: '微博'; font-size: 10px; transform: scale(0.8); }
         &.github::after { content: 'Git'; font-size: 10px; transform: scale(0.8); }
-        
-        i { display: none; } // Hide icon element as I don't have the font loaded
       }
     }
   }
 }
 
-// Media Queries for Responsiveness
+:deep(.el-input__wrapper) {
+  background-color: #f8fafc;
+  box-shadow: none !important;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1px 15px;
+  transition: all 0.2s;
+  
+  &:hover {
+    border-color: #cbd5e1;
+  }
+  
+  &.is-focus {
+    background-color: white;
+    border-color: #2563eb;
+    box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.1) !important;
+  }
+}
+
+:deep(.el-input__inner) {
+  height: 46px;
+}
+
 @media (max-width: 768px) {
   .register-layout {
     flex-direction: column;
+    width: 100%;
     
     .register-side {
-      display: none; // Hide image on mobile
+      display: none;
     }
     
     .register-form-container {
@@ -748,9 +728,9 @@ watch(dialogVisible, (newVal) => {
     }
   }
   
-  .register-modal-wrapper :deep(.el-dialog) {
-    width: 90% !important;
-    max-width: 480px;
+  .auth-page {
+    padding: 16px;
   }
 }
 </style>
+

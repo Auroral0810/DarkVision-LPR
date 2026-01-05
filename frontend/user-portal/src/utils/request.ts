@@ -2,11 +2,11 @@ import axios from 'axios'
 import type { AxiosInstance, InternalAxiosRequestConfig, AxiosResponse } from 'axios'
 import { ElMessage } from 'element-plus'
 
+// 后端基址（默认指向 8000/api/v1）
 const API_BASE_URL =
   (import.meta as any)?.env?.VITE_API_BASE_URL ||
   'http://localhost:8000/api/v1'
 
-// 创建 axios 实例
 const request: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
   timeout: 30000,
@@ -15,11 +15,13 @@ const request: AxiosInstance = axios.create({
   },
 })
 
-// 请求拦截器
+// 从存储中读取 token（session 优先，其次 local）
+const getToken = () =>
+  sessionStorage.getItem('token') || localStorage.getItem('token') || ''
+
 request.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
-    // 从 localStorage 获取 token
-    const token = localStorage.getItem('token')
+    const token = getToken()
     if (token && config.headers) {
       config.headers.Authorization = `Bearer ${token}`
     }
@@ -34,9 +36,7 @@ request.interceptors.request.use(
 request.interceptors.response.use(
   (response: AxiosResponse) => {
     const { data } = response
-    
-    // 后端统一响应格式：{ code: 20000-20999, data, message }
-    // 兼容 2xx 且无 code 的场景，默认视为成功
+    // 兼容后端统一返回 { code, message, data }
     if (typeof data?.code !== 'undefined') {
       if (data.code < 20000 || data.code >= 30000) {
         ElMessage.error(data.message || '请求失败')
@@ -44,17 +44,15 @@ request.interceptors.response.use(
       }
       return data
     }
-    
-    // 没有 code 字段，但 HTTP 状态码是 2xx，则直接返回 data
     return data
   },
   (error) => {
     if (error.response) {
       const { status, data } = error.response
-      
       switch (status) {
         case 401:
           ElMessage.error('未授权，请重新登录')
+          sessionStorage.removeItem('token')
           localStorage.removeItem('token')
           window.location.href = '/login'
           break
@@ -75,9 +73,9 @@ request.interceptors.response.use(
     } else {
       ElMessage.error('请求配置错误')
     }
-    
     return Promise.reject(error)
   }
 )
 
 export default request
+

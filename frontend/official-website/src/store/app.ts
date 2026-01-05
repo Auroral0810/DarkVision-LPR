@@ -17,38 +17,10 @@ export const useAppStore = defineStore('app', () => {
     localStorage.setItem('theme', newTheme)
   }
 
-  // 弹窗状态
-  const loginModalVisible = ref(false)
-  const registerModalVisible = ref(false)
-
-  const showLoginModal = () => {
-    loginModalVisible.value = true
-    registerModalVisible.value = false
-  }
-
-  const showRegisterModal = () => {
-    registerModalVisible.value = true
-    loginModalVisible.value = false
-  }
-
-  const hideLoginModal = () => {
-    loginModalVisible.value = false
-  }
-
-  const hideRegisterModal = () => {
-    registerModalVisible.value = false
-  }
-
   return {
     locale,
     theme,
     setLocale,
-    setTheme,
-    loginModalVisible,
-    registerModalVisible,
-    showLoginModal,
-    showRegisterModal,
-    hideLoginModal,
-    hideRegisterModal
+    setTheme
   }
 })

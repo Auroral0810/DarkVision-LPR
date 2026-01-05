@@ -164,11 +164,16 @@ export const useUserStore = defineStore('user', () => {
   })
 
   /**
-   * 登录后写入（从官网带过来的 token/user_info）
+   * 登录写入（从官网或本地登录流程）
+   * @param rememberMe true 写入 localStorage；false 写入 sessionStorage
    */
-  function login(newToken: string, payloadUser: any) {
+  function login(newToken: string, payloadUser: any, rememberMe = true) {
+    const storage = rememberMe ? localStorage : sessionStorage
+    const otherStorage = rememberMe ? sessionStorage : localStorage
+
     token.value = newToken
-    localStorage.setItem('token', newToken)
+    storage.setItem('token', newToken)
+    otherStorage.removeItem('token')
 
     const normalizedRole = (payloadUser?.user_type || payloadUser?.role || 'free').toUpperCase() as UserRole
 
@@ -179,7 +184,8 @@ export const useUserStore = defineStore('user', () => {
       user_type: (payloadUser?.user_type || 'free') as UserType,
     }
 
-    localStorage.setItem('userInfo', JSON.stringify(userInfo.value))
+    storage.setItem('userInfo', JSON.stringify(userInfo.value))
+    otherStorage.removeItem('userInfo')
   }
 
   function logout() {

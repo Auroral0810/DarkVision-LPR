@@ -7,15 +7,16 @@ import uuid
 import base64
 import io
 from app.core.response import success, UnifiedResponse
-from app.schemas.captcha import CaptchaRequest, CaptchaResponse, CaptchaVerifyRequest
+from typing import Optional
+from app.schemas.captcha import CaptchaVerifyRequest
 from app.services.captcha import captcha_service, CaptchaService
 from app.core.exceptions import ParameterException
 
 router = APIRouter()
 
 
-@router.post("/captcha/generate", response_model=UnifiedResponse, summary="获取图形验证码", tags=["验证码"])
-def generate_captcha(request: CaptchaRequest = CaptchaRequest()):
+@router.get("/captcha/generate", response_model=UnifiedResponse, summary="获取图形验证码", tags=["验证码"])
+def generate_captcha(captcha_id: Optional[str] = None):
     """
     获取图形验证码
     
@@ -55,9 +56,9 @@ def generate_captcha(request: CaptchaRequest = CaptchaRequest()):
     ```
     """
     # 如果提供了旧的captcha_id，先删除旧验证码
-    if request.captcha_id:
-        captcha_service.delete_captcha(request.captcha_id)
-    
+    if captcha_id:
+        captcha_service.delete_captcha(captcha_id)
+
     # 生成新的UUID作为验证码ID
     captcha_id = str(uuid.uuid4())
     

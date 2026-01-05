@@ -12,9 +12,7 @@
       <div class="download-cards">
         <div class="download-card windows">
           <div class="os-icon">
-            <svg viewBox="0 0 24 24" width="64" height="64" class="svg-icon">
-              <path fill="#0078D4" d="M0 3.449L9.388 2.147v9.422H0V3.449zm0 9.942h9.388v9.421L0 21.55v-8.159zm10.702-9.605L24 2.227v9.342H10.702V3.786zm0 9.605H24v9.34L10.702 21.43v-8.039z"/>
-            </svg>
+            <img src="@/assets/icons/windows.svg" alt="Windows" class="svg-icon" />
           </div>
           <h2>{{ $t('download.windows') }}</h2>
           <div class="version-info">
@@ -39,10 +37,7 @@
 
         <div class="download-card macos">
           <div class="os-icon">
-            <svg viewBox="0 0 24 24" width="64" height="64" class="svg-icon">
-              <path fill="#000000" d="M17.34 22.042c-1.155 0-1.896-.79-3.26-.79-1.39 0-2.037.767-3.237.767-3.056 0-5.756-5.066-4.522-8.625.962-2.756 3.033-3.415 4.31-3.415 1.154 0 1.88.66 2.89.66 1.057 0 1.733-.703 3.012-.703 1.26 0 2.503.746 3.237 1.83-2.91 1.735-2.293 6.096.533 7.291-.703 1.756-1.732 3.472-2.964 2.984zM12.42 2.91c1.24-1.536 1.057-3.956-1.154-4.922-1.39.263-2.94 1.713-2.677 3.328.02.042 1.413 3.054 3.83 1.594z" transform="translate(4 4) scale(0.7)"/>
-              <path fill="#000000" d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.02-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.79-1.31.02-2.3-1.28-3.14-2.49C3.12 15.29 4.41 9.4 7.7 9.35c1.3-.02 2.52.87 3.31.87.79 0 2.27-1.07 3.83-.91 1.3.05 2.49.53 3.19 1.55-2.8 1.4-2.33 5.48.51 6.64-.63 1.57-1.49 3.12-2.83 5zM13 5.3c.7-1.73 2.76-2.6 4.38-2.6.22 2.08-1.92 4.35-4.38 2.6z"/>
-            </svg>
+            <img src="@/assets/icons/macos.svg" alt="macOS" class="svg-icon" />
           </div>
           <h2>{{ $t('download.macos') }}</h2>
           <div class="version-info">
@@ -67,10 +62,7 @@
 
         <div class="download-card linux">
           <div class="os-icon">
-            <svg viewBox="0 0 24 24" width="64" height="64" class="svg-icon">
-              <!-- Tux Icon -->
-              <path fill="#000" d="M12.14 3a2.6 2.6 0 0 0-2.56 2.65c0 1.14 0 3.06 1.48 4.28 0 0 2.22 1.51 2.69 4.41.06.33.2 1.6-1.55 1.76-1.74.16-1.63 1.77-.38 1.94 1.25.17 2.06-.54 2.24-.96.18-.42.92-2 .88-3.17-.03-.7-.34-3.41-1.66-4.63C12.18 8.16 12.14 7.6 12.14 3zM9.46 8.68c-.7.65-2.06 2.37-2.14 5.34-.02.73 1.94.88 1.94.88s.22 1.15-1.12 1.24c-1.34.09-1.92-.78-2.02-1.78-.1-1 .36-4.52 1.86-6.38.38-.47 1.1.13 1.48.7zm7.64 5.42c-.08-2.97-1.44-4.69-2.14-5.34.38-.57 1.1-1.17 1.48-.7 1.5 1.86 1.96 5.38 1.86 6.38-.1 1-1.38 1.68-2.02 1.78-1.34-.09-1.12-1.24-1.12-1.24s1.96-.15 1.94-.88z" transform="scale(1.5) translate(-4, -1)"/>
-            </svg>
+            <img src="@/assets/icons/linux.svg" alt="Linux" class="svg-icon" />
           </div>
           <h2>{{ $t('download.linux') }}</h2>
           <div class="version-info">
@@ -164,12 +156,21 @@
 import { Download } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
+const downloadUrls: Record<string, string> = {
+  windows: 'https://github.com/Auroral0810/EasyRename/releases/download/v1.0.0/EasyRename_1.0.0_x64_zh%2DCN.msi',
+  macos: 'https://github.com/Auroral0810/EasyRename/releases/download/v1.0.0/EasyRename_1.0.0_aarch64.dmg',
+  linux: 'https://github.com/Auroral0810/EasyRename/releases/download/v1.0.0/easy%2Drename_1.0.0_amd64.deb'
+  
+}
+
 const handleDownload = (os: string) => {
-  ElMessage.info(`正在为您准备 ${os} 版本的下载...`)
-  // 模拟下载延迟
-  setTimeout(() => {
-    ElMessage.success('开始下载')
-  }, 1000)
+  const url = downloadUrls[os]
+  if (url) {
+    window.open(url, '_blank')
+    ElMessage.success(`正在跳转到 ${os} 版本下载页面`)
+  } else {
+    ElMessage.error('未找到对应的下载链接')
+  }
 }
 </script>
 
