@@ -1,26 +1,42 @@
 <template>
-  <el-dialog
-    v-model="dialogVisible"
-    title=""
-    width="420px"
-    class="login-modal"
-    :append-to-body="true"
-    destroy-on-close
-    center
-    align-center
-  >
-    <div class="login-container">
-      <div class="login-header">
-        <div class="logo">
-          <span class="logo-icon">DV</span>
+<el-dialog
+  v-model="dialogVisible"
+  title=""
+  width="880px"
+  class="login-modal-wrapper"
+  :append-to-body="true"
+  destroy-on-close
+  align-center
+>
+  <div class="login-layout">
+    <!-- Left Side -->
+    <div class="login-side">
+      <div class="brand-content">
+        <div class="brand-logo">
+          <span class="logo-text">DV</span>
         </div>
-        <h1>{{ $t('login.title') }}</h1>
-        <p>欢迎回来，请登录您的账号</p>
+        <h2>DarkVision LPR</h2>
+        <p class="slogan">极速、精准、企业级的车牌识别平台</p>
+        <ul class="features-list">
+          <li><el-icon><Check /></el-icon> 99.9% 识别准确率</li>
+          <li><el-icon><Check /></el-icon> <50ms 响应速度</li>
+          <li><el-icon><Check /></el-icon> 夜间/逆光稳健识别</li>
+          <li><el-icon><Check /></el-icon> 私有化与多端支持</li>
+        </ul>
+      </div>
+      <div class="side-bg-overlay"></div>
+    </div>
+
+    <!-- Right Side Form -->
+    <div class="login-form-container">
+      <div class="form-header">
+        <h2>{{ $t('login.title') }}</h2>
+        <p>欢迎回来，开启高性能识别之旅</p>
       </div>
 
       <el-tabs v-model="loginType" class="login-tabs" stretch>
         <el-tab-pane label="验证码登录" name="code">
-          <el-form :model="phoneForm" :rules="phoneRules" ref="phoneFormRef" size="large">
+          <el-form :model="phoneForm" :rules="phoneRules" ref="phoneFormRef" size="large" class="login-form">
             <el-form-item prop="phone">
               <el-input v-model="phoneForm.phone" placeholder="请输入手机号">
                 <template #prefix>
@@ -29,17 +45,19 @@
               </el-input>
             </el-form-item>
             <el-form-item prop="code">
-              <div class="input-with-btn">
-                <el-input v-model="phoneForm.code" placeholder="请输入验证码">
+              <div class="input-group">
+                <el-input v-model="phoneForm.code" placeholder="请输入验证码" maxlength="6">
                   <template #prefix>
                     <el-icon><Key /></el-icon>
                   </template>
                 </el-input>
                 <el-button 
                   type="primary" 
-                  class="append-btn"
+                  plain
+                  class="send-btn"
                   :disabled="codeDisabled"
                   @click="sendCode"
+                  :loading="sendingCode"
                 >
                   {{ codeButtonText }}
                 </el-button>
@@ -56,6 +74,7 @@
               class="submit-btn"
               :loading="loading"
               @click="handlePhoneLogin"
+              round
             >
               {{ $t('login.login') }}
             </el-button>
@@ -63,9 +82,9 @@
         </el-tab-pane>
 
         <el-tab-pane label="密码登录" name="password">
-          <el-form :model="passwordForm" :rules="passwordRules" ref="passwordFormRef" size="large">
+          <el-form :model="passwordForm" :rules="passwordRules" ref="passwordFormRef" size="large" class="login-form">
             <el-form-item prop="account">
-              <el-input v-model="passwordForm.account" placeholder="手机号/邮箱/账号">
+              <el-input v-model="passwordForm.account" placeholder="手机号/邮箱">
                 <template #prefix>
                   <el-icon><User /></el-icon>
                 </template>
@@ -94,6 +113,7 @@
               class="submit-btn"
               :loading="loading"
               @click="handlePasswordLogin"
+              round
             >
               {{ $t('login.login') }}
             </el-button>
@@ -106,14 +126,14 @@
       </div>
 
       <div class="third-party-buttons">
-        <div class="icon-btn wechat" @click="handleThirdPartyLogin('wechat')">
-          <svg viewBox="0 0 28 28" width="20" height="20"><path d="M21.35 15.65c0-3.32-3.1-6-6.92-6-3.83 0-6.93 2.68-6.93 6 0 3.32 3.1 6 6.93 6 .82 0 1.6-.14 2.33-.38.71.53 2.5 1.76 2.5 1.76s-.5-1.46-.57-1.95c1.67-1.39 2.66-3.23 2.66-5.43zM10.84 8.78c-4.42 0-8 2.87-8 6.4 0 2.22 1.41 4.18 3.55 5.37-.09.68-.66 2.08-.66 2.08s2.07-.36 3.65-1.35c.46.08.93.13 1.43.13.06 0 .12 0 .18 0-.3-1.02-.45-2.09-.45-3.17 0-4.66 4.31-8.45 9.63-8.45.68 0 1.34.07 1.99.18-1.52-2.78-5.91-4.7-10.45-4.7V8.78c-.28-.01-.58-.02-.87 0z" fill="currentColor"/></svg>
+        <div class="icon-btn wechat" @click="handleThirdPartyLogin('wechat')" title="微信登录">
+          <i class="iconfont icon-wechat"></i>
         </div>
-        <div class="icon-btn qq" @click="handleThirdPartyLogin('qq')">
-          <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.33 14.17c-.31.25-.66.44-1.03.55-.42.12-.86.19-1.3.19s-.87-.07-1.3-.19c-.37-.11-.72-.3-1.03-.55-.26-.21-.48-.46-.66-.74-.18-.28-.31-.59-.39-.91-.08-.32-.12-.65-.12-.99 0-.34.04-.67.12-.99.08-.32.21-.63.39-.91.18-.28.4-.53.66-.74.31-.25.66-.44 1.03-.55.42-.12.86-.19 1.3-.19s.87.07 1.3.19c.37.11.72.3 1.03.55.26.21.48.46.66.74.18.28.31.59.39.91.08.32.12.65.12.99 0 .34-.04.67-.12.99-.08.32-.21.63-.39.91-.18.28-.4.53-.66.74z" fill="currentColor"/></svg>
+        <div class="icon-btn qq" @click="handleThirdPartyLogin('qq')" title="QQ登录">
+          <i class="iconfont icon-qq"></i>
         </div>
-        <div class="icon-btn github" @click="handleThirdPartyLogin('github')">
-          <svg viewBox="0 0 24 24" width="20" height="20"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.167 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.604-3.369-1.34-3.369-1.34-.454-1.156-1.11-1.464-1.11-1.464-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.087 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.379.202 2.398.1 2.651.64.7 1.028 1.597 1.028 2.688 0 3.848-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.743 0 .267.18.578.688.48C19.138 20.161 22 16.416 22 12c0-5.523-4.477-10-10-10z" fill="currentColor"/></svg>
+        <div class="icon-btn github" @click="handleThirdPartyLogin('github')" title="GitHub登录">
+          <i class="iconfont icon-github"></i>
         </div>
       </div>
 
@@ -124,29 +144,27 @@
         </el-link>
       </div>
     </div>
-  </el-dialog>
+  </div>
+</el-dialog>
 </template>
 
 <script setup lang="ts">
+// @ts-nocheck
 import { ref, computed } from 'vue'
 import { useUserStore } from '@/store/user'
-import { Iphone, Lock, Key, User } from '@element-plus/icons-vue'
+import { Iphone, Lock, Key, User, Check } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-
-const props = defineProps<{
-  // modelValue is handled by defineModel in Vue 3.4+, but for safety in older setups we use standard props/emits or computed
-}>()
+import { loginByPhone, loginByEmail, sendSmsCode } from '@/api/auth'
 
 const emit = defineEmits(['switch-to-register'])
-
-// Using defineModel for two-way binding of visibility
 const dialogVisible = defineModel<boolean>('visible')
 
 const userStore = useUserStore()
 
-const loginType = ref('phone')
+const loginType = ref<'code' | 'password'>('code')
 const loading = ref(false)
+const sendingCode = ref(false)
 const rememberMe = ref(false)
 const codeDisabled = ref(false)
 const countdown = ref(0)
@@ -189,16 +207,9 @@ const codeButtonText = computed(() => {
   return countdown.value > 0 ? `${countdown.value}s` : '获取验证码'
 })
 
-const sendCode = async () => {
-  if (!phoneForm.value.phone) {
-    ElMessage.warning('请先输入手机号')
-    return
-  }
-  
-  ElMessage.success('验证码已发送')
+const startCountdown = () => {
   codeDisabled.value = true
   countdown.value = 60
-  
   const timer = setInterval(() => {
     countdown.value--
     if (countdown.value <= 0) {
@@ -208,21 +219,50 @@ const sendCode = async () => {
   }, 1000)
 }
 
+const sendCode = async () => {
+  if (!phoneForm.value.phone) {
+    ElMessage.warning('请先输入手机号')
+    return
+  }
+  try {
+    sendingCode.value = true
+    await sendSmsCode(phoneForm.value.phone, 'login')
+    ElMessage.success('验证码已发送')
+    startCountdown()
+  } catch (error) {
+    console.error(error)
+  } finally {
+    sendingCode.value = false
+  }
+}
+
+const redirectAfterLogin = () => {
+  const portal = import.meta.env.VITE_APP_PORTAL_URL || 'http://localhost:3001'
+  window.location.href = portal
+}
+
 const handlePhoneLogin = async () => {
   if (!phoneFormRef.value) return
   
-  await phoneFormRef.value.validate((valid) => {
+  await phoneFormRef.value.validate(async (valid) => {
     if (valid) {
-      loading.value = true
-      setTimeout(() => {
-        userStore.login('mock-token', {
+      try {
+        loading.value = true
+        const res = await loginByPhone({
           phone: phoneForm.value.phone,
-          nickname: '用户' + phoneForm.value.phone.slice(-4)
+          sms_code: phoneForm.value.code
         })
-        loading.value = false
+        const token = res.data?.access_token || res.data?.token || ''
+        const userInfo = res.data?.user_info || res.data?.user || {}
+        userStore.login(token, userInfo)
         ElMessage.success('登录成功')
         dialogVisible.value = false
-      }, 1000)
+        redirectAfterLogin()
+      } catch (error) {
+        console.error(error)
+      } finally {
+        loading.value = false
+      }
     }
   })
 }
@@ -230,17 +270,26 @@ const handlePhoneLogin = async () => {
 const handlePasswordLogin = async () => {
   if (!passwordFormRef.value) return
   
-  await passwordFormRef.value.validate((valid) => {
+  await passwordFormRef.value.validate(async (valid) => {
     if (valid) {
-      loading.value = true
-      setTimeout(() => {
-        userStore.login('mock-token', {
-          nickname: '用户'
-        })
-        loading.value = false
+      try {
+        loading.value = true
+        const account = passwordForm.value.account
+        const isEmail = account.includes('@')
+        const res = isEmail
+          ? await loginByEmail({ email: account, password: passwordForm.value.password })
+          : await loginByPhone({ phone: account, password: passwordForm.value.password })
+        const token = res.data?.access_token || res.data?.token || ''
+        const userInfo = res.data?.user_info || res.data?.user || {}
+        userStore.login(token, userInfo)
         ElMessage.success('登录成功')
         dialogVisible.value = false
-      }, 1000)
+        redirectAfterLogin()
+      } catch (error) {
+        console.error(error)
+      } finally {
+        loading.value = false
+      }
     }
   })
 }
@@ -256,185 +305,262 @@ const switchToRegister = () => {
 </script>
 
 <style scoped lang="scss">
-.login-container {
-  width: 100%;
-  padding: 0 20px;
-}
-
-.login-header {
-  text-align: center;
-  margin-bottom: 32px;
-  
-  .logo {
-    width: 48px;
-    height: 48px;
-    background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 auto 20px;
+.login-modal-wrapper {
+  :deep(.el-dialog) {
+    padding: 0;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+    background: #fff;
     
-    .logo-icon {
-      color: white;
-      font-weight: 800;
-      font-size: 18px;
+    .el-dialog__header {
+      display: none;
+    }
+    
+    .el-dialog__body {
+      padding: 0;
     }
   }
-  
-  h1 {
-    font-size: 24px;
-    font-weight: 700;
-    color: #0f172a;
-    margin-bottom: 8px;
-  }
-  
-  p {
-    color: #64748b;
-    font-size: 14px;
-  }
 }
 
-.login-tabs {
-  margin-bottom: 24px;
-  
-  :deep(.el-tabs__nav-wrap::after) {
-    height: 1px;
-    background-color: #e2e8f0;
-  }
-  
-  :deep(.el-tabs__item) {
-    font-size: 15px;
-    color: #64748b;
-    padding: 0 20px !important;
-    
-    &.is-active {
-      color: #2563eb;
-      font-weight: 600;
-    }
-  }
-  
-  :deep(.el-tabs__active-bar) {
-    background-color: #2563eb;
-  }
-  
-  :deep(.el-tabs__nav) {
-    width: 100%;
-    display: flex;
-    justify-content: center;
-  }
-}
-
-.input-with-btn {
+.login-layout {
   display: flex;
-  gap: 12px;
-  width: 100%;
+  min-height: 540px;
   
-  .el-input {
-    flex: 1;
-  }
-  
-  .append-btn {
-    padding: 0 4px; /* Reduced padding since text is short */
-    min-width: 90px; /* Ensure minimum width */
-    height: 46px; /* Match input height */
-    border-radius: 12px;
-  }
-}
-
-.form-options {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  
-  :deep(.el-checkbox__label) {
-    color: #64748b;
-  }
-}
-
-.submit-btn {
-  width: 100%;
-  height: 48px;
-  border-radius: 12px;
-  font-size: 16px;
-  font-weight: 600;
-  background: #2563eb;
-  border-color: #2563eb;
-  
-  &:hover {
-    background: #1d4ed8;
-    border-color: #1d4ed8;
-  }
-}
-
-.divider {
-  position: relative;
-  text-align: center;
-  margin: 32px 0 24px;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: #e2e8f0;
-  }
-  
-  span {
+  .login-side {
+    width: 340px;
+    background-image: url('https://images.unsplash.com/photo-1489515217757-5fd1be406fef?auto=format&fit=crop&w=900&q=80');
+    background-size: cover;
+    background-position: center;
     position: relative;
-    background: white;
-    padding: 0 16px;
-    color: #94a3b8;
-    font-size: 12px;
-  }
-}
-
-.third-party-buttons {
-  display: flex;
-  justify-content: center;
-  gap: 24px;
-  margin-bottom: 32px;
-  
-  .icon-btn {
-    width: 48px;
-    height: 48px;
-    border-radius: 50%;
-    background: #f8fafc;
-    border: 1px solid #e2e8f0;
     display: flex;
-    align-items: center;
+    flex-direction: column;
     justify-content: center;
-    cursor: pointer;
-    transition: all 0.2s;
-    color: #64748b;
+    padding: 40px;
+    color: white;
     
-    &:hover {
-      transform: translateY(-2px);
-      background: white;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    .side-bg-overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, rgba(37, 99, 235, 0.9) 0%, rgba(30, 64, 175, 0.8) 100%);
+      z-index: 1;
     }
     
-    &.wechat:hover { color: #07c160; border-color: #07c160; }
-    &.qq:hover { color: #12b7f5; border-color: #12b7f5; }
-    &.github:hover { color: #24292e; border-color: #24292e; }
+    .brand-content {
+      position: relative;
+      z-index: 2;
+      
+      .brand-logo {
+        width: 64px;
+        height: 64px;
+        background: rgba(255, 255, 255, 0.2);
+        backdrop-filter: blur(10px);
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 24px;
+        border: 1px solid rgba(255, 255, 255, 0.3);
+        
+        .logo-text {
+          font-size: 24px;
+          font-weight: 800;
+          color: white;
+        }
+      }
+      
+      h2 {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 10px;
+      }
+      
+      .slogan {
+        font-size: 15px;
+        opacity: 0.9;
+        margin-bottom: 28px;
+      }
+      
+      .features-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        
+        li {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-bottom: 14px;
+          font-size: 14px;
+          opacity: 0.9;
+          
+          .el-icon {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 4px;
+            border-radius: 50%;
+            font-size: 12px;
+          }
+        }
+      }
+    }
   }
-}
-
-.login-footer {
-  text-align: center;
-  color: #64748b;
-  font-size: 14px;
   
-  .el-link {
-    margin-left: 8px;
-    color: #2563eb;
-    font-weight: 600;
+  .login-form-container {
+    flex: 1;
+    padding: 40px 48px;
+    display: flex;
+    flex-direction: column;
     
-    &:hover {
-      color: #1d4ed8;
+    .form-header {
+      margin-bottom: 24px;
+      
+      h2 {
+        font-size: 26px;
+        color: #0f172a;
+        margin-bottom: 8px;
+        font-weight: 700;
+      }
+      
+      p {
+        color: #64748b;
+        font-size: 14px;
+      }
+    }
+    
+    .login-tabs {
+      :deep(.el-tabs__nav-wrap::after) {
+        height: 1px;
+        background-color: #e2e8f0;
+      }
+      :deep(.el-tabs__item) {
+        font-size: 15px;
+        color: #64748b;
+        padding: 0 20px !important;
+        &.is-active {
+          color: #2563eb;
+          font-weight: 600;
+        }
+      }
+      :deep(.el-tabs__active-bar) {
+        background-color: #2563eb;
+      }
+    }
+    
+    .login-form {
+      .input-group {
+        display: flex;
+        gap: 12px;
+        width: 100%;
+        
+        .el-input {
+          flex: 1;
+        }
+        
+        .send-btn {
+          width: 120px;
+        }
+      }
+      
+      .form-options {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        
+        :deep(.el-checkbox__label) {
+          color: #64748b;
+        }
+      }
+      
+      .submit-btn {
+        width: 100%;
+        height: 46px;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 600;
+        background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+        border: none;
+        box-shadow: 0 6px 18px rgba(37, 99, 235, 0.25);
+        
+        &:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
+        }
+      }
+    }
+    
+    .divider {
+      position: relative;
+      text-align: center;
+      margin: 28px 0 22px;
+      
+      &::before {
+        content: '';
+        position: absolute;
+        top: 50%;
+        left: 0;
+        right: 0;
+        height: 1px;
+        background: #e2e8f0;
+      }
+      
+      span {
+        position: relative;
+        background: white;
+        padding: 0 16px;
+        color: #94a3b8;
+        font-size: 12px;
+      }
+    }
+    
+    .third-party-buttons {
+      display: flex;
+      justify-content: center;
+      gap: 18px;
+      margin-bottom: 24px;
+      
+      .icon-btn {
+        width: 44px;
+        height: 44px;
+        border-radius: 50%;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: all 0.2s;
+        color: #64748b;
+        
+        &:hover {
+          transform: translateY(-2px);
+          background: white;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        
+        &.wechat:hover { color: #07c160; border-color: #07c160; }
+        &.qq:hover { color: #12b7f5; border-color: #12b7f5; }
+        &.github:hover { color: #24292e; border-color: #24292e; }
+      }
+    }
+    
+    .login-footer {
+      text-align: center;
+      color: #64748b;
+      font-size: 14px;
+      
+      .el-link {
+        margin-left: 8px;
+        color: #2563eb;
+        font-weight: 600;
+        
+        &:hover {
+          color: #1d4ed8;
+        }
+      }
     }
   }
 }
@@ -462,17 +588,22 @@ const switchToRegister = () => {
   height: 46px;
 }
 
-:deep(.el-dialog) {
-  border-radius: 20px;
-  overflow: hidden;
-  
-  .el-dialog__header {
-    margin: 0;
-    padding: 0;
+@media (max-width: 768px) {
+  .login-layout {
+    flex-direction: column;
+    
+    .login-side {
+      display: none;
+    }
+    
+    .login-form-container {
+      padding: 30px 24px;
+    }
   }
   
-  .el-dialog__body {
-    padding: 30px;
+  .login-modal-wrapper :deep(.el-dialog) {
+    width: 90% !important;
+    max-width: 480px;
   }
 }
 </style>

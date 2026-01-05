@@ -27,18 +27,21 @@ request.interceptors.request.use(
   }
 )
 
-// 响应拦截器
 request.interceptors.response.use(
   (response: AxiosResponse) => {
     const { data } = response
     
-    // 如果接口返回的数据有 code 字段，可以根据 code 判断
-    // 后端统一响应格式：{ code: 20000, data: {...}, message: "success" }
-    if (data.code && data.code !== 20000) {
-      ElMessage.error(data.message || '请求失败')
-      return Promise.reject(new Error(data.message || '请求失败'))
+    // 后端统一响应格式：{ code: 20000-20999, data, message }
+    // 兼容 2xx 且无 code 的场景，默认视为成功
+    if (typeof data?.code !== 'undefined') {
+      if (data.code < 20000 || data.code >= 30000) {
+        ElMessage.error(data.message || '请求失败')
+        return Promise.reject(new Error(data.message || '请求失败'))
+      }
+      return data
     }
     
+    // 没有 code 字段，但 HTTP 状态码是 2xx，则直接返回 data
     return data
   },
   (error) => {
