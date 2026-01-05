@@ -23,10 +23,11 @@
           </div>
           <div class="card-body">
             <ul class="features-list">
-              <li v-for="(feature, index) in freeFeatures" :key="index">
-                <el-icon><Check /></el-icon>
-                {{ feature }}
-              </li>
+              <li><el-icon><Check /></el-icon>每日 20 次免费识别</li>
+              <li><el-icon><Check /></el-icon>单张图片识别 (最大 5MB)</li>
+              <li><el-icon><Check /></el-icon>历史记录保留 7 天</li>
+              <li><el-icon><Check /></el-icon>基础准确率模型</li>
+              <li><el-icon><Check /></el-icon>社区技术支持</li>
             </ul>
             <button class="plan-btn" @click="handleChoose('free')">
               {{ $t('pricing.choose') }}
@@ -48,10 +49,11 @@
           </div>
           <div class="card-body">
             <ul class="features-list">
-              <li v-for="(feature, index) in vipFeatures" :key="index">
-                <el-icon><Check /></el-icon>
-                {{ feature }}
-              </li>
+              <li><el-icon><Check /></el-icon>每日 500 次识别 & 5000 次 API 调用</li>
+              <li><el-icon><Check /></el-icon>批量图片识别 (50 张/次)</li>
+              <li><el-icon><Check /></el-icon>视频文件识别 (10 个/月)</li>
+              <li><el-icon><Check /></el-icon>高精度模式 (YOLOv12)</li>
+              <li><el-icon><Check /></el-icon>永久历史记录 & 10GB 云存储</li>
             </ul>
             <button class="plan-btn primary" @click="handleChoose('vip')">
               {{ $t('pricing.choose') }}
@@ -70,15 +72,109 @@
           </div>
           <div class="card-body">
             <ul class="features-list">
-              <li v-for="(feature, index) in enterpriseFeatures" :key="index">
-                <el-icon><Check /></el-icon>
-                {{ feature }}
-              </li>
+              <li><el-icon><Check /></el-icon>无限次识别 & API 调用</li>
+              <li><el-icon><Check /></el-icon>私有化部署 & 定制化模型训练</li>
+              <li><el-icon><Check /></el-icon>多账户管理 & 团队协作</li>
+              <li><el-icon><Check /></el-icon>SLA 保障 & 专属客户经理</li>
+              <li><el-icon><Check /></el-icon>企业级安全与审计日志</li>
             </ul>
             <button class="plan-btn" @click="handleChoose('enterprise')">
               {{ $t('pricing.choose') }}
             </button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 功能对比表格 -->
+    <div class="comparison-section">
+      <div class="section-container">
+        <h2>详细功能对比</h2>
+        <div class="table-wrapper">
+          <table class="comparison-table">
+            <thead>
+              <tr>
+                <th>功能模块</th>
+                <th>普通用户</th>
+                <th class="highlight">VIP用户</th>
+                <th>企业用户</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>单张图片识别</td>
+                <td>20次/日</td>
+                <td class="highlight">500次/日</td>
+                <td>无限</td>
+              </tr>
+              <tr>
+                <td>批量图片识别</td>
+                <td><span class="cross">✕</span></td>
+                <td class="highlight">50张/次</td>
+                <td>1000张/次</td>
+              </tr>
+              <tr>
+                <td>视频识别</td>
+                <td><span class="cross">✕</span></td>
+                <td class="highlight">10个/月</td>
+                <td>无限</td>
+              </tr>
+              <tr>
+                <td>实时摄像头识别</td>
+                <td><span class="cross">✕</span></td>
+                <td class="highlight"><span class="check">✓</span></td>
+                <td><span class="check">✓</span></td>
+              </tr>
+              <tr>
+                <td>历史记录保留</td>
+                <td>7天 (50条)</td>
+                <td class="highlight">永久</td>
+                <td>永久</td>
+              </tr>
+              <tr>
+                <td>高精度模式 (YOLOv12)</td>
+                <td><span class="cross">✕</span></td>
+                <td class="highlight"><span class="check">✓</span></td>
+                <td><span class="check">✓</span></td>
+              </tr>
+              <tr>
+                <td>API 调用</td>
+                <td><span class="cross">✕</span></td>
+                <td class="highlight">5000次/日</td>
+                <td>无限</td>
+              </tr>
+              <tr>
+                <td>云端存储空间</td>
+                <td>0 GB</td>
+                <td class="highlight">10 GB</td>
+                <td>无限</td>
+              </tr>
+              <tr>
+                <td>多账户管理</td>
+                <td><span class="cross">✕</span></td>
+                <td class="highlight"><span class="cross">✕</span></td>
+                <td>50个子账户</td>
+              </tr>
+              <tr>
+                <td>定制化模型</td>
+                <td><span class="cross">✕</span></td>
+                <td class="highlight"><span class="cross">✕</span></td>
+                <td><span class="check">✓</span></td>
+              </tr>
+              <tr>
+                <td>私有化部署</td>
+                <td><span class="cross">✕</span></td>
+                <td class="highlight"><span class="cross">✕</span></td>
+                <td>可选增值服务</td>
+              </tr>
+              <tr>
+                <td>客服支持</td>
+                <td>机器人</td>
+                <td class="highlight">人工优先</td>
+                <td>7×24 专属支持</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -303,6 +399,101 @@ const handleChoose = (plan: string) => {
       &:hover {
         background: #1d4ed8;
         border-color: #1d4ed8;
+      }
+    }
+  }
+}
+
+.comparison-section {
+  padding: 80px 0;
+  background: white;
+
+  .section-container {
+    max-width: 1000px;
+    margin: 0 auto;
+    padding: 0 24px;
+
+    h2 {
+      text-align: center;
+      font-size: 30px;
+      font-weight: 700;
+      color: #0f172a;
+      margin-bottom: 48px;
+    }
+  }
+
+  .table-wrapper {
+    overflow-x: auto;
+    border-radius: 16px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    border: 1px solid #e2e8f0;
+  }
+
+  .comparison-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    
+    th, td {
+      padding: 16px 24px;
+      text-align: center;
+      border-bottom: 1px solid #e2e8f0;
+      color: #334155;
+      font-size: 15px;
+
+      &:first-child {
+        text-align: left;
+        font-weight: 500;
+        color: #0f172a;
+        padding-left: 32px;
+        width: 25%;
+      }
+    }
+
+    thead {
+      th {
+        background: #f8fafc;
+        font-weight: 600;
+        color: #0f172a;
+        font-size: 16px;
+        padding-top: 20px;
+        padding-bottom: 20px;
+        
+        &.highlight {
+          color: #2563eb;
+          background: #eff6ff;
+        }
+      }
+    }
+
+    tbody {
+      tr:last-child td {
+        border-bottom: none;
+      }
+
+      tr:hover td {
+        background: #f8fafc;
+      }
+      
+      .highlight {
+        background: #eff6ff;
+        font-weight: 500;
+        color: #1e40af;
+      }
+
+      tr:hover .highlight {
+        background: #dbeafe;
+      }
+
+      .check {
+        color: #16a34a;
+        font-weight: bold;
+        font-size: 18px;
+      }
+
+      .cross {
+        color: #cbd5e1;
+        font-size: 18px;
       }
     }
   }
