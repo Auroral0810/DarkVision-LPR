@@ -171,8 +171,7 @@ const topPlates = [
 
 <style scoped lang="scss">
 .analysis-view {
-  max-width: 1200px;
-  margin: 0 auto;
+  width: 100%;
   position: relative;
   min-height: 80vh;
 }

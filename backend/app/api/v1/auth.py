@@ -1,0 +1,288 @@
+from fastapi import APIRouter, Depends, Request
+from fastapi.security import OAuth2PasswordBearer
+from sqlalchemy.orm import Session
+from app.core.database import get_db
+from app.core.response import success, success_created, UnifiedResponse
+from app.core.codes import ResponseCode
+from app.core.security import decode_access_token
+from app.schemas.user import (
+    UserRegister, UserLoginByPhone, UserLoginByEmail,
+    SMSCodeRequest, EmailCodeRequest, LoginResponse
+)
+from app.services.auth import (
+    register_user,
+    authenticate_by_phone_password,
+    authenticate_by_phone_code,
+    authenticate_by_email_password,
+    authenticate_by_email_code,
+    check_user_status,
+    update_login_info,
+    get_user_detail_info,
+    create_user_token,
+    get_user_by_id,
+    logout_user
+)
+from app.services.verification import verification_service
+from app.core.exceptions import UnauthorizedException, TokenInvalidException, ParameterException
+
+router = APIRouter()
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
+
+
+@router.post("/register", response_model=UnifiedResponse, summary="用户注册", tags=["认证"])
+def register(user_data: UserRegister, db: Session = Depends(get_db)):
+    """
+    用户注册接口（需要短信验证码）
+    
+    **注册流程**:
+    1. 先调用 `/api/v1/auth/sms/send` 发送验证码（scene=register）
+    2. 输入手机号、验证码、昵称、密码进行注册
+    
+    **请求参数**:
+    - **phone**: 手机号（11位，1开头）
+    - **sms_code**: 短信验证码（6位数字）
+    - **nickname**: 昵称（2-50字符，全局唯一）
+    - **password**: 密码（6-20字符）
+    - **email**: 邮箱（可选）
+    
+    **说明**:
+    - 注册成功后自动创建为 **FREE（普通）** 用户
+    - 如果提供邮箱，会发送欢迎邮件
+    - 验证码5分钟有效，使用后自动失效
+    
+    **示例请求**:
+    ```json
+    {
+      "phone": "13800138000",
+      "sms_code": "123456",
+      "nickname": "新用户",
+      "password": "123456",
+      "email": "user@example.com"
+    }
+    ```
+    """
+    user = register_user(db, user_data)
+    user_detail = get_user_detail_info(db, user.id)
+    
+    return success_created(
+        data=user_detail.model_dump(mode='json'),
+        message="注册成功"
+    )
+
+
+@router.post("/login/phone", response_model=UnifiedResponse, summary="手机号登录", tags=["认证"])
+def login_by_phone(
+    login_data: UserLoginByPhone,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """
+    手机号登录接口（支持密码和验证码两种方式）
+    
+    **方式一：手机号+密码**
+    ```json
+    {
+      "phone": "13800138000",
+      "password": "123456"
+    }
+    ```
+    
+    **方式二：手机号+验证码**
+    ```json
+    {
+      "phone": "13800138000",
+      "sms_code": "123456"
+    }
+    ```
+    
+    返回：
+    - **access_token**: JWT访问令牌
+    - **user_info**: 用户详细信息（包含会员状态、额度等）
+    """
+    # 判断使用哪种登录方式
+    if login_data.password:
+        user = authenticate_by_phone_password(db, login_data)
+    elif login_data.sms_code:
+        user = authenticate_by_phone_code(db, login_data)
+    else:
+        raise ParameterException("请提供密码或验证码")
+    
+    # 检查用户状态
+    check_user_status(user)
+    
+    # 更新登录信息
+    client_ip = request.client.host if request.client else None
+    update_login_info(db, user, client_ip)
+    
+    # 创建token
+    access_token = create_user_token(user)
+    
+    # 获取用户详细信息
+    user_detail = get_user_detail_info(db, user.id)
+    
+    return success(
+        data={
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user_info": user_detail.model_dump(mode='json')
+        },
+        message="登录成功"
+    )
+
+
+@router.post("/login/email", response_model=UnifiedResponse, summary="邮箱登录", tags=["认证"])
+def login_by_email(
+    login_data: UserLoginByEmail,
+    request: Request,
+    db: Session = Depends(get_db)
+):
+    """
+    邮箱登录接口（支持密码和验证码两种方式）
+    
+    **方式一：邮箱+密码**
+    ```json
+    {
+      "email": "user@example.com",
+      "password": "123456"
+    }
+    ```
+    
+    **方式二：邮箱+验证码**
+    ```json
+    {
+      "email": "user@example.com",
+      "email_code": "123456"
+    }
+    ```
+    """
+    # 判断使用哪种登录方式
+    if login_data.password:
+        user = authenticate_by_email_password(db, login_data)
+    elif login_data.email_code:
+        user = authenticate_by_email_code(db, login_data)
+    else:
+        raise ParameterException("请提供密码或验证码")
+    
+    # 检查用户状态
+    check_user_status(user)
+    
+    # 更新登录信息
+    client_ip = request.client.host if request.client else None
+    update_login_info(db, user, client_ip)
+    
+    # 创建token
+    access_token = create_user_token(user)
+    
+    # 获取用户详细信息
+    user_detail = get_user_detail_info(db, user.id)
+    
+    return success(
+        data={
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user_info": user_detail.model_dump(mode='json')
+        },
+        message="登录成功"
+    )
+
+
+@router.post("/sms/send", response_model=UnifiedResponse, summary="发送短信验证码", tags=["认证"])
+def send_sms_code(code_request: SMSCodeRequest):
+    """
+    发送短信验证码
+    
+    - **phone**: 手机号
+    - **scene**: 使用场景（login/register/reset_password）
+    
+    **注意**：
+    - 验证码有效期5分钟
+    - 同一手机号1分钟内只能发送一次
+    - 开发环境会在响应中返回验证码（生产环境不返回）
+    """
+    code = verification_service.send_sms_code(code_request.phone, code_request.scene)
+    
+    # 开发环境返回验证码，生产环境不返回
+    return success(
+        data={"code": code, "expire_seconds": 300},  # 生产环境删除 code 字段
+        message="验证码已发送"
+    )
+
+
+@router.post("/email/send", response_model=UnifiedResponse, summary="发送邮箱验证码", tags=["认证"])
+def send_email_code(code_request: EmailCodeRequest):
+    """
+    发送邮箱验证码
+    
+    - **email**: 邮箱
+    - **scene**: 使用场景（login/register/reset_password）
+    
+    **注意**：
+    - 验证码有效期5分钟
+    - 同一邮箱1分钟内只能发送一次
+    - 开发环境会在响应中返回验证码（生产环境不返回）
+    """
+    code = verification_service.send_email_code(code_request.email, code_request.scene)
+    
+    # 开发环境返回验证码，生产环境不返回
+    return success(
+        data={"code": code, "expire_seconds": 300},  # 生产环境删除 code 字段
+        message="验证码已发送"
+    )
+
+
+@router.get("/me", response_model=UnifiedResponse, summary="获取当前用户信息", tags=["认证"])
+def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(get_db)
+):
+    """
+    获取当前登录用户信息
+    
+    需要在 Header 中携带 token:
+    ```
+    Authorization: Bearer <your_token>
+    ```
+    
+    返回用户详细信息，包括：
+    - 基本信息（手机号、昵称、邮箱、头像等）
+    - 会员信息（类型、到期时间）
+    - 识别额度（每日额度、已用额度、剩余额度）
+    - 实名认证状态
+    - 企业信息（如果是企业用户）
+    """
+    # 解析token
+    payload = decode_access_token(token)
+    if not payload:
+        raise TokenInvalidException()
+    
+    user_id = payload.get("user_id")
+    if not user_id:
+        raise UnauthorizedException()
+    
+    # 获取用户详细信息（优先从缓存）
+    user_detail = get_user_detail_info(db, user_id)
+    
+    return success(
+        data=user_detail.model_dump(mode='json'),
+        message="获取成功"
+    )
+
+
+@router.post("/logout", response_model=UnifiedResponse, summary="用户登出", tags=["认证"])
+def logout(
+    token: str = Depends(oauth2_scheme),
+):
+    """
+    用户登出接口
+    
+    清除服务器端的token和用户信息缓存
+    """
+    # 解析token获取用户ID
+    payload = decode_access_token(token)
+    if payload:
+        user_id = payload.get("user_id")
+        if user_id:
+            logout_user(user_id)
+    
+    return success(message="登出成功")

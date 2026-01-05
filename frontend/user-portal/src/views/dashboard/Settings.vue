@@ -704,8 +704,7 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .settings-view {
-  max-width: 1200px;
-  margin: 0 auto;
+  width: 100%;
 }
 
 .settings-container {

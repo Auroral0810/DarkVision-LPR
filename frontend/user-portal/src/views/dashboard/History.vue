@@ -155,8 +155,7 @@ const tableRowClassName = () => '' // Helper
 
 <style scoped lang="scss">
 .history-view {
-  max-width: 1200px;
-  margin: 0 auto;
+  width: 100%;
 }
 
 .view-header {

@@ -106,8 +106,7 @@ const activeTab = ref('single')
 
 <style scoped lang="scss">
 .recognition-view {
-  max-width: 1000px;
-  margin: 0 auto;
+  width: 100%;
 }
 
 .view-header {
