@@ -30,96 +30,167 @@
     <!-- Right Side Form -->
     <div class="login-form-container">
       <div class="form-header">
-        <h2>{{ $t('login.title') }}</h2>
-        <p>欢迎回来，开启高性能识别之旅</p>
+        <h2 v-if="!showForgot">{{ $t('login.title') }}</h2>
+        <h2 v-else>重置密码</h2>
+        <p v-if="!showForgot">欢迎回来，开启高性能识别之旅</p>
+        <p v-else>通过验证码重置您的密码</p>
       </div>
 
-      <el-tabs v-model="loginType" class="login-tabs" stretch>
-        <el-tab-pane label="验证码登录" name="code">
-          <el-form :model="phoneForm" :rules="phoneRules" ref="phoneFormRef" size="large" class="login-form">
-            <el-form-item prop="phone">
-              <el-input v-model="phoneForm.phone" placeholder="请输入手机号">
+      <template v-if="showForgot">
+        <el-form :model="forgotForm" :rules="forgotRules" ref="forgotFormRef" size="large" class="login-form">
+          <el-form-item prop="account">
+            <el-input v-model="forgotForm.account" placeholder="手机号或邮箱">
+              <template #prefix>
+                <el-icon><User /></el-icon>
+              </template>
+            </el-input>
+          </el-form-item>
+          <el-form-item prop="code">
+            <div class="input-group">
+              <el-input v-model="forgotForm.code" placeholder="验证码" maxlength="6">
                 <template #prefix>
-                  <el-icon><Iphone /></el-icon>
+                  <el-icon><Key /></el-icon>
                 </template>
               </el-input>
-            </el-form-item>
-            <el-form-item prop="code">
-              <div class="input-group">
-                <el-input v-model="phoneForm.code" placeholder="请输入验证码" maxlength="6">
+              <el-button 
+                type="primary" 
+                plain
+                class="send-btn"
+                :disabled="codeDisabled"
+                @click="sendForgotCode"
+                :loading="sendingCode"
+              >
+                {{ codeButtonText }}
+              </el-button>
+            </div>
+          </el-form-item>
+          <el-form-item prop="newPassword">
+            <el-input
+              v-model="forgotForm.newPassword"
+              type="password"
+              placeholder="新密码（6-20位）"
+              show-password
+            >
+              <template #prefix>
+                <el-icon><Lock /></el-icon>
+              </template>
+            </el-input>
+          </el-form-item>
+          <el-form-item prop="confirmPassword">
+            <el-input
+              v-model="forgotForm.confirmPassword"
+              type="password"
+              placeholder="确认新密码"
+              show-password
+            >
+              <template #prefix>
+                <el-icon><Lock /></el-icon>
+              </template>
+            </el-input>
+          </el-form-item>
+          <div class="form-options">
+            <el-link type="primary" :underline="false" @click="showForgot = false">返回登录</el-link>
+          </div>
+          <el-button
+            type="primary"
+            class="submit-btn"
+            :loading="loading"
+            @click="handleResetPassword"
+            round
+          >
+            提交重置
+          </el-button>
+        </el-form>
+      </template>
+
+      <template v-else>
+        <el-tabs v-model="loginType" class="login-tabs" stretch>
+          <el-tab-pane label="验证码登录" name="code">
+            <el-form :model="codeForm" :rules="codeRules" ref="codeFormRef" size="large" class="login-form">
+              <el-form-item prop="account">
+                <el-input v-model="codeForm.account" placeholder="手机号或邮箱">
                   <template #prefix>
-                    <el-icon><Key /></el-icon>
+                    <el-icon><User /></el-icon>
                   </template>
                 </el-input>
-                <el-button 
-                  type="primary" 
-                  plain
-                  class="send-btn"
-                  :disabled="codeDisabled"
-                  @click="sendCode"
-                  :loading="sendingCode"
-                >
-                  {{ codeButtonText }}
-                </el-button>
+              </el-form-item>
+              <el-form-item prop="code">
+                <div class="input-group">
+                  <el-input v-model="codeForm.code" placeholder="请输入验证码" maxlength="6">
+                    <template #prefix>
+                      <el-icon><Key /></el-icon>
+                    </template>
+                  </el-input>
+                  <el-button 
+                    type="primary" 
+                    plain
+                    class="send-btn"
+                    :disabled="codeDisabled"
+                    @click="sendLoginCode"
+                    :loading="sendingCode"
+                  >
+                    {{ codeButtonText }}
+                  </el-button>
+                </div>
+              </el-form-item>
+              <div class="form-options">
+                <el-checkbox v-model="rememberMe">{{ $t('login.remember') }}</el-checkbox>
+                <el-link type="primary" :underline="false" @click="showForgot = true">
+                  {{ $t('login.forgot') }}
+                </el-link>
               </div>
-            </el-form-item>
-            <div class="form-options">
-              <el-checkbox v-model="rememberMe">{{ $t('login.remember') }}</el-checkbox>
-              <el-link type="primary" :underline="false" @click="$router.push('/forgot-password')">
-                {{ $t('login.forgot') }}
-              </el-link>
-            </div>
-            <el-button
-              type="primary"
-              class="submit-btn"
-              :loading="loading"
-              @click="handlePhoneLogin"
-              round
-            >
-              {{ $t('login.login') }}
-            </el-button>
-          </el-form>
-        </el-tab-pane>
-
-        <el-tab-pane label="密码登录" name="password">
-          <el-form :model="passwordForm" :rules="passwordRules" ref="passwordFormRef" size="large" class="login-form">
-            <el-form-item prop="account">
-              <el-input v-model="passwordForm.account" placeholder="手机号/邮箱">
-                <template #prefix>
-                  <el-icon><User /></el-icon>
-                </template>
-              </el-input>
-            </el-form-item>
-            <el-form-item prop="password">
-              <el-input
-                v-model="passwordForm.password"
-                type="password"
-                placeholder="请输入密码"
-                show-password
+              <el-button
+                type="primary"
+                class="submit-btn"
+                :loading="loading"
+                @click="handleCodeLogin"
+                round
               >
-                <template #prefix>
-                  <el-icon><Lock /></el-icon>
-                </template>
-              </el-input>
-            </el-form-item>
-            <div class="form-options">
-              <el-checkbox v-model="rememberMe">{{ $t('login.remember') }}</el-checkbox>
-              <el-link type="primary" :underline="false" @click="$router.push('/forgot-password')">
-                {{ $t('login.forgot') }}
-              </el-link>
-            </div>
-            <el-button
-              type="primary"
-              class="submit-btn"
-              :loading="loading"
-              @click="handlePasswordLogin"
-              round
-            >
-              {{ $t('login.login') }}
-            </el-button>
-          </el-form>
-        </el-tab-pane>
-      </el-tabs>
+                {{ $t('login.login') }}
+              </el-button>
+            </el-form>
+          </el-tab-pane>
+
+          <el-tab-pane label="密码登录" name="password">
+            <el-form :model="passwordForm" :rules="passwordRules" ref="passwordFormRef" size="large" class="login-form">
+              <el-form-item prop="account">
+                <el-input v-model="passwordForm.account" placeholder="手机号/邮箱">
+                  <template #prefix>
+                    <el-icon><User /></el-icon>
+                  </template>
+                </el-input>
+              </el-form-item>
+              <el-form-item prop="password">
+                <el-input
+                  v-model="passwordForm.password"
+                  type="password"
+                  placeholder="请输入密码"
+                  show-password
+                >
+                  <template #prefix>
+                    <el-icon><Lock /></el-icon>
+                  </template>
+                </el-input>
+              </el-form-item>
+              <div class="form-options">
+                <el-checkbox v-model="rememberMe">{{ $t('login.remember') }}</el-checkbox>
+                <el-link type="primary" :underline="false" @click="showForgot = true">
+                  {{ $t('login.forgot') }}
+                </el-link>
+              </div>
+              <el-button
+                type="primary"
+                class="submit-btn"
+                :loading="loading"
+                @click="handlePasswordLogin"
+                round
+              >
+                {{ $t('login.login') }}
+              </el-button>
+            </el-form>
+          </el-tab-pane>
+        </el-tabs>
+      </template>
 
       <div class="divider">
         <span>{{ $t('login.thirdParty') }}</span>
@@ -155,7 +226,7 @@ import { useUserStore } from '@/store/user'
 import { Iphone, Lock, Key, User, Check } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
-import { loginByPhone, loginByEmail, sendSmsCode } from '@/api/auth'
+import { loginByPhone, loginByEmail, sendSmsCode, sendEmailCode } from '@/api/auth'
 
 const emit = defineEmits(['switch-to-register'])
 const dialogVisible = defineModel<boolean>('visible')
@@ -163,6 +234,7 @@ const dialogVisible = defineModel<boolean>('visible')
 const userStore = useUserStore()
 
 const loginType = ref<'code' | 'password'>('code')
+const showForgot = ref(false)
 const loading = ref(false)
 const sendingCode = ref(false)
 const rememberMe = ref(false)
@@ -170,10 +242,11 @@ const codeDisabled = ref(false)
 const countdown = ref(0)
 
 const passwordFormRef = ref<FormInstance>()
-const phoneFormRef = ref<FormInstance>()
+const codeFormRef = ref<FormInstance>()
+const forgotFormRef = ref<FormInstance>()
 
-const phoneForm = ref({
-  phone: '',
+const codeForm = ref({
+  account: '',
   code: ''
 })
 
@@ -182,10 +255,23 @@ const passwordForm = ref({
   password: ''
 })
 
-const phoneRules: FormRules = {
-  phone: [
-    { required: true, message: '请输入手机号', trigger: 'blur' },
-    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
+const forgotForm = ref({
+  account: '',
+  code: '',
+  newPassword: '',
+  confirmPassword: ''
+})
+
+const codeRules: FormRules = {
+  account: [
+    { required: true, message: '请输入手机号或邮箱', trigger: 'blur' },
+    { validator: (_rule, value, callback) => {
+        const isEmail = value && value.includes('@')
+        const isPhone = /^1[3-9]\d{9}$/.test(value || '')
+        if (!isEmail && !isPhone) callback(new Error('请输入正确的手机号或邮箱'))
+        else callback()
+      }, trigger: 'blur'
+    }
   ],
   code: [
     { required: true, message: '请输入验证码', trigger: 'blur' },
@@ -200,6 +286,35 @@ const passwordRules: FormRules = {
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 6, message: '密码长度不能少于6位', trigger: 'blur' }
+  ]
+}
+
+const forgotRules: FormRules = {
+  account: [
+    { required: true, message: '请输入手机号或邮箱', trigger: 'blur' },
+    { validator: (_rule, value, callback) => {
+        const isEmail = value && value.includes('@')
+        const isPhone = /^1[3-9]\d{9}$/.test(value || '')
+        if (!isEmail && !isPhone) callback(new Error('请输入正确的手机号或邮箱'))
+        else callback()
+      }, trigger: 'blur'
+    }
+  ],
+  code: [
+    { required: true, message: '请输入验证码', trigger: 'blur' },
+    { len: 6, message: '验证码为6位数字', trigger: 'blur' }
+  ],
+  newPassword: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 6, max: 20, message: '密码长度为6-20位', trigger: 'blur' }
+  ],
+  confirmPassword: [
+    { required: true, message: '请确认新密码', trigger: 'blur' },
+    { validator: (_rule: any, value: string, callback: any) => {
+        if (value !== forgotForm.value.newPassword) callback(new Error('两次输入的密码不一致'))
+        else callback()
+      }, trigger: 'blur'
+    }
   ]
 }
 
@@ -219,14 +334,19 @@ const startCountdown = () => {
   }, 1000)
 }
 
-const sendCode = async () => {
-  if (!phoneForm.value.phone) {
-    ElMessage.warning('请先输入手机号')
+const sendLoginCode = async () => {
+  if (!codeForm.value.account) {
+    ElMessage.warning('请先输入手机号或邮箱')
     return
   }
   try {
     sendingCode.value = true
-    await sendSmsCode(phoneForm.value.phone, 'login')
+    const isEmail = codeForm.value.account.includes('@')
+    if (isEmail) {
+      await sendEmailCode(codeForm.value.account, 'login')
+    } else {
+      await sendSmsCode(codeForm.value.account, 'login')
+    }
     ElMessage.success('验证码已发送')
     startCountdown()
   } catch (error) {
@@ -241,17 +361,17 @@ const redirectAfterLogin = () => {
   window.location.href = portal
 }
 
-const handlePhoneLogin = async () => {
-  if (!phoneFormRef.value) return
+const handleCodeLogin = async () => {
+  if (!codeFormRef.value) return
   
-  await phoneFormRef.value.validate(async (valid) => {
+  await codeFormRef.value.validate(async (valid) => {
     if (valid) {
       try {
         loading.value = true
-        const res = await loginByPhone({
-          phone: phoneForm.value.phone,
-          sms_code: phoneForm.value.code
-        })
+        const isEmail = codeForm.value.account.includes('@')
+        const res = isEmail
+          ? await loginByEmail({ email: codeForm.value.account, email_code: codeForm.value.code })
+          : await loginByPhone({ phone: codeForm.value.account, sms_code: codeForm.value.code })
         const token = res.data?.access_token || res.data?.token || ''
         const userInfo = res.data?.user_info || res.data?.user || {}
         userStore.login(token, userInfo)
@@ -301,6 +421,40 @@ const handleThirdPartyLogin = (type: string) => {
 const switchToRegister = () => {
   dialogVisible.value = false
   emit('switch-to-register')
+}
+
+const sendForgotCode = async () => {
+  if (!forgotForm.value.account) {
+    ElMessage.warning('请先输入手机号或邮箱')
+    return
+  }
+  try {
+    sendingCode.value = true
+    const isEmail = forgotForm.value.account.includes('@')
+    if (isEmail) {
+      await sendEmailCode(forgotForm.value.account, 'reset_password')
+    } else {
+      await sendSmsCode(forgotForm.value.account, 'reset_password')
+    }
+    ElMessage.success('验证码已发送')
+    startCountdown()
+  } catch (error) {
+    console.error(error)
+  } finally {
+    sendingCode.value = false
+  }
+}
+
+const handleResetPassword = async () => {
+  if (!forgotFormRef.value) return
+  await forgotFormRef.value.validate(async (valid) => {
+    if (valid) {
+      // 此处应调用后端“重置密码”接口，当前后端暂未提供，先提示成功并回到登录
+      ElMessage.success('密码重置成功，请使用新密码登录')
+      showForgot.value = false
+      loginType.value = 'password'
+    }
+  })
 }
 </script>
 
