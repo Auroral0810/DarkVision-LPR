@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, model_validator
 from typing import Optional
 from datetime import datetime
 from app.models.user import UserType, UserStatus
@@ -6,12 +6,29 @@ from app.models.user import UserType, UserStatus
 
 # ===== 注册相关 =====
 class UserRegister(BaseModel):
-    """用户注册（需要验证码）"""
-    phone: str = Field(..., min_length=11, max_length=11, pattern="^1[3-9]\d{9}$")
-    sms_code: str = Field(..., min_length=6, max_length=6, description="短信验证码")
+    """用户注册（支持手机或邮箱）"""
+    phone: Optional[str] = Field(None, min_length=11, max_length=11, pattern="^1[3-9]\d{9}$")
+    sms_code: Optional[str] = Field(None, min_length=6, max_length=6, description="短信验证码")
+    email: Optional[EmailStr] = None
+    email_code: Optional[str] = Field(None, min_length=6, max_length=6, description="邮箱验证码")
     nickname: str = Field(..., min_length=2, max_length=50)
     password: str = Field(..., min_length=6, max_length=20)
-    email: Optional[EmailStr] = None
+    
+    @model_validator(mode='after')
+    def validate_register_method(self):
+        if not self.phone and not self.email:
+            raise ValueError("必须提供手机号或邮箱")
+        
+        if self.phone and not self.sms_code:
+            raise ValueError("使用手机号注册必须提供短信验证码")
+            
+        if self.email and not self.email_code and not self.phone:
+            # 如果只提供邮箱，必须提供邮箱验证码
+            # 如果提供了手机号（作为主账号），邮箱可以是附加信息，不需要验证码（或者视业务逻辑而定）
+            # 这里简化逻辑：如果作为注册账号，必须验证
+            raise ValueError("使用邮箱注册必须提供邮箱验证码")
+            
+        return self
     
     class Config:
         json_schema_extra = {
@@ -19,8 +36,7 @@ class UserRegister(BaseModel):
                 "phone": "13800138000",
                 "sms_code": "123456",
                 "nickname": "新用户",
-                "password": "123456",
-                "email": "user@example.com"
+                "password": "123456"
             }
         }
 
@@ -79,10 +95,10 @@ class Token(BaseModel):
 class UserBasicInfo(BaseModel):
     """用户基本信息"""
     id: int
-    phone: str
+    phone: Optional[str] = None
     nickname: str
-    email: Optional[str]
-    avatar_url: Optional[str]
+    email: Optional[str] = None
+    avatar_url: Optional[str] = None
     user_type: UserType
     status: UserStatus
     

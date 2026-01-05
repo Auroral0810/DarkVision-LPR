@@ -26,7 +26,7 @@ import json
 
 def register_user(db: Session, user_data: UserRegister) -> User:
     """
-    用户注册（需要验证码）
+    用户注册（支持手机或邮箱）
     
     Args:
         db: 数据库会话
@@ -41,31 +41,45 @@ def register_user(db: Session, user_data: UserRegister) -> User:
         UserExistedException: 昵称已存在
         ParameterException: 参数错误或验证码错误
     """
-    # 验证手机号格式
-    if not re.match(r"^1[3-9]\d{9}$", user_data.phone):
-        raise ParameterException("手机号格式不正确")
-    
-    # 验证短信验证码
-    if not verification_service.verify_code("register", user_data.phone, user_data.sms_code):
-        raise ParameterException("验证码错误或已过期")
-    
-    # 检查手机号是否已存在
-    existing_user = db.query(User).filter(User.phone == user_data.phone).first()
-    if existing_user:
-        raise PhoneExistedException()
-    
-    # 检查昵称是否已存在
+    # 1. 验证手机号注册逻辑
+    if user_data.phone:
+        # 验证手机号格式
+        if not re.match(r"^1[3-9]\d{9}$", user_data.phone):
+            raise ParameterException("手机号格式不正确")
+        
+        # 验证短信验证码
+        if not user_data.sms_code:
+            raise ParameterException("手机号注册必须提供短信验证码")
+            
+        if not verification_service.verify_code("register", user_data.phone, user_data.sms_code):
+            raise ParameterException("短信验证码错误或已过期")
+        
+        # 检查手机号是否已存在
+        existing_user = db.query(User).filter(User.phone == user_data.phone).first()
+        if existing_user:
+            raise PhoneExistedException()
+
+    # 2. 验证邮箱注册逻辑
+    if user_data.email:
+        # 如果是纯邮箱注册（无手机号），必须验证邮箱验证码
+        if not user_data.phone:
+            if not user_data.email_code:
+                raise ParameterException("邮箱注册必须提供邮箱验证码")
+                
+            if not verification_service.verify_code("register", user_data.email, user_data.email_code):
+                raise ParameterException("邮箱验证码错误或已过期")
+        
+        # 检查邮箱是否已存在
+        existing_email = db.query(User).filter(User.email == user_data.email).first()
+        if existing_email:
+            raise EmailExistedException()
+
+    # 3. 检查昵称是否已存在
     existing_nickname = db.query(User).filter(User.nickname == user_data.nickname).first()
     if existing_nickname:
         raise UserExistedException("昵称已被使用")
     
-    # 如果提供了邮箱，检查邮箱是否已存在
-    if user_data.email:
-        existing_email = db.query(User).filter(User.email == user_data.email).first()
-        if existing_email:
-            raise EmailExistedException()
-    
-    # 创建用户（只能注册为普通用户 FREE）
+    # 4. 创建用户（只能注册为普通用户 FREE）
     hashed_password = get_password_hash(user_data.password)
     new_user = User(
         phone=user_data.phone,
@@ -110,7 +124,8 @@ def register_user(db: Session, user_data: UserRegister) -> User:
         except Exception as e:
             logger.warning(f"Failed to send welcome email: {e}")
     
-    logger.info(f"User registered: {new_user.phone} (id: {new_user.id})")
+    identifier = user_data.phone or user_data.email
+    logger.info(f"User registered: {identifier} (id: {new_user.id})")
     
     return new_user
 
@@ -203,7 +218,7 @@ def get_user_detail_info(db: Session, user_id: int) -> UserDetailInfo:
         if cached_data:
             try:
                 data = json.loads(cached_data.decode('utf-8'))
-                logger.info(f"User detail loaded from cache: {user_id}")
+                # logger.info(f"User detail loaded from cache: {user_id}")
                 return UserDetailInfo(**data)
             except Exception as e:
                 logger.warning(f"Failed to load user detail from cache: {e}")
@@ -291,7 +306,7 @@ def get_user_detail_info(db: Session, user_id: int) -> UserDetailInfo:
                 if isinstance(value, datetime):
                     cache_data[key] = value.isoformat()
             redis_client.setex(cache_key, 300, json.dumps(cache_data))
-            logger.info(f"User detail cached: {user_id}")
+            # logger.info(f"User detail cached: {user_id}")
         except Exception as e:
             logger.warning(f"Failed to cache user detail: {e}")
     

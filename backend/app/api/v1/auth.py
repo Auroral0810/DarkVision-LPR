@@ -33,18 +33,21 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
 @router.post("/register", response_model=UnifiedResponse, summary="用户注册", tags=["认证"])
 def register(user_data: UserRegister, db: Session = Depends(get_db)):
     """
-    用户注册接口（需要短信验证码）
+    用户注册接口（支持手机号或邮箱）
     
     **注册流程**:
-    1. 先调用 `/api/v1/auth/sms/send` 发送验证码（scene=register）
-    2. 输入手机号、验证码、昵称、密码进行注册
+    1. 获取图形验证码 `/api/v1/captcha/generate`
+    2. 验证图形验证码 `/api/v1/captcha/verify` (可选，通常前端做)
+    3. 调用 `/api/v1/auth/sms/send` (手机) 或 `/api/v1/auth/email/send` (邮箱) 发送验证码
+    4. 输入账号、验证码、昵称、密码进行注册
     
     **请求参数**:
-    - **phone**: 手机号（11位，1开头）
-    - **sms_code**: 短信验证码（6位数字）
+    - **phone**: 手机号（可选，与邮箱二选一）
+    - **sms_code**: 短信验证码（手机注册时必填）
+    - **email**: 邮箱（可选，与手机二选一）
+    - **email_code**: 邮箱验证码（邮箱注册时必填）
     - **nickname**: 昵称（2-50字符，全局唯一）
     - **password**: 密码（6-20字符）
-    - **email**: 邮箱（可选）
     
     **说明**:
     - 注册成功后自动创建为 **FREE（普通）** 用户
@@ -57,8 +60,16 @@ def register(user_data: UserRegister, db: Session = Depends(get_db)):
       "phone": "13800138000",
       "sms_code": "123456",
       "nickname": "新用户",
-      "password": "123456",
-      "email": "user@example.com"
+      "password": "123456"
+    }
+    ```
+    或者
+    ```json
+    {
+      "email": "user@example.com",
+      "email_code": "123456",
+      "nickname": "新用户",
+      "password": "123456"
     }
     ```
     """

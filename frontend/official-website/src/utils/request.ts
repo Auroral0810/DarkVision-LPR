@@ -33,7 +33,8 @@ request.interceptors.response.use(
     const { data } = response
     
     // 如果接口返回的数据有 code 字段，可以根据 code 判断
-    if (data.code && data.code !== 200) {
+    // 后端统一响应格式：{ code: 20000, data: {...}, message: "success" }
+    if (data.code && data.code !== 20000) {
       ElMessage.error(data.message || '请求失败')
       return Promise.reject(new Error(data.message || '请求失败'))
     }
@@ -57,10 +58,10 @@ request.interceptors.response.use(
           ElMessage.error('请求的资源不存在')
           break
         case 500:
-          ElMessage.error('服务器错误')
+          ElMessage.error(data?.message || '服务器错误')
           break
         default:
-          ElMessage.error(data.message || '请求失败')
+          ElMessage.error(data?.message || '请求失败')
       }
     } else if (error.request) {
       ElMessage.error('网络错误，请检查网络连接')

@@ -21,7 +21,7 @@ class User(Base):
     __tablename__ = "users"
     
     id = Column(BigInteger, primary_key=True, index=True)
-    phone = Column(String(11), unique=True, nullable=False, index=True, comment="手机号")
+    phone = Column(String(11), unique=True, nullable=True, index=True, comment="手机号")
     nickname = Column(String(50), unique=True, nullable=False, index=True, comment="昵称")
     email = Column(String(100), unique=True, nullable=True, comment="邮箱")
     password_hash = Column(String(255), nullable=False, comment="密码哈希")
