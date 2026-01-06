@@ -56,8 +56,13 @@
         <h2 class="section-title">场景示例</h2>
         <div class="examples-grid">
           <div class="example-card">
-            <div class="card-image dark">
-              <div class="overlay-text">Low Light</div>
+            <div class="card-image">
+              <img
+                src="@/assets/images/低光照环境识别.png"
+                alt="低光照环境识别"
+                class="example-img"
+              />
+              <!-- <div class="overlay-text">Low Light</div> -->
             </div>
             <div class="card-content">
               <h3>{{ $t('capabilities.examples.example1') }}</h3>
@@ -66,8 +71,13 @@
           </div>
           
           <div class="example-card">
-            <div class="card-image angle">
-              <div class="overlay-text">Wide Angle</div>
+            <div class="card-image">
+              <img
+                src="@/assets/images/多角度车牌识别.png"
+                alt="多角度车牌识别"
+                class="example-img"
+              />
+              <!-- <div class="overlay-text">Wide Angle</div> -->
             </div>
             <div class="card-content">
               <h3>{{ $t('capabilities.examples.example2') }}</h3>
@@ -76,8 +86,13 @@
           </div>
           
           <div class="example-card">
-            <div class="card-image batch">
-              <div class="overlay-text">Batch Process</div>
+            <div class="card-image">
+              <img
+                src="@/assets/images/批量图片识别.png"
+                alt="批量图片识别"
+                class="example-img"
+              />
+              <!-- <div class="overlay-text">Batch Process</div> -->
             </div>
             <div class="card-content">
               <h3>{{ $t('capabilities.examples.example3') }}</h3>
@@ -278,22 +293,36 @@ watchEffect(() => {
     }
 
     .card-image {
-      height: 200px;
+      width: 100%;
+      aspect-ratio: 16 / 9;
       background: #0f172a;
       position: relative;
       display: flex;
-      align-items: center;
+      align-items: stretch;
       justify-content: center;
-      
-      &.dark { background: #020617; }
-      &.angle { background: #1e293b; }
-      &.batch { background: #334155; }
-      
+      padding: 0;
+      overflow: hidden;
+
+      .example-img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+        display: block;
+        border-radius: 0;
+      }
+
       .overlay-text {
+        position: absolute;
+        right: 18px;
+        bottom: 18px;
         color: rgba(255, 255, 255, 0.5);
         font-weight: 700;
         letter-spacing: 0.1em;
         text-transform: uppercase;
+        z-index: 2;
+        font-size: 1.1rem;
+        text-shadow: 0 1px 2px rgba(30,41,59,0.22);
       }
     }
 
@@ -315,6 +344,8 @@ watchEffect(() => {
     }
   }
 }
+
+// ...保留原有响应式样式...
 
 @media (max-width: 768px) {
   .statistics-bar {

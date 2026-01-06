@@ -183,13 +183,13 @@
                     </el-select>
                   </el-col>
                 </el-row>
-                <el-input 
+              <el-input 
                   v-model="profileForm.detailAddress" 
                   placeholder="请输入详细地址（街道、门牌号等）"
-                  maxlength="200"
-                  show-word-limit
+                maxlength="200"
+                show-word-limit
                   style="margin-top: 12px"
-                />
+              />
               </div>
             </el-form-item>
             <el-form-item>
@@ -452,28 +452,46 @@
         ref="forgotPasswordFormRef" 
         label-position="top"
       >
-        <el-form-item label="手机号或邮箱" prop="account">
-          <el-input v-model="forgotPasswordForm.account" placeholder="请输入绑定的手机号或邮箱">
+        <el-form-item label="验证方式" v-if="availableMethods.length > 1">
+          <el-radio-group v-model="forgotPasswordMethod" @change="handleMethodChange">
+            <el-radio label="phone" v-if="userStore.userInfo.phone">手机号</el-radio>
+            <el-radio label="email" v-if="userStore.userInfo.email">邮箱</el-radio>
+          </el-radio-group>
+        </el-form-item>
+
+        <el-form-item :label="forgotPasswordMethod === 'phone' ? '手机号' : '邮箱'" prop="account">
+          <el-input 
+            v-model="forgotPasswordForm.account" 
+            :placeholder="forgotPasswordMethod === 'phone' ? '手机号' : '邮箱'"
+            disabled
+            class="readonly-input"
+          >
             <template #prefix>
-              <el-icon><User /></el-icon>
+              <el-icon v-if="forgotPasswordMethod === 'phone'"><Iphone /></el-icon>
+              <el-icon v-else><Message /></el-icon>
             </template>
           </el-input>
         </el-form-item>
         <el-form-item label="验证码" prop="code">
-          <div class="code-input">
-            <el-input v-model="forgotPasswordForm.code" placeholder="请输入验证码" maxlength="6">
-              <template #prefix>
-                <el-icon><Key /></el-icon>
-              </template>
-            </el-input>
-            <el-button 
-              @click="sendForgotPasswordCode" 
-              :disabled="forgotPasswordCodeDisabled"
-              :loading="sendingForgotPasswordCode"
-            >
-              {{ forgotPasswordCodeButtonText }}
-            </el-button>
-          </div>
+          <el-input 
+            v-model="forgotPasswordForm.code" 
+            placeholder="请输入验证码" 
+            maxlength="6"
+          >
+            <template #prefix>
+              <el-icon><Key /></el-icon>
+            </template>
+            <template #append>
+              <el-button 
+                @click="sendForgotPasswordCode" 
+                :disabled="forgotPasswordCodeDisabled"
+                :loading="sendingForgotPasswordCode"
+                class="send-code-btn"
+              >
+                {{ forgotPasswordCodeButtonText }}
+              </el-button>
+            </template>
+          </el-input>
         </el-form-item>
         <el-form-item label="新密码" prop="newPassword">
           <el-input
@@ -589,6 +607,23 @@ const passwordLoading = ref(false)
 const sendingForgotPasswordCode = ref(false)
 const forgotPasswordCodeDisabled = ref(false)
 const forgotPasswordCountdown = ref(0)
+const forgotPasswordMethod = ref<'phone' | 'email'>('phone')
+
+const availableMethods = computed(() => {
+  const methods: { label: string; value: 'phone' | 'email' }[] = []
+  if (userStore.userInfo.phone) methods.push({ label: '手机号', value: 'phone' })
+  if (userStore.userInfo.email) methods.push({ label: '邮箱', value: 'email' })
+  return methods
+})
+
+const handleMethodChange = (val: 'phone' | 'email') => {
+  forgotPasswordMethod.value = val
+  if (val === 'phone') {
+    forgotPasswordForm.account = userStore.userInfo.phone || ''
+  } else {
+    forgotPasswordForm.account = userStore.userInfo.email || ''
+  }
+}
 
 // 格式化地址字符串
 const formatAddress = (province: string, city: string, district: string, detail: string) => {
@@ -862,14 +897,7 @@ const validateConfirmPasswordForgot = (_rule: any, value: string, callback: any)
 
 const forgotPasswordRules: FormRules = {
   account: [
-    { required: true, message: '请输入手机号或邮箱', trigger: 'blur' },
-    { validator: (_rule, value, callback) => {
-        const isEmail = value && value.includes('@')
-        const isPhone = /^1[3-9]\d{9}$/.test(value || '')
-        if (!isEmail && !isPhone) callback(new Error('请输入正确的手机号或邮箱'))
-        else callback()
-      }, trigger: 'blur'
-    }
+    { required: true, message: '请选择验证方式', trigger: 'blur' }
   ],
   code: [
     { required: true, message: '请输入验证码', trigger: 'blur' },
@@ -944,7 +972,7 @@ const handleAvatarUpload = async (file: File) => {
     const res = await uploadImage(file)
     if (res.code === 20000 && res.data) {
       userStore.userInfo.avatar_url = res.data.url
-      ElMessage.success('头像上传成功')
+    ElMessage.success('头像上传成功')
     } else {
       ElMessage.error(res.message || '头像上传失败')
     }
@@ -1000,13 +1028,13 @@ const handleSaveProfile = async () => {
         
         if (res.code === 20000 && res.data) {
           // 更新store中的用户信息
-          userStore.userInfo.nickname = profileForm.nickname
+      userStore.userInfo.nickname = profileForm.nickname
           userStore.userInfo.avatar_url = res.data.avatar_url || userStore.userInfo.avatar_url
-          userStore.userProfile.gender = profileForm.gender as any
-          userStore.userProfile.birthday = profileForm.birthday || null
+      userStore.userProfile.gender = profileForm.gender as any
+      userStore.userProfile.birthday = profileForm.birthday || null
           userStore.userProfile.address = fullAddress || null
           
-          ElMessage.success('保存成功')
+      ElMessage.success('保存成功')
         } else {
           ElMessage.error(res.message || '保存失败')
         }
@@ -1038,6 +1066,13 @@ const openPasswordDialog = () => {
 
 const switchPasswordMode = (mode: 'change' | 'reset') => {
   passwordMode.value = mode
+  if (mode === 'reset') {
+    if (availableMethods.value.length > 0) {
+      handleMethodChange(availableMethods.value[0].value)
+    } else {
+      ElMessage.warning('请先绑定手机号或邮箱')
+    }
+  }
 }
 
 const resetPasswordDialog = () => {
@@ -1072,7 +1107,7 @@ const handleChangePassword = async () => {
           confirm_password: passwordForm.confirmPassword
         })
         ElMessage.success('密码修改成功，请重新登录')
-        showPasswordDialog.value = false
+      showPasswordDialog.value = false
         // 退出登录
         userStore.logout()
         // 跳转到登录页
@@ -1202,13 +1237,11 @@ const handleUpgrade = () => {
 
 const sendForgotPasswordCode = async () => {
   if (!forgotPasswordForm.account) {
-    ElMessage.warning('请先输入手机号或邮箱')
     return
   }
   try {
     sendingForgotPasswordCode.value = true
-    const isEmail = forgotPasswordForm.account.includes('@')
-    if (isEmail) {
+    if (forgotPasswordMethod.value === 'email') {
       await sendEmailCode(forgotPasswordForm.account, 'reset_password')
     } else {
       await sendSmsCode(forgotPasswordForm.account, 'reset_password')
@@ -1368,12 +1401,21 @@ onMounted(() => {
   margin-bottom: 10px;
 }
 
-.code-input {
-  display: flex;
-  gap: 12px;
+.send-code-btn {
+  width: 110px;
+  height: 100%;
+  border-top-left-radius: 0;
+  border-bottom-left-radius: 0;
+  color: var(--el-color-primary);
+  font-weight: 500;
   
-  .el-input {
-    flex: 1;
+  &:hover {
+    color: var(--el-color-primary-light-3);
+    background-color: transparent;
+  }
+  
+  &.is-disabled {
+    color: var(--el-text-color-placeholder);
   }
 }
 
@@ -1480,6 +1522,22 @@ onMounted(() => {
         p { margin: 0; font-size: 13px; color: #94a3b8; }
       }
     }
+  }
+}
+
+.send-code-btn {
+  width: 112px;
+  color: var(--el-color-primary);
+  font-weight: normal;
+  
+  &:hover {
+    color: var(--el-color-primary-light-3);
+    background-color: var(--el-color-primary-light-9);
+  }
+  
+  &.is-disabled {
+    color: var(--el-text-color-placeholder);
+    background-color: transparent;
   }
 }
 
