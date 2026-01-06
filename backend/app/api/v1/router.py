@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1 import auth, captcha, contact, website, recognition, upload, users, websocket
+from app.api.v1 import auth, captcha, contact, website, recognition, upload, users, websocket, history
 
 router = APIRouter()
 
@@ -11,3 +11,4 @@ router.include_router(recognition.router, prefix="/recognition", tags=["车牌�
 router.include_router(websocket.router, prefix="/recognition", tags=["实时通信"]) # Mount under /recognition so URL is /api/v1/recognition/ws/{task_id}
 router.include_router(upload.router, prefix="/upload", tags=["文件上传"])
 router.include_router(users.router, prefix="/users", tags=["用户"])
+router.include_router(history.router, prefix="/history", tags=["识别历史"])

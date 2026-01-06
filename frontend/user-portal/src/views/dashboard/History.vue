@@ -1,145 +1,339 @@
 <template>
-  <div class="history-view">
-    <div class="view-header">
-      <div class="header-left">
-        <h2>识别历史</h2>
-        <p class="subtitle">查看和管理您的所有识别记录</p>
-      </div>
-      <div class="header-right">
-        <el-button type="primary" plain icon="Download" v-if="userStore.isVIP">导出数据</el-button>
-      </div>
-    </div>
-
-    <div class="filter-card">
-      <el-form :inline="true" class="filter-form">
-        <el-form-item label="日期范围">
-          <el-date-picker
-            v-model="dateRange"
-            type="daterange"
-            range-separator="至"
-            start-placeholder="开始日期"
-            end-placeholder="结束日期"
-            :shortcuts="shortcuts"
-          />
-        </el-form-item>
-        <el-form-item label="车牌号">
-          <el-input v-model="searchKeyword" placeholder="输入车牌号搜索" prefix-icon="Search" />
-        </el-form-item>
-        <el-form-item label="类型">
-          <el-select v-model="filterType" placeholder="全部类型" clearable style="width: 120px">
-            <el-option label="蓝牌" value="blue" />
-            <el-option label="绿牌" value="green" />
-            <el-option label="黄牌" value="yellow" />
-          </el-select>
-        </el-form-item>
-        <el-form-item>
-          <el-button type="primary" @click="handleSearch">查询</el-button>
-          <el-button @click="resetSearch">重置</el-button>
-        </el-form-item>
-      </el-form>
-    </div>
-
-    <div class="table-container">
-      <el-table :data="tableData" style="width: 100%" class="data-table" :row-class-name="tableRowClassName">
-        <el-table-column type="selection" width="55" />
-        
-        <el-table-column label="原图" width="120">
-          <template #default>
-            <div class="image-preview">
-              <el-icon><Picture /></el-icon>
-            </div>
-          </template>
-        </el-table-column>
-        
-        <el-table-column prop="plate" label="车牌号码" min-width="120">
-          <template #default="scope">
-            <div class="plate-cell">
-              <span class="plate-text">{{ scope.row.plate }}</span>
-            </div>
-          </template>
-        </el-table-column>
-        
-        <el-table-column prop="type" label="类型" width="100">
-          <template #default="scope">
-            <el-tag :type="getPlateTypeColor(scope.row.type)" effect="light" size="small">
-              {{ scope.row.type }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        
-        <el-table-column prop="confidence" label="置信度" width="180">
-          <template #default="scope">
-            <div class="confidence-bar">
-              <span class="val">{{ scope.row.confidence }}%</span>
-              <el-progress 
-                :percentage="scope.row.confidence" 
-                :show-text="false" 
-                :color="getConfidenceColor(scope.row.confidence)"
-                :stroke-width="6"
-              />
-            </div>
-          </template>
-        </el-table-column>
-        
-        <el-table-column prop="date" label="识别时间" width="180" sortable>
-          <template #default="scope">
-            <span class="time-text">{{ scope.row.date }}</span>
-          </template>
-        </el-table-column>
-        
-        <el-table-column label="操作" width="150" fixed="right">
-          <template #default>
-            <el-button link type="primary" size="small">详情</el-button>
-            <el-button link type="primary" size="small">下载</el-button>
-            <el-button link type="danger" size="small">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-      
-      <div class="pagination-footer">
-        <div class="selection-info">
-          已选择 0 项
+  <el-config-provider :locale="locale">
+    <div class="history-view">
+      <div class="view-header">
+        <div class="header-left">
+          <h2>{{ t.title }}</h2>
+          <p class="subtitle">{{ t.subtitle }}</p>
         </div>
-        <el-pagination 
-          background 
-          layout="prev, pager, next, jumper" 
-          :total="100" 
-          :page-size="10"
-        />
+        <div class="header-right">
+          <el-radio-group v-model="lang" size="small" @change="handleLangChange" style="margin-right: 16px;">
+            <el-radio-button label="zh-cn">中文</el-radio-button>
+            <el-radio-button label="en">EN</el-radio-button>
+          </el-radio-group>
+          <el-button type="primary" plain icon="Download" v-if="userStore.isVIP">{{ t.export }}</el-button>
+        </div>
+      </div>
+
+      <div class="filter-card">
+        <el-form :inline="true" class="filter-form">
+          <el-form-item :label="t.dateRange">
+            <el-date-picker
+              v-model="dateRange"
+              type="daterange"
+              :range-separator="t.to"
+              :start-placeholder="t.startDate"
+              :end-placeholder="t.endDate"
+              :shortcuts="shortcuts"
+              @change="handleFilter"
+            />
+          </el-form-item>
+          <el-form-item :label="t.plateNumber">
+            <el-input 
+              v-model="searchKeyword" 
+              :placeholder="t.searchPlaceholder" 
+              prefix-icon="Search"
+              clearable
+              @keyup.enter="handleFilter"
+            />
+          </el-form-item>
+          <el-form-item :label="t.type">
+            <el-select v-model="filterType" :placeholder="t.allTypes" clearable style="width: 120px" @change="handleFilter">
+              <el-option label="蓝牌" value="blue" />
+              <el-option label="绿牌" value="green" />
+              <el-option label="黄牌" value="yellow" />
+              <el-option label="白牌" value="white" />
+              <el-option label="其他" value="other" />
+            </el-select>
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" @click="handleFilter">{{ t.query }}</el-button>
+            <el-button @click="resetSearch">{{ t.reset }}</el-button>
+          </el-form-item>
+        </el-form>
+      </div>
+
+      <div class="table-container">
+        <el-table 
+          v-loading="loading"
+          :data="tableData" 
+          style="width: 100%" 
+          class="data-table" 
+          :row-class-name="tableRowClassName"
+          @selection-change="handleSelectionChange"
+        >
+          <el-table-column type="selection" width="55" />
+          
+          <el-table-column :label="t.image" width="120">
+            <template #default="scope">
+              <el-image 
+                class="image-preview" 
+                :src="scope.row.original_image_url" 
+                :preview-src-list="[scope.row.original_image_url]"
+                fit="cover"
+              >
+                <template #error>
+                  <div class="image-slot">
+                    <el-icon><Picture /></el-icon>
+                  </div>
+                </template>
+              </el-image>
+            </template>
+          </el-table-column>
+          
+          <el-table-column prop="license_plate" :label="t.plateNumber" min-width="120">
+            <template #default="scope">
+              <div class="plate-cell">
+                <span class="plate-text">{{ scope.row.license_plate }}</span>
+              </div>
+            </template>
+          </el-table-column>
+          
+          <el-table-column prop="plate_type" :label="t.type" width="100">
+            <template #default="scope">
+              <el-tag :type="getPlateTypeColor(scope.row.plate_type)" effect="light" size="small">
+                {{ formatPlateType(scope.row.plate_type) }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          
+          <el-table-column prop="confidence" :label="t.confidence" width="180">
+            <template #default="scope">
+              <div class="confidence-bar">
+                <span class="val">{{ (scope.row.confidence * 100).toFixed(1) }}%</span>
+                <el-progress 
+                  :percentage="scope.row.confidence * 100" 
+                  :show-text="false" 
+                  :color="getConfidenceColor(scope.row.confidence * 100)"
+                  :stroke-width="6"
+                />
+              </div>
+            </template>
+          </el-table-column>
+          
+          <el-table-column prop="created_at" :label="t.time" width="180" sortable>
+            <template #default="scope">
+              <span class="time-text">{{ formatDate(scope.row.created_at) }}</span>
+            </template>
+          </el-table-column>
+          
+          <el-table-column :label="t.actions" width="150" fixed="right">
+            <template #default="scope">
+              <el-button link type="primary" size="small">{{ t.detail }}</el-button>
+              <el-button link type="danger" size="small" @click="handleDelete(scope.row)">{{ t.delete }}</el-button>
+            </template>
+          </el-table-column>
+          
+          <template #empty>
+            <el-empty :description="t.noData" :image-size="100" />
+          </template>
+        </el-table>
+        
+        <div class="pagination-footer">
+          <div class="selection-info">
+            {{ t.selected.replace('{n}', String(selectedRows.length)) }}
+          </div>
+          <el-pagination 
+            background 
+            v-model:current-page="currentPage"
+            v-model:page-size="pageSize"
+            :page-sizes="[5, 10, 20]"
+            layout="total, sizes, prev, pager, next, jumper" 
+            :total="total"
+            @size-change="handleSizeChange"
+            @current-change="handleCurrentChange"
+          />
+        </div>
       </div>
     </div>
-  </div>
+  </el-config-provider>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useUserStore } from '@/store/user'
 import { Search, Picture, Download } from '@element-plus/icons-vue'
+import { getRecognitionHistory } from '@/api/history'
+import { ElMessageBox, ElMessage } from 'element-plus'
+import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
+import en from 'element-plus/dist/locale/en.mjs'
 
 const userStore = useUserStore()
 
-const dateRange = ref('')
+// Localization
+const lang = ref(localStorage.getItem('lang') || 'zh-cn')
+const locale = computed(() => lang.value === 'zh-cn' ? zhCn : en)
+
+const locales = {
+  'zh-cn': {
+    title: '识别历史',
+    subtitle: '查看和管理您的所有识别记录',
+    export: '导出数据',
+    dateRange: '日期范围',
+    to: '至',
+    startDate: '开始日期',
+    endDate: '结束日期',
+    plateNumber: '车牌号码',
+    searchPlaceholder: '输入车牌号搜索',
+    type: '类型',
+    allTypes: '全部类型',
+    query: '查询',
+    reset: '重置',
+    image: '原图',
+    confidence: '置信度',
+    time: '识别时间',
+    actions: '操作',
+    detail: '详情',
+    delete: '删除',
+    noData: '暂无识别记录',
+    selected: '已选择 {n} 项',
+    lastWeek: '最近一周',
+    lastMonth: '最近一月',
+    lastYear: '最近一年'
+  },
+  'en': {
+    title: 'History',
+    subtitle: 'View and manage your recognition records',
+    export: 'Export Data',
+    dateRange: 'Date Range',
+    to: 'To',
+    startDate: 'Start Date',
+    endDate: 'End Date',
+    plateNumber: 'Plate Number',
+    searchPlaceholder: 'Search plate number',
+    type: 'Type',
+    allTypes: 'All Types',
+    query: 'Query',
+    reset: 'Reset',
+    image: 'Original',
+    confidence: 'Confidence',
+    time: 'Time',
+    actions: 'Actions',
+    detail: 'Detail',
+    delete: 'Delete',
+    noData: 'No Records Found',
+    selected: 'Selected {n} items',
+    lastWeek: 'Last Week',
+    lastMonth: 'Last Month',
+    lastYear: 'Last Year'
+  }
+}
+
+const t = computed(() => locales[lang.value as keyof typeof locales])
+
+const handleLangChange = (val: any) => {
+  lang.value = String(val)
+  localStorage.setItem('lang', String(val))
+}
+
+// Data Handling
+const loading = ref(false)
+const tableData = ref([])
+const total = ref(0)
+const currentPage = ref(1)
+const pageSize = ref(10)
+const dateRange = ref<any[]>([])
 const searchKeyword = ref('')
 const filterType = ref('')
+const selectedRows = ref<any[]>([])
 
-const shortcuts = [
-  { text: '最近一周', value: () => { const end = new Date(); const start = new Date(); start.setTime(start.getTime() - 3600 * 1000 * 24 * 7); return [start, end] } },
-  { text: '最近一月', value: () => { const end = new Date(); const start = new Date(); start.setTime(start.getTime() - 3600 * 1000 * 24 * 30); return [start, end] } },
-]
+const shortcuts = computed(() => [
+  { text: t.value.lastWeek, value: () => { const end = new Date(); const start = new Date(); start.setTime(start.getTime() - 3600 * 1000 * 24 * 7); return [start, end] } },
+  { text: t.value.lastMonth, value: () => { const end = new Date(); const start = new Date(); start.setTime(start.getTime() - 3600 * 1000 * 24 * 30); return [start, end] } },
+  { text: t.value.lastYear, value: () => { const end = new Date(); const start = new Date(); start.setTime(start.getTime() - 3600 * 1000 * 24 * 365); return [start, end] } },
+])
 
-const tableData = [
-  { date: '2026-01-04 14:23:01', plate: '京A·88888', type: '蓝牌', confidence: 99.2 },
-  { date: '2026-01-04 14:20:15', plate: '沪C·12345', type: '蓝牌', confidence: 95.5 },
-  { date: '2026-01-04 13:55:42', plate: '苏E·67890', type: '绿牌', confidence: 98.1 },
-  { date: '2026-01-04 12:30:11', plate: '浙B·54321', type: '黄牌', confidence: 88.4 },
-  { date: '2026-01-04 11:15:33', plate: '粤A·00001', type: '蓝牌', confidence: 99.9 },
-]
+const fetchData = async () => {
+  loading.value = true
+  try {
+    const params: any = {
+      page: currentPage.value,
+      page_size: pageSize.value,
+    }
+    if (searchKeyword.value) params.license_plate = searchKeyword.value
+    if (filterType.value) params.plate_type = filterType.value
+    if (dateRange.value && dateRange.value.length === 2) {
+      params.start_date = dateRange.value[0].toISOString()
+      params.end_date = dateRange.value[1].toISOString()
+    }
+    
+    const res = await getRecognitionHistory(params) as any
+    if (res.code === 20000) {
+      tableData.value = res.data.items
+      total.value = res.data.total
+    }
+  } catch (error) {
+    console.error('Fetch history error:', error)
+    ElMessage.error(lang.value === 'zh-cn' ? '获取历史记录失败' : 'Failed to fetch history')
+  } finally {
+    loading.value = false
+  }
+}
+
+const handleFilter = () => {
+  currentPage.value = 1
+  fetchData()
+}
+
+const resetSearch = () => {
+  dateRange.value = []
+  searchKeyword.value = ''
+  filterType.value = ''
+  currentPage.value = 1
+  fetchData()
+}
+
+const handleSizeChange = (val: number) => {
+  pageSize.value = val
+  fetchData()
+}
+
+const handleCurrentChange = (val: number) => {
+  currentPage.value = val
+  fetchData()
+}
+
+const handleSelectionChange = (val: any) => {
+  selectedRows.value = val
+}
+
+const handleDelete = (row: any) => {
+  const msg = lang.value === 'zh-cn' 
+    ? `确定要删除车牌 ${row.license_plate} 的记录吗？` 
+    : `Are you sure to delete the record for ${row.license_plate}?`
+  ElMessageBox.confirm(
+    msg,
+    lang.value === 'zh-cn' ? '提示' : 'Warning',
+    {
+      confirmButtonText: lang.value === 'zh-cn' ? '确定' : 'Confirm',
+      cancelButtonText: lang.value === 'zh-cn' ? '取消' : 'Cancel',
+      type: 'warning',
+    }
+  ).then(() => {
+    ElMessage.success(lang.value === 'zh-cn' ? '删除成功' : 'Delete successfully')
+    // TODO: Implement real delete call
+  })
+}
 
 const getPlateTypeColor = (type: string) => {
-  if (type === '蓝牌') return ''
-  if (type === '绿牌') return 'success'
-  if (type === '黄牌') return 'warning'
-  return 'info'
+  switch (type) {
+    case 'blue': return ''
+    case 'green': return 'success'
+    case 'yellow': return 'warning'
+    case 'white': return 'info'
+    default: return 'info'
+  }
+}
+
+const formatPlateType = (type: string) => {
+  const map: any = {
+    'blue': '蓝牌',
+    'green': '绿牌',
+    'yellow': '黄牌',
+    'white': '白牌',
+    'other': '其他'
+  }
+  return map[type] || type
 }
 
 const getConfidenceColor = (val: number) => {
@@ -148,9 +342,16 @@ const getConfidenceColor = (val: number) => {
   return '#ef4444'
 }
 
-const handleSearch = () => { console.log('Search') }
-const resetSearch = () => { dateRange.value = ''; searchKeyword.value = ''; filterType.value = '' }
-const tableRowClassName = () => '' // Helper
+const formatDate = (dateStr: string) => {
+  if (!dateStr) return '-'
+  return new Date(dateStr).toLocaleString(lang.value === 'zh-cn' ? 'zh-CN' : 'en-US')
+}
+
+const tableRowClassName = () => ''
+
+onMounted(() => {
+  fetchData()
+})
 </script>
 
 <style scoped lang="scss">
@@ -194,7 +395,7 @@ const tableRowClassName = () => '' // Helper
   }
   
   :deep(.el-table__row) {
-    td { padding: 16px 0; }
+    td { padding: 12px 0; }
   }
 }
 
@@ -212,9 +413,18 @@ const tableRowClassName = () => '' // Helper
   transition: all 0.2s;
   
   &:hover {
-    background: #e2e8f0;
-    color: #94a3b8;
+    transform: scale(1.05);
   }
+}
+
+.image-slot {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  background: var(--el-fill-color-light);
+  color: var(--el-text-color-placeholder);
 }
 
 .plate-text {

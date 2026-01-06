@@ -341,5 +341,38 @@ class RecognitionService:
         db.refresh(record)
         
         return record
+    
+    def get_history(
+        self, 
+        user_id: int, 
+        db: Session,
+        page: int = 1,
+        page_size: int = 10,
+        start_date: Optional[datetime] = None,
+        end_date: Optional[datetime] = None,
+        license_plate: Optional[str] = None,
+        plate_type: Optional[str] = None
+    ):
+        """获取识别历史记录"""
+        query = db.query(RecognitionRecord).filter(RecognitionRecord.user_id == user_id)
+        
+        if start_date:
+            query = query.filter(RecognitionRecord.created_at >= start_date)
+        if end_date:
+            query = query.filter(RecognitionRecord.created_at <= end_date)
+        if license_plate:
+            query = query.filter(RecognitionRecord.license_plate.like(f"%{license_plate}%"))
+        if plate_type:
+            query = query.filter(RecognitionRecord.plate_type == plate_type)
+            
+        total = query.count()
+        
+        # Sort by creation time desc
+        query = query.order_by(RecognitionRecord.created_at.desc())
+        
+        # Pagination
+        items = query.offset((page - 1) * page_size).limit(page_size).all()
+        
+        return items, total
 
 recognition_service = RecognitionService()
