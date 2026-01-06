@@ -59,7 +59,7 @@
                 :show-file-list="false"
                 :before-upload="handleAvatarUpload"
               >
-                <el-button size="small">更换头像</el-button>
+                <el-button size="small" :loading="uploadingAvatar">更换头像</el-button>
               </el-upload>
               <span class="tip">支持 JPG/PNG，最大 2MB</span>
             </div>
@@ -74,14 +74,31 @@
           >
             <el-row :gutter="24">
               <el-col :span="12">
-                <el-form-item label="手机号" prop="phone">
+                <el-form-item label="手机号">
                   <el-input 
-                    v-model="profileForm.phone" 
-                    placeholder="请输入手机号"
+                    :value="userStore.userInfo.phone || '未绑定'"
+                    placeholder="未绑定"
                     :prefix-icon="Iphone"
+                    disabled
+                    class="readonly-input"
                   />
+                  <span class="form-tip">请在安全设置中绑定手机号</span>
                 </el-form-item>
               </el-col>
+              <el-col :span="12">
+                <el-form-item label="邮箱">
+                  <el-input 
+                    :value="userStore.userInfo.email || '未绑定'"
+                    placeholder="未绑定"
+                    :prefix-icon="Message"
+                    disabled
+                    class="readonly-input"
+                  />
+                  <span class="form-tip">请在安全设置中绑定邮箱</span>
+                </el-form-item>
+              </el-col>
+            </el-row>
+            <el-row :gutter="24">
               <el-col :span="12">
                 <el-form-item label="昵称" prop="nickname">
                   <el-input 
@@ -89,17 +106,6 @@
                     placeholder="请输入昵称"
                     maxlength="50"
                     show-word-limit
-                  />
-                </el-form-item>
-              </el-col>
-            </el-row>
-            <el-row :gutter="24">
-              <el-col :span="12">
-                <el-form-item label="邮箱" prop="email">
-                  <el-input 
-                    v-model="profileForm.email" 
-                    placeholder="请输入邮箱（可选）"
-                    :prefix-icon="Message"
                   />
                 </el-form-item>
               </el-col>
@@ -128,17 +134,66 @@
               </el-col>
             </el-row>
             <el-form-item label="地址" prop="address">
-              <el-input 
-                v-model="profileForm.address" 
-                type="textarea" 
-                :rows="3"
-                placeholder="请输入详细地址"
-                maxlength="200"
-                show-word-limit
-              />
+              <div class="address-form">
+                <el-row :gutter="12">
+                  <el-col :span="8">
+                    <el-select 
+                      v-model="profileForm.province" 
+                      placeholder="请选择省份"
+                      @change="handleProvinceChange"
+                      style="width: 100%"
+                    >
+                      <el-option 
+                        v-for="province in provinces" 
+                        :key="province.code"
+                        :label="province.name" 
+                        :value="province.code"
+                      />
+                    </el-select>
+                  </el-col>
+                  <el-col :span="8">
+                    <el-select 
+                      v-model="profileForm.city" 
+                      placeholder="请选择城市"
+                      @change="handleCityChange"
+                      :disabled="!profileForm.province"
+                      style="width: 100%"
+                    >
+                      <el-option 
+                        v-for="city in cities" 
+                        :key="city.code"
+                        :label="city.name" 
+                        :value="city.code"
+                      />
+                    </el-select>
+                  </el-col>
+                  <el-col :span="8">
+                    <el-select 
+                      v-model="profileForm.district" 
+                      placeholder="请选择区县"
+                      :disabled="!profileForm.city"
+                      style="width: 100%"
+                    >
+                      <el-option 
+                        v-for="district in districts" 
+                        :key="district.code"
+                        :label="district.name" 
+                        :value="district.code"
+                      />
+                    </el-select>
+                  </el-col>
+                </el-row>
+                <el-input 
+                  v-model="profileForm.detailAddress" 
+                  placeholder="请输入详细地址（街道、门牌号等）"
+                  maxlength="200"
+                  show-word-limit
+                  style="margin-top: 12px"
+                />
+              </div>
             </el-form-item>
             <el-form-item>
-              <el-button type="primary" @click="handleSaveProfile">保存修改</el-button>
+              <el-button type="primary" @click="handleSaveProfile" :loading="savingProfile">保存修改</el-button>
               <el-button @click="resetProfileForm">重置</el-button>
             </el-form-item>
           </el-form>
@@ -153,7 +208,7 @@
                 <h4>登录密码</h4>
                 <p>建议定期修改密码以保护账户安全</p>
               </div>
-              <el-button link type="primary" @click="showPasswordDialog = true">修改</el-button>
+              <el-button link type="primary" @click="openPasswordDialog">修改</el-button>
             </div>
             
             <div class="security-item">
@@ -362,21 +417,102 @@
     </div>
     
     <!-- Dialogs -->
-    <el-dialog v-model="showPasswordDialog" title="修改密码" width="500px">
-      <el-form :model="passwordForm" :rules="passwordRules" ref="passwordFormRef" label-position="top">
+    <!-- Password Dialog (Handles both Change and Reset) -->
+    <el-dialog 
+      v-model="showPasswordDialog" 
+      :title="passwordMode === 'change' ? '修改密码' : '找回密码'" 
+      width="500px"
+      @closed="resetPasswordDialog"
+    >
+      <el-form 
+        v-if="passwordMode === 'change'"
+        :model="passwordForm" 
+        :rules="passwordRules" 
+        ref="passwordFormRef" 
+        label-position="top"
+      >
         <el-form-item label="当前密码" prop="oldPassword">
-          <el-input v-model="passwordForm.oldPassword" type="password" show-password />
+          <el-input v-model="passwordForm.oldPassword" type="password" show-password placeholder="请输入当前密码" />
         </el-form-item>
         <el-form-item label="新密码" prop="newPassword">
-          <el-input v-model="passwordForm.newPassword" type="password" show-password />
+          <el-input v-model="passwordForm.newPassword" type="password" show-password placeholder="请输入新密码（6-20位）" />
         </el-form-item>
         <el-form-item label="确认新密码" prop="confirmPassword">
-          <el-input v-model="passwordForm.confirmPassword" type="password" show-password />
+          <el-input v-model="passwordForm.confirmPassword" type="password" show-password placeholder="请再次输入新密码" />
         </el-form-item>
+        <div class="form-link">
+          <el-button link type="primary" @click="switchPasswordMode('reset')">忘记密码？</el-button>
+        </div>
       </el-form>
+
+      <el-form 
+        v-else
+        :model="forgotPasswordForm" 
+        :rules="forgotPasswordRules" 
+        ref="forgotPasswordFormRef" 
+        label-position="top"
+      >
+        <el-form-item label="手机号或邮箱" prop="account">
+          <el-input v-model="forgotPasswordForm.account" placeholder="请输入绑定的手机号或邮箱">
+            <template #prefix>
+              <el-icon><User /></el-icon>
+            </template>
+          </el-input>
+        </el-form-item>
+        <el-form-item label="验证码" prop="code">
+          <div class="code-input">
+            <el-input v-model="forgotPasswordForm.code" placeholder="请输入验证码" maxlength="6">
+              <template #prefix>
+                <el-icon><Key /></el-icon>
+              </template>
+            </el-input>
+            <el-button 
+              @click="sendForgotPasswordCode" 
+              :disabled="forgotPasswordCodeDisabled"
+              :loading="sendingForgotPasswordCode"
+            >
+              {{ forgotPasswordCodeButtonText }}
+            </el-button>
+          </div>
+        </el-form-item>
+        <el-form-item label="新密码" prop="newPassword">
+          <el-input
+            v-model="forgotPasswordForm.newPassword"
+            type="password"
+            placeholder="请输入新密码（6-20位）"
+            show-password
+          >
+            <template #prefix>
+              <el-icon><Lock /></el-icon>
+            </template>
+          </el-input>
+        </el-form-item>
+        <el-form-item label="确认新密码" prop="confirmPassword">
+          <el-input
+            v-model="forgotPasswordForm.confirmPassword"
+            type="password"
+            placeholder="请再次输入新密码"
+            show-password
+          >
+            <template #prefix>
+              <el-icon><Lock /></el-icon>
+            </template>
+          </el-input>
+        </el-form-item>
+        <div class="form-link">
+          <el-button link type="primary" @click="switchPasswordMode('change')">想起密码了？返回修改</el-button>
+        </div>
+      </el-form>
+
       <template #footer>
         <el-button @click="showPasswordDialog = false">取消</el-button>
-        <el-button type="primary" @click="handleChangePassword">确定</el-button>
+        <el-button 
+          type="primary" 
+          @click="handlePasswordSubmit" 
+          :loading="passwordLoading"
+        >
+          确定
+        </el-button>
       </template>
     </el-dialog>
     
@@ -415,53 +551,241 @@
         <el-button type="primary" @click="handleChangeEmail">确定</el-button>
       </template>
     </el-dialog>
+    
+    <!-- 忘记密码对话框 (移除，已合并到修改密码) -->
+
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useUserStore } from '@/store/user'
 import { 
   User, Lock, Postcard, Link, Trophy, Iphone, Message, 
   CircleCheckFilled, WarningFilled, Clock, Plus, Check,
-  ChatDotRound
+  ChatDotRound, Key
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
+import { uploadImage } from '@/api/recognition'
+import { updateProfile, resetPassword, changePassword, sendSmsCode, sendEmailCode } from '@/api/auth'
 
 const userStore = useUserStore()
 const activeTab = ref('profile')
 
 const profileFormRef = ref<FormInstance>()
 const passwordFormRef = ref<FormInstance>()
+const forgotPasswordFormRef = ref<FormInstance>()
 const phoneFormRef = ref<FormInstance>()
 const emailFormRef = ref<FormInstance>()
 
 const showPasswordDialog = ref(false)
+const passwordMode = ref<'change' | 'reset'>('change')
 const showPhoneDialog = ref(false)
 const showEmailDialog = ref(false)
+const uploadingAvatar = ref(false)
+const savingProfile = ref(false)
+const passwordLoading = ref(false)
+const sendingForgotPasswordCode = ref(false)
+const forgotPasswordCodeDisabled = ref(false)
+const forgotPasswordCountdown = ref(0)
 
-// Profile Form
+// 格式化地址字符串
+const formatAddress = (province: string, city: string, district: string, detail: string) => {
+  const parts = [province, city, district, detail].filter(Boolean)
+  return parts.join('/')
+}
+
+// Profile Form - 初始化时需要先解析地址
+const initAddressParts = () => {
+  const address = userStore.userProfile.address
+  if (!address) return { province: '', city: '', district: '', detailAddress: '' }
+  
+  const parts = address.split('/')
+  const provinceName = parts[0] || ''
+  const cityName = parts[1] || ''
+  const districtName = parts[2] || ''
+  const detailAddress = parts.slice(3).join('/') || ''
+  
+  // 查找省份代码
+  const provinceCode = Object.keys(provinceCityData).find(
+    code => provinceCityData[code].name === provinceName
+  ) || ''
+  
+  // 如果找到省份，查找城市代码
+  let cityCode = ''
+  if (provinceCode) {
+    const provinceData = provinceCityData[provinceCode]
+    cityCode = Object.keys(provinceData.cities).find(
+      code => provinceData.cities[code].name === cityName
+    ) || ''
+  }
+  
+  // 如果找到城市，查找区县代码
+  let districtCode = ''
+  if (provinceCode && cityCode) {
+    const provinceData = provinceCityData[provinceCode]
+    const cityData = provinceData.cities[cityCode]
+    if (cityData) {
+      const index = cityData.districts.findIndex(d => d === districtName)
+      if (index !== -1) {
+        districtCode = `${cityCode}${String(index + 1).padStart(2, '0')}`
+      }
+    }
+  }
+  
+  return {
+    province: provinceCode,
+    city: cityCode,
+    district: districtCode,
+    detailAddress
+  }
+}
+
+const addressParts = initAddressParts()
 const profileForm = reactive({
-  phone: userStore.userInfo.phone,
   nickname: userStore.userInfo.nickname,
-  email: userStore.userInfo.email || '',
   gender: userStore.userProfile.gender || 'unknown',
   birthday: userStore.userProfile.birthday || '',
-  address: userStore.userProfile.address || ''
+  province: addressParts.province,
+  city: addressParts.city,
+  district: addressParts.district,
+  detailAddress: addressParts.detailAddress
 })
 
+// 省市区数据（硬编码，主要省份和城市）
+const provinceCityData: Record<string, { name: string; cities: Record<string, { name: string; districts: string[] }> }> = {
+  '110000': {
+    name: '北京市',
+    cities: {
+      '110100': {
+        name: '北京市',
+        districts: ['东城区', '西城区', '朝阳区', '丰台区', '石景山区', '海淀区', '门头沟区', '房山区', '通州区', '顺义区', '昌平区', '大兴区', '怀柔区', '平谷区', '密云区', '延庆区']
+      }
+    }
+  },
+  '120000': {
+    name: '天津市',
+    cities: {
+      '120100': {
+        name: '天津市',
+        districts: ['和平区', '河东区', '河西区', '南开区', '河北区', '红桥区', '东丽区', '西青区', '津南区', '北辰区', '武清区', '宝坻区', '滨海新区', '宁河区', '静海区', '蓟州区']
+      }
+    }
+  },
+  '310000': {
+    name: '上海市',
+    cities: {
+      '310100': {
+        name: '上海市',
+        districts: ['黄浦区', '徐汇区', '长宁区', '静安区', '普陀区', '虹口区', '杨浦区', '闵行区', '宝山区', '嘉定区', '浦东新区', '金山区', '松江区', '青浦区', '奉贤区', '崇明区']
+      }
+    }
+  },
+  '330000': {
+    name: '浙江省',
+    cities: {
+      '330100': {
+        name: '杭州市',
+        districts: ['上城区', '下城区', '江干区', '拱墅区', '西湖区', '滨江区', '萧山区', '余杭区', '富阳区', '临安区', '桐庐县', '淳安县', '建德市']
+      },
+      '330200': {
+        name: '宁波市',
+        districts: ['海曙区', '江北区', '北仑区', '镇海区', '鄞州区', '奉化区', '象山县', '宁海县', '余姚市', '慈溪市']
+      },
+      '330300': {
+        name: '温州市',
+        districts: ['鹿城区', '龙湾区', '瓯海区', '洞头区', '永嘉县', '平阳县', '苍南县', '文成县', '泰顺县', '瑞安市', '乐清市', '龙港市']
+      }
+    }
+  },
+  '440000': {
+    name: '广东省',
+    cities: {
+      '440100': {
+        name: '广州市',
+        districts: ['荔湾区', '越秀区', '海珠区', '天河区', '白云区', '黄埔区', '番禺区', '花都区', '南沙区', '从化区', '增城区']
+      },
+      '440300': {
+        name: '深圳市',
+        districts: ['罗湖区', '福田区', '南山区', '宝安区', '龙岗区', '盐田区', '龙华区', '坪山区', '光明区', '大鹏新区']
+      },
+      '440400': {
+        name: '珠海市',
+        districts: ['香洲区', '斗门区', '金湾区']
+      }
+    }
+  },
+  '510000': {
+    name: '四川省',
+    cities: {
+      '510100': {
+        name: '成都市',
+        districts: ['锦江区', '青羊区', '金牛区', '武侯区', '成华区', '龙泉驿区', '青白江区', '新都区', '温江区', '双流区', '郫都区', '新津区', '都江堰市', '彭州市', '邛崃市', '崇州市', '简阳市', '金堂县', '大邑县', '蒲江县']
+      }
+    }
+  },
+  '320000': {
+    name: '江苏省',
+    cities: {
+      '320100': {
+        name: '南京市',
+        districts: ['玄武区', '秦淮区', '建邺区', '鼓楼区', '浦口区', '栖霞区', '雨花台区', '江宁区', '六合区', '溧水区', '高淳区']
+      },
+      '320500': {
+        name: '苏州市',
+        districts: ['虎丘区', '吴中区', '相城区', '姑苏区', '吴江区', '常熟市', '张家港市', '昆山市', '太仓市']
+      }
+    }
+  }
+}
+
+// 省份列表
+const provinces = computed(() => {
+  return Object.keys(provinceCityData).map(code => ({
+    code,
+    name: provinceCityData[code].name
+  }))
+})
+
+// 城市列表（根据选中的省份）
+const cities = computed(() => {
+  if (!profileForm.province) return []
+  const provinceData = provinceCityData[profileForm.province]
+  if (!provinceData) return []
+  return Object.keys(provinceData.cities).map(code => ({
+    code,
+    name: provinceData.cities[code].name
+  }))
+})
+
+// 区县列表（根据选中的城市）
+const districts = computed(() => {
+  if (!profileForm.province || !profileForm.city) return []
+  const provinceData = provinceCityData[profileForm.province]
+  if (!provinceData) return []
+  const cityData = provinceData.cities[profileForm.city]
+  if (!cityData) return []
+  return cityData.districts.map((name, index) => ({
+    code: `${profileForm.city}${String(index + 1).padStart(2, '0')}`,
+    name
+  }))
+})
+
+// 省市区变更处理
+const handleProvinceChange = () => {
+  profileForm.city = ''
+  profileForm.district = ''
+}
+
+const handleCityChange = () => {
+  profileForm.district = ''
+}
+
 const profileRules: FormRules = {
-  phone: [
-    { required: true, message: '请输入手机号', trigger: 'blur' },
-    { pattern: /^1[3-9]\d{9}$/, message: '请输入正确的手机号', trigger: 'blur' }
-  ],
   nickname: [
     { required: true, message: '请输入昵称', trigger: 'blur' },
     { min: 2, max: 50, message: '昵称长度为2-50个字符', trigger: 'blur' }
-  ],
-  email: [
-    { type: 'email', message: '请输入正确的邮箱', trigger: 'blur' }
   ]
 }
 
@@ -520,8 +844,66 @@ const emailRules: FormRules = {
   code: [{ required: true, message: '请输入验证码', trigger: 'blur' }]
 }
 
+// Forgot Password Form
+const forgotPasswordForm = reactive({
+  account: '',
+  code: '',
+  newPassword: '',
+  confirmPassword: ''
+})
+
+const validateConfirmPasswordForgot = (_rule: any, value: string, callback: any) => {
+  if (value !== forgotPasswordForm.newPassword) {
+    callback(new Error('两次输入的密码不一致'))
+  } else {
+    callback()
+  }
+}
+
+const forgotPasswordRules: FormRules = {
+  account: [
+    { required: true, message: '请输入手机号或邮箱', trigger: 'blur' },
+    { validator: (_rule, value, callback) => {
+        const isEmail = value && value.includes('@')
+        const isPhone = /^1[3-9]\d{9}$/.test(value || '')
+        if (!isEmail && !isPhone) callback(new Error('请输入正确的手机号或邮箱'))
+        else callback()
+      }, trigger: 'blur'
+    }
+  ],
+  code: [
+    { required: true, message: '请输入验证码', trigger: 'blur' },
+    { len: 6, message: '验证码为6位数字', trigger: 'blur' }
+  ],
+  newPassword: [
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 6, max: 20, message: '密码长度为6-20位', trigger: 'blur' }
+  ],
+  confirmPassword: [
+    { required: true, message: '请确认新密码', trigger: 'blur' },
+    { validator: validateConfirmPasswordForgot, trigger: 'blur' }
+  ]
+}
+
+const forgotPasswordCodeButtonText = computed(() => {
+  return forgotPasswordCountdown.value > 0 ? `${forgotPasswordCountdown.value}s` : '获取验证码'
+})
+
+const startForgotPasswordCountdown = () => {
+  forgotPasswordCodeDisabled.value = true
+  forgotPasswordCountdown.value = 60
+  const timer = setInterval(() => {
+    forgotPasswordCountdown.value--
+    if (forgotPasswordCountdown.value <= 0) {
+      clearInterval(timer)
+      forgotPasswordCodeDisabled.value = false
+    }
+  }, 1000)
+}
+
 // Methods
-const maskPhone = (phone: string) => {
+const maskPhone = (phone: string | null | undefined) => {
+  if (!phone) return '未绑定'
   return phone.replace(/(\d{3})\d{4}(\d{4})/, '$1****$2')
 }
 
@@ -544,14 +926,35 @@ const formatQuota = (value: number | typeof Infinity) => {
   return value === Infinity ? '无限' : value.toString()
 }
 
-const handleAvatarUpload = (file: File) => {
-  // TODO: Upload to OSS
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    userStore.userInfo.avatar_url = e.target?.result as string
-    ElMessage.success('头像上传成功')
+const handleAvatarUpload = async (file: File) => {
+  // 验证文件类型
+  if (!file.type.startsWith('image/')) {
+    ElMessage.error('请上传图片文件')
+    return false
   }
-  reader.readAsDataURL(file)
+  
+  // 验证文件大小（2MB）
+  if (file.size > 2 * 1024 * 1024) {
+    ElMessage.error('图片大小不能超过2MB')
+    return false
+  }
+  
+  try {
+    uploadingAvatar.value = true
+    const res = await uploadImage(file)
+    if (res.code === 20000 && res.data) {
+      userStore.userInfo.avatar_url = res.data.url
+      ElMessage.success('头像上传成功')
+    } else {
+      ElMessage.error(res.message || '头像上传失败')
+    }
+  } catch (error: any) {
+    console.error('Avatar upload error:', error)
+    ElMessage.error(error?.response?.data?.message || '头像上传失败')
+  } finally {
+    uploadingAvatar.value = false
+  }
+  
   return false
 }
 
@@ -575,39 +978,139 @@ const handleIdCardUpload = (file: File, type: 'front' | 'back' | 'face') => {
 
 const handleSaveProfile = async () => {
   if (!profileFormRef.value) return
-  await profileFormRef.value.validate((valid) => {
+  await profileFormRef.value.validate(async (valid) => {
     if (valid) {
-      // TODO: Call API
-      userStore.userInfo.phone = profileForm.phone
-      userStore.userInfo.nickname = profileForm.nickname
-      userStore.userInfo.email = profileForm.email || null
-      userStore.userProfile.gender = profileForm.gender as any
-      userStore.userProfile.birthday = profileForm.birthday || null
-      userStore.userProfile.address = profileForm.address || null
-      ElMessage.success('保存成功')
+      try {
+        savingProfile.value = true
+        
+        // 格式化地址
+        const provinceName = provinces.value.find(p => p.code === profileForm.province)?.name || ''
+        const cityName = cities.value.find(c => c.code === profileForm.city)?.name || ''
+        const districtName = districts.value.find(d => d.code === profileForm.district)?.name || ''
+        const fullAddress = formatAddress(provinceName, cityName, districtName, profileForm.detailAddress)
+        
+        // 调用API更新用户信息
+        const res = await updateProfile({
+          nickname: profileForm.nickname,
+          avatar_url: userStore.userInfo.avatar_url || undefined,
+          gender: profileForm.gender as 'male' | 'female' | 'unknown',
+          birthday: profileForm.birthday || undefined,
+          address: fullAddress || undefined
+        })
+        
+        if (res.code === 20000 && res.data) {
+          // 更新store中的用户信息
+          userStore.userInfo.nickname = profileForm.nickname
+          userStore.userInfo.avatar_url = res.data.avatar_url || userStore.userInfo.avatar_url
+          userStore.userProfile.gender = profileForm.gender as any
+          userStore.userProfile.birthday = profileForm.birthday || null
+          userStore.userProfile.address = fullAddress || null
+          
+          ElMessage.success('保存成功')
+        } else {
+          ElMessage.error(res.message || '保存失败')
+        }
+      } catch (error: any) {
+        console.error('Save profile error:', error)
+        ElMessage.error(error?.response?.data?.message || '保存失败')
+      } finally {
+        savingProfile.value = false
+      }
     }
   })
 }
 
 const resetProfileForm = () => {
-  profileForm.phone = userStore.userInfo.phone
+  const addressParts = initAddressParts()
   profileForm.nickname = userStore.userInfo.nickname
-  profileForm.email = userStore.userInfo.email || ''
   profileForm.gender = userStore.userProfile.gender || 'unknown'
   profileForm.birthday = userStore.userProfile.birthday || ''
-  profileForm.address = userStore.userProfile.address || ''
+  profileForm.province = addressParts.province
+  profileForm.city = addressParts.city
+  profileForm.district = addressParts.district
+  profileForm.detailAddress = addressParts.detailAddress
+}
+
+const openPasswordDialog = () => {
+  passwordMode.value = 'change'
+  showPasswordDialog.value = true
+}
+
+const switchPasswordMode = (mode: 'change' | 'reset') => {
+  passwordMode.value = mode
+}
+
+const resetPasswordDialog = () => {
+  // 重置所有表单数据
+  passwordForm.oldPassword = ''
+  passwordForm.newPassword = ''
+  passwordForm.confirmPassword = ''
+  
+  forgotPasswordForm.account = ''
+  forgotPasswordForm.code = ''
+  forgotPasswordForm.newPassword = ''
+  forgotPasswordForm.confirmPassword = ''
+}
+
+const handlePasswordSubmit = async () => {
+  if (passwordMode.value === 'change') {
+    await handleChangePassword()
+  } else {
+    await handleForgotPassword()
+  }
 }
 
 const handleChangePassword = async () => {
   if (!passwordFormRef.value) return
-  await passwordFormRef.value.validate((valid) => {
+  await passwordFormRef.value.validate(async (valid) => {
     if (valid) {
-      // TODO: Call API
-      ElMessage.success('密码修改成功')
-      showPasswordDialog.value = false
-      passwordForm.oldPassword = ''
-      passwordForm.newPassword = ''
-      passwordForm.confirmPassword = ''
+      try {
+        passwordLoading.value = true
+        await changePassword({
+          old_password: passwordForm.oldPassword,
+          new_password: passwordForm.newPassword,
+          confirm_password: passwordForm.confirmPassword
+        })
+        ElMessage.success('密码修改成功，请重新登录')
+        showPasswordDialog.value = false
+        // 退出登录
+        userStore.logout()
+        // 跳转到登录页
+        window.location.href = '/login'
+      } catch (error: any) {
+        console.error('Change password error:', error)
+        ElMessage.error(error?.response?.data?.message || '密码修改失败')
+      } finally {
+        passwordLoading.value = false
+      }
+    }
+  })
+}
+
+const handleForgotPassword = async () => {
+  if (!forgotPasswordFormRef.value) return
+  await forgotPasswordFormRef.value.validate(async (valid) => {
+    if (valid) {
+      try {
+        passwordLoading.value = true
+        await resetPassword({
+          account: forgotPasswordForm.account,
+          code: forgotPasswordForm.code,
+          new_password: forgotPasswordForm.newPassword,
+          confirm_password: forgotPasswordForm.confirmPassword
+        })
+        ElMessage.success('密码重置成功，请重新登录')
+        showPasswordDialog.value = false
+        // 退出登录
+        userStore.logout()
+        // 跳转到登录页
+        window.location.href = '/login'
+      } catch (error: any) {
+        console.error('Reset password error:', error)
+        ElMessage.error(error?.response?.data?.message || '密码重置失败')
+      } finally {
+        passwordLoading.value = false
+      }
     }
   })
 }
@@ -696,6 +1199,32 @@ const handleUpgrade = () => {
   ElMessage.info('正在跳转到订阅页面...')
   // router.push('/upgrade')
 }
+
+const sendForgotPasswordCode = async () => {
+  if (!forgotPasswordForm.account) {
+    ElMessage.warning('请先输入手机号或邮箱')
+    return
+  }
+  try {
+    sendingForgotPasswordCode.value = true
+    const isEmail = forgotPasswordForm.account.includes('@')
+    if (isEmail) {
+      await sendEmailCode(forgotPasswordForm.account, 'reset_password')
+    } else {
+      await sendSmsCode(forgotPasswordForm.account, 'reset_password')
+    }
+    ElMessage.success('验证码已发送')
+    startForgotPasswordCountdown()
+  } catch (error: any) {
+    console.error('Send code error:', error)
+    ElMessage.error(error?.response?.data?.message || '验证码发送失败')
+  } finally {
+    sendingForgotPasswordCode.value = false
+  }
+}
+
+// 移除原来的 handleForgotPassword, 因为已经重写了
+
 
 onMounted(() => {
   resetProfileForm()
@@ -796,6 +1325,25 @@ onMounted(() => {
 
 .settings-form {
   max-width: 800px;
+  
+  .readonly-input {
+    :deep(.el-input__inner) {
+      background-color: #f5f7fa;
+      color: #909399;
+      cursor: not-allowed;
+    }
+  }
+  
+  .form-tip {
+    display: block;
+    font-size: 12px;
+    color: #909399;
+    margin-top: 4px;
+  }
+  
+  .address-form {
+    width: 100%;
+  }
 }
 
 .security-list {
@@ -813,6 +1361,11 @@ onMounted(() => {
       p { margin: 0; font-size: 13px; color: #94a3b8; }
     }
   }
+}
+
+.form-link {
+  text-align: right;
+  margin-bottom: 10px;
 }
 
 .code-input {

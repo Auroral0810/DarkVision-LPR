@@ -8,8 +8,8 @@ export type Gender = 'male' | 'female' | 'unknown'
 export type VerificationStatus = 'pending' | 'approved' | 'rejected'
 
 export interface UserInfo {
-  id: string
-  phone: string
+  id: string | number
+  phone: string | null
   nickname: string
   email: string | null
   avatar_url: string | null
@@ -53,10 +53,10 @@ export interface ThirdPartyLogin {
 // Mock / fallback initial state
 const defaultUser: UserInfo = {
   id: '1',
-  phone: '13800138000',
+  phone: null,
   nickname: 'Guest User',
   email: 'guest@darkvision.com',
-  avatar_url: 'https://cube.elemecdn.com/0/88/03b0d39583f48206768a7534e55bcpng.png',
+  avatar_url: null,
   user_type: 'free',
   role: 'FREE',
   status: 'active',
@@ -175,13 +175,29 @@ export const useUserStore = defineStore('user', () => {
     storage.setItem('token', newToken)
     otherStorage.removeItem('token')
 
-    const normalizedRole = (payloadUser?.user_type || payloadUser?.role || 'free').toUpperCase() as UserRole
+    // 将 user_type 转换为 role
+    const userType = payloadUser?.user_type || 'free'
+    let normalizedRole: UserRole = 'FREE'
+    if (userType === 'vip') {
+      normalizedRole = 'VIP'
+    } else if (userType === 'enterprise') {
+      normalizedRole = 'COMPANY'
+    } else {
+      normalizedRole = 'FREE'
+    }
 
     userInfo.value = {
       ...defaultUser,
-      ...payloadUser,
-      role: normalizedRole as UserRole,
-      user_type: (payloadUser?.user_type || 'free') as UserType,
+      id: payloadUser?.id ?? defaultUser.id,
+      phone: payloadUser?.phone ?? null,
+      nickname: payloadUser?.nickname ?? defaultUser.nickname,
+      email: payloadUser?.email ?? null,
+      avatar_url: payloadUser?.avatar_url ?? null,
+      user_type: userType as UserType,
+      role: normalizedRole,
+      status: (payloadUser?.status || 'active') as 'active' | 'inactive' | 'banned',
+      created_at: payloadUser?.created_at || defaultUser.created_at,
+      last_login_at: payloadUser?.last_login_at ?? null,
     }
 
     storage.setItem('userInfo', JSON.stringify(userInfo.value))

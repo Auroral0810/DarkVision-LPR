@@ -159,6 +159,17 @@ class PasswordChange(BaseModel):
 
 class PasswordReset(BaseModel):
     """重置密码（通过验证码）"""
-    phone: str = Field(..., min_length=11, max_length=11)
-    sms_code: str = Field(..., min_length=6, max_length=6)
+    account: str = Field(..., description="手机号或邮箱")
+    code: str = Field(..., min_length=6, max_length=6, description="验证码")
     new_password: str = Field(..., min_length=6, max_length=20)
+    confirm_password: str = Field(..., min_length=6, max_length=20)
+
+
+# ===== 用户信息更新 =====
+class UserProfileUpdate(BaseModel):
+    """更新用户基本信息"""
+    nickname: Optional[str] = Field(None, min_length=2, max_length=50)
+    avatar_url: Optional[str] = None
+    gender: Optional[str] = Field(None, pattern="^(male|female|unknown)$")
+    birthday: Optional[str] = None  # YYYY-MM-DD格式
+    address: Optional[str] = None  # 省/市/区/详细地址

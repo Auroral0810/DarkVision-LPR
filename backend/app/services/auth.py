@@ -6,7 +6,7 @@ from app.models.user import User, UserType, UserStatus, UserProfile, UserMembers
 from app.core.security import verify_password, get_password_hash, create_access_token
 from app.schemas.user import (
     UserRegister, UserLoginByPhone, UserLoginByEmail,
-    UserDetailInfo
+    UserDetailInfo, PasswordChange
 )
 from app.core.cache import get_redis
 from app.core.logger import logger
@@ -53,7 +53,7 @@ def register_user(db: Session, user_data: UserRegister) -> User:
             
         if not verification_service.verify_code("register", user_data.phone, user_data.sms_code):
             raise ParameterException("短信验证码错误或已过期")
-        
+    
         # 检查手机号是否已存在
         existing_user = db.query(User).filter(User.phone == user_data.phone).first()
         if existing_user:
@@ -253,6 +253,44 @@ def reset_password(db: Session, reset_data: ResetPasswordRequest) -> User:
     
     return user
 
+def update_password(db: Session, user_id: int, password_data: PasswordChange) -> User:
+    """
+    修改密码（需要旧密码）
+    
+    Args:
+        db: 数据库会话
+        user_id: 用户ID
+        password_data: 密码修改信息
+        
+    Returns:
+        User: 更新后的用户对象
+    """
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise UserNotFoundException()
+    
+    # 验证旧密码
+    if not verify_password(password_data.old_password, user.password_hash):
+        raise ParameterException("旧密码错误")
+        
+    # 验证新密码一致性 (Schema层面已有部分校验，这里再次确认业务逻辑)
+    if password_data.new_password != password_data.confirm_password:
+        raise ParameterException("两次输入的密码不一致")
+        
+    if password_data.old_password == password_data.new_password:
+        raise ParameterException("新密码不能与旧密码相同")
+        
+    # 更新密码
+    user.password_hash = get_password_hash(password_data.new_password)
+    db.commit()
+    db.refresh(user)
+    
+    # 清除用户所有登录 Token (强制下线)
+    logout_user(user.id)
+    
+    return user
+
+
 def get_user_detail_info(db: Session, user_id: int) -> UserDetailInfo:
     """
     获取用户详细信息（包含会员、额度、认证状态等）
@@ -392,6 +430,71 @@ def create_user_token(user: User) -> str:
         redis_client.setex(token_key, 7 * 24 * 3600, access_token)
     
     return access_token
+
+
+def update_user_profile(db: Session, user_id: int, profile_data: dict) -> User:
+    """
+    更新用户基本信息
+    
+    Args:
+        db: 数据库会话
+        user_id: 用户ID
+        profile_data: 要更新的字段字典
+        
+    Returns:
+        User: 更新后的用户对象
+    """
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise UserNotFoundException()
+    
+    # 更新用户表字段
+    if 'nickname' in profile_data and profile_data['nickname']:
+        # 检查昵称是否已被其他用户使用
+        existing = db.query(User).filter(
+            User.nickname == profile_data['nickname'],
+            User.id != user_id
+        ).first()
+        if existing:
+            raise ParameterException("昵称已被使用")
+        user.nickname = profile_data['nickname']
+    
+    if 'avatar_url' in profile_data:
+        user.avatar_url = profile_data['avatar_url']
+    
+    # 更新用户扩展信息表
+    from app.models.user import UserProfile
+    profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
+    if not profile:
+        profile = UserProfile(user_id=user_id)
+        db.add(profile)
+    
+    if 'gender' in profile_data and profile_data['gender']:
+        profile.gender = profile_data['gender']
+    
+    if 'birthday' in profile_data:
+        if profile_data['birthday']:
+            from datetime import datetime
+            try:
+                profile.birthday = datetime.strptime(profile_data['birthday'], '%Y-%m-%d')
+            except ValueError:
+                raise ParameterException("生日格式错误，应为YYYY-MM-DD")
+        else:
+            profile.birthday = None
+    
+    if 'address' in profile_data:
+        profile.address = profile_data['address']
+    
+    db.commit()
+    db.refresh(user)
+    
+    # 清除用户信息缓存
+    redis_client = get_redis()
+    if redis_client:
+        cache_key = f"user_detail:{user_id}"
+        redis_client.delete(cache_key)
+    
+    return user
 
 
 def get_user_by_id(db: Session, user_id: int) -> User:

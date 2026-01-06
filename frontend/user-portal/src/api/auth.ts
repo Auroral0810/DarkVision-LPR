@@ -42,7 +42,29 @@ export function sendEmailCode(email: string, scene: string): Promise<UnifiedResp
   return request.post('/auth/email/send', { email, scene })
 }
 
-export function resetPassword(data: any): Promise<UnifiedResponse> {
+export function resetPassword(data: {
+  account: string
+  code: string
+  new_password: string
+  confirm_password: string
+}): Promise<UnifiedResponse> {
   return request.post('/auth/password/reset', data)
+}
+
+// 用户信息更新
+export interface UpdateProfileRequest {
+  nickname?: string
+  avatar_url?: string
+  gender?: 'male' | 'female' | 'unknown'
+  birthday?: string
+  address?: string
+}
+
+export function updateProfile(data: UpdateProfileRequest): Promise<UnifiedResponse<any>> {
+  return request.put('/users/profile', data)
+}
+
+export function changePassword(data: any): Promise<UnifiedResponse> {
+  return request.put('/users/password', data)
 }
 
