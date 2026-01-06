@@ -17,7 +17,7 @@
 ![License](https://img.shields.io/badge/License-MIT-lightgrey)
 ![Email](https://img.shields.io/badge/Email-15968588744%40163.com-red)
 
-[English](./README_EN.md) | [中文](./README.md)
+[English](./READM.md) | [中文](./README_ZH.md
 
 ---
 
@@ -495,7 +495,7 @@ We are a passionate technical team dedicated to empowering traditional industrie
 
 ## ⭐ Star & Stats
 
-[![Star History Chart](https://starchart.cc/Auroral0810/DarkVision-LPR.svg)](https://starchart.cc/Auroral0810/DarkVision-LPR)
+[![Star History Chart](https://api.star-history.com/svg?repos=Auroral0810/DarkVision-LPR&type=Date)](https://star-history.com/#Auroral0810/DarkVision-LPR&Date)
 
 ![GitHub Repo stars](https://img.shields.io/github/stars/Auroral0810/DarkVision-LPR?style=social)
 ![GitHub forks](https://img.shields.io/github/forks/Auroral0810/DarkVision-LPR?style=social)

@@ -17,7 +17,7 @@
 ![License](https://img.shields.io/badge/License-MIT-lightgrey)
 ![Email](https://img.shields.io/badge/Email-15968588744%40163.com-red)
 
-[English](./README_EN.md) | [中文](./README.md)
+[English](./README.md) | [中文](./README_ZH.md)
 
 ---
 
@@ -493,9 +493,9 @@ VITE_API_BASE_URL=http://localhost:8000
 
 - **Auroral** - 项目发起人 & 全栈架构师
 
-## ⭐ Star & Stats · Star 历史与统计
+## ⭐ Star 历史与统计
 
-[![Star History Chart](https://starchart.cc/Auroral0810/DarkVision-LPR.svg)](https://starchart.cc/Auroral0810/DarkVision-LPR)
+[![Star History Chart](https://api.star-history.com/svg?repos=Auroral0810/DarkVision-LPR&type=Date)](https://star-history.com/#Auroral0810/DarkVision-LPR&Date)
 
 ![GitHub Repo stars](https://img.shields.io/github/stars/Auroral0810/DarkVision-LPR?style=social)
 ![GitHub forks](https://img.shields.io/github/forks/Auroral0810/DarkVision-LPR?style=social)
