@@ -10,7 +10,8 @@ from app.services.auth import (
     update_user_profile,
     get_user_detail_info,
     update_password,
-    submit_real_name_verification
+    submit_real_name_verification,
+    withdraw_real_name_verification
 )
 from app.core.exceptions import UnauthorizedException, TokenInvalidException
 
@@ -112,3 +113,14 @@ def verify_real_name(
     """
     submit_real_name_verification(db, user_id, verify_data)
     return success(message="实名认证已经提交，请等待管理员审核照片")
+
+@router.post("/verify/withdraw", response_model=UnifiedResponse, summary="撤回实名认证申请", tags=["用户"])
+def withdraw_verification(
+    user_id: int = Depends(get_current_user_id),
+    db: Session = Depends(get_db)
+):
+    """
+    撤回正在审核中的实名认证申请
+    """
+    withdraw_real_name_verification(db, user_id)
+    return success(message="申请已成功撤回")

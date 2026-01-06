@@ -801,3 +801,35 @@ def submit_real_name_verification(db: Session, user_id: int, verify_data: RealNa
         redis_client.delete(f"user_detail:{user_id}")
     
     return True
+
+
+def withdraw_real_name_verification(db: Session, user_id: int):
+    """
+    撤回实名认证申请
+    
+    只有在审核中（pending）状态下才能撤回
+    撤回后直接删除申请记录
+    """
+    from app.models.user import RealNameVerification
+    from app.core.exceptions import ParameterException
+    
+    verification = db.query(RealNameVerification).filter(
+        RealNameVerification.user_id == user_id
+    ).first()
+    
+    if not verification:
+        raise ParameterException("未找到实名认证申请记录")
+        
+    if verification.status != "pending":
+        raise ParameterException(f"当前状态为 {verification.status}，无法撤回申请")
+    
+    # 删除申请记录
+    db.delete(verification)
+    db.commit()
+    
+    # 清除用户信息缓存
+    redis_client = get_redis()
+    if redis_client:
+        redis_client.delete(f"user_detail:{user_id}")
+    
+    return True

@@ -40,6 +40,12 @@ class User(Base):
     # 关系
     profile = relationship("UserProfile", back_populates="user", uselist=False)
     membership = relationship("UserMembership", back_populates="user", uselist=False)
+    real_name_verification = relationship("RealNameVerification", back_populates="user", uselist=False, foreign_keys="[RealNameVerification.user_id]")
+    
+    @property
+    def is_verified(self) -> bool:
+        """是否已通过实名认证"""
+        return self.real_name_verification and self.real_name_verification.status == "approved"
 
 class UserProfile(Base):
     __tablename__ = "user_profiles"
@@ -96,6 +102,9 @@ class RealNameVerification(Base):
     reviewed_by = Column(BigInteger, ForeignKey("users.id"), nullable=True)
     reviewed_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
+    
+    user = relationship("User", back_populates="real_name_verification", foreign_keys=[user_id])
+    reviewer = relationship("User", foreign_keys=[reviewed_by])
 
 class LoginLog(Base):
     """登录日志"""

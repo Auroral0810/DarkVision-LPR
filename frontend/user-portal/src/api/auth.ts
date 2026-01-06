@@ -84,3 +84,7 @@ export interface VerificationSubmitRequest {
 export function submitVerification(data: VerificationSubmitRequest): Promise<UnifiedResponse> {
   return request.post('/users/verify', data)
 }
+
+export function withdrawVerification(): Promise<UnifiedResponse> {
+  return request.post('/users/verify/withdraw')
+}

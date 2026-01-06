@@ -656,7 +656,7 @@ import {
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { uploadImage } from '@/api/recognition'
-import { updateProfile, resetPassword, changePassword, sendSmsCode as sendSmsCodeAPI, sendEmailCode as sendEmailCodeAPI, submitVerification } from '@/api/auth'
+import { updateProfile, resetPassword, changePassword, sendSmsCode as sendSmsCodeAPI, sendEmailCode as sendEmailCodeAPI, submitVerification, withdrawVerification } from '@/api/auth'
 
 const userStore = useUserStore()
 const activeTab = ref('profile')
@@ -1049,9 +1049,9 @@ const maskOpenId = (openId: string) => {
   return openId.length > 8 ? openId.slice(0, 4) + '****' + openId.slice(-4) : '****'
 }
 
-const maskName = (name: string | null) => {
+const maskName = (name: string | null | undefined) => {
   if (!name) return ''
-  if (name.length <= 1) return '*'
+  if (name.length <= 1) return name
   return name.charAt(0) + '*'.repeat(name.length - 1)
 }
 
@@ -1405,11 +1405,15 @@ const handleWithdrawVerification = async () => {
       cancelButtonText: '取消'
     })
     
-    userStore.withdrawVerification()
+    await withdrawVerification()
     ElMessage.success('已撤回申请')
+    await userStore.updateUserInfo()
     resetVerifyForm() 
-  } catch {
-    // 用户取消了操作
+  } catch (error: any) {
+    if (error !== 'cancel') {
+      console.error('Withdraw error:', error)
+      ElMessage.error(error?.response?.data?.message || '撤回失败，请重试')
+    }
   }
 }
 
