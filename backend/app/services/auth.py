@@ -762,7 +762,7 @@ def submit_real_name_verification(db: Session, user_id: int, verify_data: RealNa
         if res["res"] in ["2", "3"]:
             raise ParameterException(f"实名认证失败：{res['description']}")
         # 其他接口请求错误
-        raise ParameterException(f"实名核验接口异常: {res['description']}")
+        raise ParameterException(f"{res['description']}")
     
     # 2. 如果核验一致 (res="1")，记录申请等待照片人工审核
     # 检查是否已有申请

@@ -53,12 +53,22 @@ class IdVerificationService:
             logger.info(f"Calling Aliyun ID Verification API for {name}")
             response = self.http.request('GET', url, headers=headers)
             
+            
             if response.status != 200:
-                logger.error(f"Aliyun ID Verification API failed with status {response.status}: {response.data.decode('utf-8')}")
+                # 尝试解析响应体获取更具体的错误信息
+                try:
+                    error_content = response.data.decode('utf-8')
+                    error_json = json.loads(error_content)
+                    error_msg = error_json.get('msg', f"接口请求失败 (Status: {response.status})")
+                    logger.error(f"Aliyun ID Verification API failed with status {response.status}: {error_content}")
+                except:
+                    error_msg = f"接口请求失败 (Status: {response.status})"
+                    logger.error(f"Aliyun ID Verification API failed with status {response.status}: {response.data.decode('utf-8', errors='ignore')}")
+                
                 return {
                     "success": False,
                     "res": "0",
-                    "description": f"接口请求失败 (Status: {response.status})",
+                    "description": error_msg,
                     "data": {}
                 }
             
