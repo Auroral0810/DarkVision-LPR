@@ -367,13 +367,30 @@ def get_user_detail_info(db: Session, user_id: int) -> UserDetailInfo:
             SubAccount.enterprise_user_id == user_id
         ).scalar() or 0
     
+    # 处理头像URL：如果是OSS URL，生成带签名的临时访问URL
+    avatar_display_url = user.avatar_url
+    if avatar_display_url and 'oss-accesspoint.aliyuncs.com' in avatar_display_url:
+        try:
+            from app.utils.oss import oss_uploader
+            # 从完整URL中提取object_key
+            # 例如: https://xxx.oss-accesspoint.aliyuncs.com/lpr/upload/xxx.jpg
+            import re
+            match = re.search(r'oss-accesspoint\.aliyuncs\.com/(.+)', avatar_display_url)
+            if match:
+                object_key = match.group(1)
+                # 生成24小时有效的签名URL
+                avatar_display_url = oss_uploader.generate_presigned_url(object_key, expires=86400)
+        except Exception as e:
+            logger.warning(f"Failed to generate presigned URL for avatar: {e}")
+            # 如果签名失败，保持原URL
+    
     # 构建详细信息
     user_detail = UserDetailInfo(
         id=user.id,
         phone=user.phone,
         nickname=user.nickname,
         email=user.email,
-        avatar_url=user.avatar_url,
+        avatar_url=avatar_display_url,  # 使用签名后的URL
         user_type=user.user_type,
         status=user.status,
         membership_type=membership.membership_type if membership else "free",

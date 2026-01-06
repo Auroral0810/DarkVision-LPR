@@ -70,4 +70,21 @@ class OSSUploader:
             logger.error(f"OSS Download Exception: {e}")
             raise e
 
+    def generate_presigned_url(self, object_key: str, expires: int = 3600) -> str:
+        """
+        生成带签名的临时访问URL
+        :param object_key: OSS Object Key
+        :param expires: 过期时间(秒)，默认1小时
+        :return: 签名URL
+        """
+        if not self.enabled:
+            raise Exception("OSS is not configured")
+            
+        try:
+            url = self.bucket.sign_url('GET', object_key, expires)
+            return url
+        except Exception as e:
+            logger.error(f"OSS Generate Presigned URL Exception: {e}")
+            raise e
+
 oss_uploader = OSSUploader()

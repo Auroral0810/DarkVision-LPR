@@ -609,6 +609,9 @@ const forgotPasswordCodeDisabled = ref(false)
 const forgotPasswordCountdown = ref(0)
 const forgotPasswordMethod = ref<'phone' | 'email'>('phone')
 
+// 存储原始OSS URL（用于保存到数据库）
+const originalAvatarUrl = ref<string>('')
+
 const availableMethods = computed(() => {
   const methods: { label: string; value: 'phone' | 'email' }[] = []
   if (userStore.userInfo.phone) methods.push({ label: '手机号', value: 'phone' })
@@ -971,8 +974,11 @@ const handleAvatarUpload = async (file: File) => {
     uploadingAvatar.value = true
     const res = await uploadImage(file)
     if (res.code === 20000 && res.data) {
-      userStore.userInfo.avatar_url = res.data.url
-    ElMessage.success('头像上传成功')
+      // 保存原始OSS URL（用于后端保存）
+      originalAvatarUrl.value = res.data.url
+      // 使用签名URL用于立即显示
+      userStore.userInfo.avatar_url = res.data.signed_url || res.data.url
+      ElMessage.success('头像上传成功，请点击"保存修改"以保存更改')
     } else {
       ElMessage.error(res.message || '头像上传失败')
     }
@@ -1018,9 +1024,12 @@ const handleSaveProfile = async () => {
         const fullAddress = formatAddress(provinceName, cityName, districtName, profileForm.detailAddress)
         
         // 调用API更新用户信息
+        // 使用原始OSS URL（如果有新上传），否则使用当前的avatar_url
+        const avatarToSave = originalAvatarUrl.value || userStore.userInfo.avatar_url
+        
         const res = await updateProfile({
           nickname: profileForm.nickname,
-          avatar_url: userStore.userInfo.avatar_url || undefined,
+          avatar_url: avatarToSave || undefined,
           gender: profileForm.gender as 'male' | 'female' | 'unknown',
           birthday: profileForm.birthday || undefined,
           address: fullAddress || undefined
@@ -1028,13 +1037,17 @@ const handleSaveProfile = async () => {
         
         if (res.code === 20000 && res.data) {
           // 更新store中的用户信息
-      userStore.userInfo.nickname = profileForm.nickname
+          userStore.userInfo.nickname = profileForm.nickname
+          // 后端返回的是签名URL，直接使用
           userStore.userInfo.avatar_url = res.data.avatar_url || userStore.userInfo.avatar_url
-      userStore.userProfile.gender = profileForm.gender as any
-      userStore.userProfile.birthday = profileForm.birthday || null
+          userStore.userProfile.gender = profileForm.gender as any
+          userStore.userProfile.birthday = profileForm.birthday || null
           userStore.userProfile.address = fullAddress || null
           
-      ElMessage.success('保存成功')
+          // 清空临时存储的原始URL
+          originalAvatarUrl.value = ''
+          
+          ElMessage.success('保存成功')
         } else {
           ElMessage.error(res.message || '保存失败')
         }

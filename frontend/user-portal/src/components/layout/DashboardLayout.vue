@@ -51,7 +51,7 @@
 
         <div class="user-profile">
           <div class="user-info">
-            <el-avatar :size="36" :src="userStore.userInfo.avatar" />
+            <el-avatar :size="36" :src="userStore.userInfo.avatar_url || ''" />
             <div class="user-details">
               <span class="username">{{ userStore.userInfo.nickname }}</span>
               <span class="email">{{ userStore.userInfo.email }}</span>

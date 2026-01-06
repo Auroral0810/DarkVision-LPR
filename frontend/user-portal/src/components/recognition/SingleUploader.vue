@@ -184,14 +184,19 @@ const processFile = async (file: File) => {
   // Reset
   resetState()
   
-  // Preview
+  // Preview (先用本地URL)
   previewUrl.value = URL.createObjectURL(file)
   fileName.value = file.name
   uploading.value = true
   
   try {
     const res = await uploadImage(file)
+    // 保存原始OSS URL用于识别
     imageUrl.value = res.data.url
+    // 如果有签名URL，用于预览显示
+    if (res.data.signed_url) {
+      previewUrl.value = res.data.signed_url
+    }
     ElMessage.success('图片上传成功')
   } catch (error) {
     console.error(error)
