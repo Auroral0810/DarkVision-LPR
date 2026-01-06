@@ -5,7 +5,7 @@ from app.core.response import success, error, UnifiedResponse
 from app.api.deps import get_current_user
 from app.models.user import User
 from app.services.recognition import recognition_service
-from app.schemas.recognition import RecognitionResultResponse
+from app.schemas.recognition import RecognitionResultResponse, BatchRecognitionRequest
 from app.schemas.upload import RecognizeByUrlRequest
 
 router = APIRouter()
@@ -92,3 +92,36 @@ async def start_recognition_task(
     )
     
     return success(data={"task_uuid": task.task_uuid})
+
+@router.post("/batch", summary="开始批量图片识别任务")
+async def start_batch_recognition(
+    background_tasks: BackgroundTasks,
+    request: BatchRecognitionRequest = Body(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    批量识别任务
+    1. 验证数量限制
+    2. 创建批量任务
+    3. 后台异步处理
+    """
+    if len(request.image_urls) > 50:
+        return error(message="单次批量识别最多支持 50 张图片")
+        
+    if not request.image_urls:
+        return error(message="请至少提供一张图片URL")
+
+    # 1. Start Task
+    task = recognition_service.create_task(current_user.id, "batch", db)
+    
+    # 2. Async Process
+    background_tasks.add_task(
+        recognition_service.process_batch_task_async,
+        task.task_uuid,
+        request.image_urls,
+        current_user.id
+    )
+    
+    return success(data={"task_uuid": task.task_uuid})
+

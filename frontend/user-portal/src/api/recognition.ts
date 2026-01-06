@@ -37,3 +37,13 @@ export const startRecognitionTask = (imageUrl: string) => {
     image_url: imageUrl
   })
 }
+/**
+ * 开始批量识别任务 (WebSocket模式)
+ * @param imageUrls OSS图片URL列表
+ * @returns Promise<{task_uuid: string}>
+ */
+export const startBatchRecognitionTask = (imageUrls: string[]) => {
+  return request.post('/recognition/batch', {
+    image_urls: imageUrls
+  })
+}

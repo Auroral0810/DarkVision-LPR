@@ -256,8 +256,182 @@ class RecognitionService:
                 "status": "failed",
                 "message": str(e)
             })
+    async def process_batch_task_async(self, task_uuid: str, image_urls: List[str], user_id: int):
+        """异步处理批量识别任务"""
+        from app.core.database import SessionLocal
+        db = SessionLocal()
+        
+        logger.info(f"Starting async BATCH processing for task {task_uuid}, count={len(image_urls)}")
+        
+        try:
+            task = db.query(RecognitionTask).filter(RecognitionTask.task_uuid == task_uuid).first()
+            if not task:
+                logger.error(f"Task {task_uuid} not found")
+                return
+
+            task.status = 'processing'
+            task.started_at = datetime.now()
+            task.total_items = len(image_urls)
+            db.commit()
+            
+            await self.update_task_progress(task_uuid, 0, "processing", db, f"开始处理，共 {len(image_urls)} 张")
+            
+            # Concurrency Control
+            semaphore = asyncio.Semaphore(3) # Max 3 concurrent recognitions
+            
+            processed_count = 0
+            success_count = 0
+            failed_count = 0
+            
+
+            async def process_single_item(url):
+                nonlocal processed_count, success_count, failed_count
+                async with semaphore:
+                    result_data = None
+                    try:
+                        record = await self._process_single_image_internal(url, task.id, user_id, db)
+                        if record:
+                            success_count += 1
+                            result_data = {
+                                "status": "success", 
+                                "plate": record.license_plate, 
+                                "confidence": record.confidence,
+                                "type": record.plate_type,
+                                "url": url
+                            }
+                        else:
+                            failed_count += 1
+                            result_data = {"status": "failed", "error": "No plate detected", "url": url}
+                    except Exception as e:
+                        failed_count += 1
+                        logger.error(f"Batch item failed {url}: {e}")
+                        result_data = {"status": "failed", "error": str(e), "url": url}
+                    finally:
+                        processed_count += 1
+                        progress = round((processed_count / len(image_urls)) * 100, 1)
+                        
+                        # Use background task manager to broadcast to avoid blocking? 
+                        # await is fine here as it is async
+                        await manager.broadcast_to_task(task_uuid, {
+                            "type": "item_complete",
+                            "data": result_data,
+                            "progress": progress,
+                            "processed_count": processed_count,
+                            "total_count": len(image_urls)
+                        })
+
+                        return result_data
+
+
+            # Gather all tasks
+            tasks = [process_single_item(url) for url in image_urls]
+            results = await asyncio.gather(*tasks)
+            
+            # Finalize Task
+            task.status = 'completed'
+            task.progress = 100.00
+            task.success_count = success_count
+            task.failed_count = failed_count
+            task.finished_at = datetime.now()
+            db.commit()
+
+            # Push Final Result
+            await manager.broadcast_to_task(task_uuid, {
+                "type": "result",
+                "progress": 100,
+                "status": "completed",
+                "message": f"批量处理完成，成功 {success_count} 张",
+                "data": results 
+            })
+
+        except Exception as e:
+            logger.error(f"Batch Task {task_uuid} failed: {e}")
+            db.rollback()
+            task = db.query(RecognitionTask).filter(RecognitionTask.task_uuid == task_uuid).first()
+            if task:
+                task.status = 'failed'
+                task.finished_at = datetime.now()
+                db.commit()
+            
+            await manager.broadcast_to_task(task_uuid, {
+                "type": "error",
+                "status": "failed",
+                "message": str(e)
+            })
         finally:
             db.close()
+
+    async def _process_single_image_internal(self, image_url: str, task_id: int, user_id: int, db: Session) -> Optional[RecognitionRecord]:
+        """Internal helper for single image processing without task overhead"""
+        # 1. Download
+        await run_cpu_bound(self._init_models)
+        
+        try:
+            if image_url.startswith('http'):
+                # Check if it's our own OSS URL
+                oss_url_prefix = settings.OSS_URL
+                if oss_url_prefix and oss_url_prefix in image_url:
+                     object_key = image_url.replace(oss_url_prefix, "")
+                     if object_key.startswith("/"):
+                         object_key = object_key[1:]
+                     file_content = await run_cpu_bound(oss_uploader.get_file_content, object_key)
+                else:
+                    response = await run_cpu_bound(requests.get, image_url, timeout=15)
+                    response.raise_for_status()
+                    file_content = response.content
+            else:
+                 with open(image_url, 'rb') as f:
+                    file_content = f.read()
+        except Exception as e:
+            raise Exception(f"Download/Read failed: {str(e)}")
+
+        # Save temp
+        filename = f"{uuid.uuid4()}.jpg"
+        upload_path = os.path.join(settings.UPLOAD_DIR, "temp")
+        os.makedirs(upload_path, exist_ok=True)
+        temp_file_path = os.path.join(upload_path, filename)
+        
+        with open(temp_file_path, "wb") as buffer:
+            buffer.write(file_content)
+
+        try:
+            # 2. Detection
+            img_rgb, detections = await run_cpu_bound(self.detector.detect, temp_file_path)
+            
+            if not detections:
+                return None
+
+            detection = detections[0]
+            
+            # 3. Enhancement
+            if detection['keypoints'] is not None:
+                rectified = await run_cpu_bound(PlateEnhancer.rectify_plate_with_keypoints, img_rgb, detection['keypoints'])
+            else:
+                rectified = await run_cpu_bound(PlateEnhancer.rectify_plate_with_bbox, img_rgb, detection['bbox'])
+
+            # 4. Recognition
+            plate_number, _ = await run_cpu_bound(self.recognizer.recognize, rectified)
+            
+            # Save Record
+            record = RecognitionRecord(
+                task_id=task_id,
+                user_id=user_id,
+                original_image_url=image_url,
+                license_plate=plate_number,
+                confidence=float(detection['conf']),
+                bbox=detection['bbox'],
+                plate_type="blue", # Placeholder
+                processed_at=datetime.now()
+            )
+            db.add(record)
+            db.flush() # Ensure ID is generated if needed, commit handled by caller
+            db.refresh(record)
+            
+            return record
+
+        finally:
+            if os.path.exists(temp_file_path):
+                os.remove(temp_file_path)
 
     async def process_image(self, file: UploadFile, user_id: int, db: Session) -> Optional[RecognitionRecord]:
         """Keep legacy method for backward compatibility if needed, or redirect to async logic"""

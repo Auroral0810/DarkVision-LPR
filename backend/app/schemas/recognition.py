@@ -1,4 +1,4 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List, Any
 from datetime import datetime
 
@@ -29,3 +29,5 @@ class RecognitionTaskResponse(BaseModel):
     class Config:
         from_attributes = True
 
+class BatchRecognitionRequest(BaseModel):
+    image_urls: List[str] = Field(..., max_items=50, description="OSS image URLs list, max 50")

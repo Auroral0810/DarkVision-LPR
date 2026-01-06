@@ -6,7 +6,7 @@
         <p class="subtitle">{{ t.subtitle }}</p>
       </div>
       <div class="header-right">
-        <el-radio-group v-model="userStore.lang" size="small" @change="userStore.setLang" style="margin-right: 16px;">
+        <el-radio-group v-model="userStore.lang" size="small" @change="(val: any) => userStore.setLang(val)" style="margin-right: 16px;">
           <el-radio-button label="zh-cn">中文</el-radio-button>
           <el-radio-button label="en">EN</el-radio-button>
         </el-radio-group>
@@ -90,7 +90,7 @@
         
         <el-table-column prop="plate_type" :label="t.type" width="100">
           <template #default="scope">
-            <el-tag :type="getPlateTypeColor(scope.row.plate_type)" effect="light" size="small">
+            <el-tag :type="getPlateTypeColor(scope.row.plate_type) as 'primary' | 'success' | 'warning' | 'info' | 'danger'" effect="light" size="small">
               {{ formatPlateType(scope.row.plate_type) }}
             </el-tag>
           </template>
@@ -198,7 +198,7 @@
             <span class="plate-number-large">{{ currentRecord.license_plate }}</span>
           </el-descriptions-item>
           <el-descriptions-item :label="t.type">
-            <el-tag :type="getPlateTypeColor(currentRecord.plate_type)" effect="light">
+            <el-tag :type="getPlateTypeColor(currentRecord.plate_type) as 'primary' | 'success' | 'warning' | 'info' | 'danger'" effect="light">
               {{ formatPlateType(currentRecord.plate_type) }}
             </el-tag>
           </el-descriptions-item>
@@ -235,7 +235,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useUserStore } from '@/store/user'
-import { Search, Picture, Download } from '@element-plus/icons-vue'
+import { Picture } from '@element-plus/icons-vue'
 import { getRecognitionHistory, deleteRecognitionRecord } from '@/api/history'
 import { ElMessageBox, ElMessage } from 'element-plus'
 
@@ -444,7 +444,7 @@ const handleDeleteFromDetail = () => {
 
 const getPlateTypeColor = (type: string) => {
   switch (type) {
-    case 'blue': return ''
+    case 'blue': return 'primary'
     case 'green': return 'success'
     case 'yellow': return 'warning'
     case 'white': return 'info'
