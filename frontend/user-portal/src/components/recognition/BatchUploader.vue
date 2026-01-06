@@ -72,7 +72,9 @@
           <div class="status-overlay" v-if="file.status !== 'pending'">
              <el-icon v-if="file.status === 'success'" class="success-icon"><CircleCheckFilled /></el-icon>
              <el-icon v-if="file.status === 'error'" class="error-icon"><CircleCloseFilled /></el-icon>
-             <el-loading v-if="file.status === 'uploading' || file.status === 'processing'" class="loading-icon" />
+             <div v-if="file.status === 'uploading' || file.status === 'processing'" class="loading-wrapper">
+                <el-icon class="is-loading"><Loading /></el-icon>
+             </div>
           </div>
         </div>
         
@@ -119,8 +121,7 @@
     <div class="results-container" v-if="status === 'finished'">
       <div class="results-header">
         <h4>识别结果 (成功: {{ successCount }}, 失败: {{ failedCount }})</h4>
-        <!-- Export Placeholder -->
-        <el-button type="success" plain @click="ElMessage.info('导出功能开发中')">导出结果</el-button>
+        <el-button type="success" plain @click="exportData">导出结果</el-button>
       </div>
       
       <el-table :data="files" style="width: 100%" border stripe>
@@ -182,7 +183,7 @@
 
 <script setup lang="ts">
 import { ref, computed, onBeforeUnmount } from 'vue'
-import { UploadFilled, CircleCheckFilled, CircleCloseFilled, Close, Plus } from '@element-plus/icons-vue'
+import { UploadFilled, CircleCheckFilled, CircleCloseFilled, Close, Plus, Loading } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 import { uploadImage, startBatchRecognitionTask } from '@/api/recognition'
 
@@ -440,6 +441,34 @@ const formatPlateType = (type?: string) => {
   return map[type] || type
 }
 
+const exportData = () => {
+  if (files.value.length === 0) return
+  
+  // CSV Header
+  const headers = ['文件名', '识别车牌', '车牌类型', '置信度', '状态', '备注', '图片链接']
+  const rows = files.value.map(f => {
+    return [
+       f.file.name,
+       f.result?.plate || '',
+       formatPlateType(f.result?.type),
+       f.result?.confidence ? `${f.result.confidence}%` : '',
+       getStatusText(f.status),
+       f.error || '',
+       f.ossUrl || ''
+    ].map(field => `"${field}"`).join(',') // Quote fields
+  })
+  
+  const csvContent = [headers.join(','), ...rows].join('\n')
+  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.setAttribute('download', `batch_recognition_results_${new Date().getTime()}.csv`)
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
+}
+
 const getStatusType = (s: string) => {
     if(s === 'success') return 'success'
     if(s === 'error') return 'danger'
@@ -586,6 +615,7 @@ onBeforeUnmount(() => {
           
           .success-icon { color: #22c55e; }
           .error-icon { color: #ef4444; }
+          .loading-wrapper { color: #3b82f6; font-size: 28px; }
       }
     }
     

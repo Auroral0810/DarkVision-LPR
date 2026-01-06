@@ -10,7 +10,7 @@
           <el-radio-button label="zh-cn">中文</el-radio-button>
           <el-radio-button label="en">EN</el-radio-button>
         </el-radio-group>
-        <el-button type="primary" plain icon="Download" v-if="userStore.isVIP">{{ t.export }}</el-button>
+        <el-button type="primary" plain icon="Download" v-if="userStore.isVIP" @click="handleExport">{{ t.export }}</el-button>
       </div>
     </div>
 
@@ -357,6 +357,43 @@ const fetchData = async () => {
   } finally {
     loading.value = false
   }
+}
+
+const handleExport = () => {
+  if (tableData.value.length === 0) return
+  
+  // CSV Header
+  const headers = ['URL', 'Filename', 'Plate Number', 'Vehicle Type', 'Confidence', 'Time', 'BBox']
+  
+  const rows = tableData.value.map((record: any) => {
+    // Process BBox if it exists (assuming json string or array)
+    let bboxStr = ''
+    try {
+        if (record.detection_data) {
+           bboxStr = JSON.stringify(record.detection_data)
+        }
+    } catch(e) {}
+
+    return [
+       record.original_image_url || '',
+       record.filename || '',
+       record.license_plate || '',
+       formatPlateType(record.plate_type),
+       record.confidence ? `${(record.confidence * 100).toFixed(2)}%` : '',
+       new Date(record.created_at).toLocaleString(),
+       bboxStr.replace(/"/g, '""') // Escape quotes in CSV
+    ].map(field => `"${field}"`).join(',')
+  })
+  
+  const csvContent = [headers.join(','), ...rows].join('\n')
+  const blob = new Blob(['\uFEFF' + csvContent], { type: 'text/csv;charset=utf-8;' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+  link.href = url
+  link.setAttribute('download', `history_export_${new Date().getTime()}.csv`)
+  document.body.appendChild(link)
+  link.click()
+  document.body.removeChild(link)
 }
 
 const handleFilter = () => {
