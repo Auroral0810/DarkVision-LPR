@@ -22,7 +22,8 @@ from app.services.auth import (
     create_user_token,
     get_user_by_id,
     logout_user,
-    reset_password
+    reset_password,
+    log_login_attempt
 )
 from app.services.verification import verification_service
 from app.core.exceptions import UnauthorizedException, TokenInvalidException, ParameterException
@@ -113,35 +114,50 @@ def login_by_phone(
     - **access_token**: JWT访问令牌
     - **user_info**: 用户详细信息（包含会员状态、额度等）
     """
-    # 判断使用哪种登录方式
-    if login_data.password:
-        user = authenticate_by_phone_password(db, login_data)
-    elif login_data.sms_code:
-        user = authenticate_by_phone_code(db, login_data)
-    else:
-        raise ParameterException("请提供密码或验证码")
-    
-    # 检查用户状态
-    check_user_status(user)
-    
-    # 更新登录信息
     client_ip = request.client.host if request.client else None
-    update_login_info(db, user, client_ip)
+    user_agent = request.headers.get("user-agent", "")
+    user_id = None
+    account = login_data.phone
     
-    # 创建token
-    access_token = create_user_token(user)
-    
-    # 获取用户详细信息
-    user_detail = get_user_detail_info(db, user.id)
-    
-    return success(
-        data={
-            "access_token": access_token,
-            "token_type": "bearer",
-            "user_info": user_detail.model_dump(mode='json')
-        },
-        message="登录成功"
-    )
+    try:
+        # 判断使用哪种登录方式
+        if login_data.password:
+            user = authenticate_by_phone_password(db, login_data)
+        elif login_data.sms_code:
+            user = authenticate_by_phone_code(db, login_data)
+        else:
+            raise ParameterException("请提供密码或验证码")
+        
+        user_id = user.id
+        
+        # 检查用户状态
+        check_user_status(user)
+        
+        # 更新登录信息
+        update_login_info(db, user, client_ip)
+        
+        # 创建token
+        access_token = create_user_token(user)
+        
+        # 获取用户详细信息
+        user_detail = get_user_detail_info(db, user.id)
+        
+        # 记录成功登录日志
+        log_login_attempt(db, user_id, client_ip, user_agent, success=True)
+        
+        return success(
+            data={
+                "access_token": access_token,
+                "token_type": "bearer",
+                "user_info": user_detail.model_dump(mode='json')
+            },
+            message="登录成功"
+        )
+    except Exception as e:
+        # 记录失败登录日志
+        failure_reason = str(e)
+        log_login_attempt(db, user_id, client_ip, user_agent, success=False, failure_reason=failure_reason, account=account)
+        raise
 
 
 @router.post("/login/email", response_model=UnifiedResponse, summary="邮箱登录", tags=["认证"])
@@ -169,35 +185,50 @@ def login_by_email(
     }
     ```
     """
-    # 判断使用哪种登录方式
-    if login_data.password:
-        user = authenticate_by_email_password(db, login_data)
-    elif login_data.email_code:
-        user = authenticate_by_email_code(db, login_data)
-    else:
-        raise ParameterException("请提供密码或验证码")
-    
-    # 检查用户状态
-    check_user_status(user)
-    
-    # 更新登录信息
     client_ip = request.client.host if request.client else None
-    update_login_info(db, user, client_ip)
+    user_agent = request.headers.get("user-agent", "")
+    user_id = None
+    account = login_data.email
     
-    # 创建token
-    access_token = create_user_token(user)
-    
-    # 获取用户详细信息
-    user_detail = get_user_detail_info(db, user.id)
-    
-    return success(
-        data={
-            "access_token": access_token,
-            "token_type": "bearer",
-            "user_info": user_detail.model_dump(mode='json')
-        },
-        message="登录成功"
-    )
+    try:
+        # 判断使用哪种登录方式
+        if login_data.password:
+            user = authenticate_by_email_password(db, login_data)
+        elif login_data.email_code:
+            user = authenticate_by_email_code(db, login_data)
+        else:
+            raise ParameterException("请提供密码或验证码")
+        
+        user_id = user.id
+        
+        # 检查用户状态
+        check_user_status(user)
+        
+        # 更新登录信息
+        update_login_info(db, user, client_ip)
+        
+        # 创建token
+        access_token = create_user_token(user)
+        
+        # 获取用户详细信息
+        user_detail = get_user_detail_info(db, user.id)
+        
+        # 记录成功登录日志
+        log_login_attempt(db, user_id, client_ip, user_agent, success=True)
+        
+        return success(
+            data={
+                "access_token": access_token,
+                "token_type": "bearer",
+                "user_info": user_detail.model_dump(mode='json')
+            },
+            message="登录成功"
+        )
+    except Exception as e:
+        # 记录失败登录日志
+        failure_reason = str(e)
+        log_login_attempt(db, user_id, client_ip, user_agent, success=False, failure_reason=failure_reason, account=account)
+        raise
 
 
 @router.post("/sms/send", response_model=UnifiedResponse, summary="发送短信验证码", tags=["认证"])

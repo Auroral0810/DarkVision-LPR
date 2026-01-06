@@ -80,21 +80,6 @@
               <el-icon><Trophy /></el-icon>
               升级 VIP
             </el-button>
-            <div class="role-switcher">
-              <span class="label">当前演示角色:</span>
-              <el-dropdown @command="handleRoleSwitch">
-                <span class="el-dropdown-link">
-                  {{ userStore.userInfo.role }}<el-icon class="el-icon--right"><ArrowDown /></el-icon>
-                </span>
-                <template #dropdown>
-                  <el-dropdown-menu>
-                    <el-dropdown-item command="FREE">FREE (普通用户)</el-dropdown-item>
-                    <el-dropdown-item command="VIP">VIP (高级用户)</el-dropdown-item>
-                    <el-dropdown-item command="COMPANY">COMPANY (企业用户)</el-dropdown-item>
-                  </el-dropdown-menu>
-                </template>
-              </el-dropdown>
-            </div>
           </div>
         </el-header>
         
@@ -114,7 +99,7 @@
 import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
-import { Odometer, Camera, List, TrendCharts, Setting, ArrowDown, MoreFilled, Trophy } from '@element-plus/icons-vue'
+import { Odometer, Camera, List, TrendCharts, Setting, MoreFilled, Trophy } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
 
 const route = useRoute()
@@ -142,12 +127,6 @@ const handleProfileCommand = (command: string) => {
     window.location.href = 'http://localhost:3000'
     ElMessage.success('已退出登录')
   }
-}
-
-const handleRoleSwitch = (command: string) => {
-  // @ts-ignore
-  userStore.switchRole(command)
-  ElMessage.success(`已切换至 ${command} 角色`)
 }
 
 const handleUpgrade = () => {
@@ -341,26 +320,6 @@ const handleUpgrade = () => {
       
       &:hover {
         opacity: 0.9;
-      }
-    }
-    
-    .role-switcher {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 14px;
-      
-      .label {
-        color: #64748b;
-      }
-      
-      .el-dropdown-link {
-        cursor: pointer;
-        color: #1e293b;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 4px;
       }
     }
   }

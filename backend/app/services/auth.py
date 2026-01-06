@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 from datetime import datetime, date
 from typing import Optional
-from app.models.user import User, UserType, UserStatus, UserProfile, UserMembership
+from app.models.user import User, UserType, UserStatus, UserProfile, UserMembership, LoginLog
 from app.core.security import verify_password, get_password_hash, create_access_token
 from app.schemas.user import (
     UserRegister, UserLoginByPhone, UserLoginByEmail,
@@ -434,3 +434,57 @@ def invalidate_user_cache(user_id: int):
         detail_key = f"user_detail:{user_id}"
         redis_client.delete(detail_key)
         logger.info(f"User cache invalidated: {user_id}")
+
+
+def log_login_attempt(
+    db: Session,
+    user_id: Optional[int],
+    ip_address: Optional[str] = None,
+    user_agent: Optional[str] = None,
+    success: bool = True,
+    failure_reason: Optional[str] = None,
+    account: Optional[str] = None  # 用于失败时查找用户ID
+):
+    """
+    记录登录日志
+    
+    Args:
+        db: 数据库会话
+        user_id: 用户ID（失败时可能为None）
+        ip_address: IP地址
+        user_agent: 用户代理字符串
+        success: 是否成功
+        failure_reason: 失败原因（失败时填写）
+        account: 账号（手机号或邮箱，用于失败时查找用户ID）
+    """
+    try:
+        # 如果失败且user_id为None，尝试通过账号查找用户ID
+        final_user_id = user_id
+        if not success and not user_id and account:
+            try:
+                if '@' in account:
+                    user = db.query(User).filter(User.email == account).first()
+                else:
+                    user = db.query(User).filter(User.phone == account).first()
+                if user:
+                    final_user_id = user.id
+            except Exception:
+                pass
+        
+        # 如果仍然找不到，使用0作为占位符（表示未知用户）
+        if not final_user_id:
+            final_user_id = 0
+        
+        login_log = LoginLog(
+            user_id=final_user_id,
+            ip_address=ip_address,
+            user_agent=user_agent,
+            success=success,
+            failure_reason=failure_reason,
+            created_at=datetime.now()
+        )
+        db.add(login_log)
+        db.commit()
+    except Exception as e:
+        logger.error(f"Failed to log login attempt: {e}")
+        db.rollback()

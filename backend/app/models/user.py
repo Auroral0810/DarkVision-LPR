@@ -1,4 +1,4 @@
-from sqlalchemy import Column, BigInteger, String, Enum, DateTime, Text, ForeignKey, Integer
+from sqlalchemy import Column, BigInteger, String, Enum, DateTime, Text, ForeignKey, Integer, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
@@ -96,3 +96,17 @@ class RealNameVerification(Base):
     reviewed_by = Column(BigInteger, ForeignKey("users.id"), nullable=True)
     reviewed_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
+
+class LoginLog(Base):
+    """登录日志"""
+    __tablename__ = "login_logs"
+    
+    id = Column(BigInteger, primary_key=True, index=True)
+    user_id = Column(BigInteger, ForeignKey("users.id"), nullable=False, index=True)
+    ip_address = Column(String(45), nullable=True)
+    user_agent = Column(Text, nullable=True)
+    success = Column(Boolean, nullable=False, default=False)
+    failure_reason = Column(String(255), nullable=True)
+    created_at = Column(DateTime, server_default=func.now(), index=True)
+    
+    user = relationship("User")
