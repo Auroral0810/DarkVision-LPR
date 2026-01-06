@@ -41,7 +41,8 @@
             <el-radio-button label="month">本月</el-radio-button>
             <el-radio-button label="year">全年</el-radio-button>
           </el-radio-group>
-          <el-button icon="Download" plain>导出报告</el-button>
+          <el-button :icon="Refresh" circle plain />
+          <el-button :icon="Download" plain>导出报告</el-button>
         </div>
       </div>
 
@@ -75,18 +76,11 @@
           <template #header>
             <div class="card-header">
               <span>识别趋势</span>
+              <el-tag size="small" type="success" effect="plain">近7天</el-tag>
             </div>
           </template>
           <div class="chart-container">
-            <!-- Mock Bar Chart -->
-            <div class="bar-chart">
-              <div class="bar-group" v-for="(h, i) in [40, 65, 35, 85, 55, 75, 90]" :key="i">
-                <div class="bar" :style="{ height: h + '%' }">
-                  <div class="tooltip">{{ h * 10 }}</div>
-                </div>
-                <span class="x-label">{{ getDateLabel(i) }}</span>
-              </div>
-            </div>
+            <v-chart class="chart" :option="trendOption" autoresize />
         </div>
       </el-card>
 
@@ -96,19 +90,8 @@
               <span>车牌类型分布</span>
             </div>
           </template>
-          <div class="chart-container flex-center">
-            <!-- CSS Pie Chart -->
-            <div class="pie-chart">
-              <div class="slice blue" style="--p: 60; --r: 0;"></div>
-              <div class="slice green" style="--p: 30; --r: 216;"></div>
-              <div class="slice yellow" style="--p: 10; --r: 324;"></div>
-              <div class="center-hole"></div>
-            </div>
-          <div class="legend">
-              <div class="legend-item"><span class="color-dot blue"></span> 蓝牌 (60%)</div>
-              <div class="legend-item"><span class="color-dot green"></span> 绿牌 (30%)</div>
-              <div class="legend-item"><span class="color-dot yellow"></span> 黄牌 (10%)</div>
-            </div>
+          <div class="chart-container">
+            <v-chart class="chart" :option="pieOption" autoresize />
           </div>
         </el-card>
       </div>
@@ -145,20 +128,158 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, provide } from 'vue'
 import { useUserStore } from '@/store/user'
-import { TrendCharts, Download, Top } from '@element-plus/icons-vue'
+import { TrendCharts, Download, Top, Refresh } from '@element-plus/icons-vue'
+import VChart, { THEME_KEY } from 'vue-echarts'
+import { use } from 'echarts/core'
+import { CanvasRenderer } from 'echarts/renderers'
+import { BarChart, LineChart, PieChart } from 'echarts/charts'
+import {
+  GridComponent,
+  TooltipComponent,
+  LegendComponent,
+  TitleComponent,
+  DatasetComponent
+} from 'echarts/components'
+
+// Register ECharts components
+use([
+  CanvasRenderer,
+  BarChart,
+  LineChart,
+  PieChart,
+  GridComponent,
+  TooltipComponent,
+  LegendComponent,
+  TitleComponent,
+  DatasetComponent
+])
+
+provide(THEME_KEY, 'light')
 
 const userStore = useUserStore()
 const timeRange = ref('week')
 
-const getDateLabel = (index: number) => {
-  const date = new Date()
-  date.setDate(date.getDate() - (6 - index))
-  const month = String(date.getMonth() + 1).padStart(2, '0')
-  const day = String(date.getDate()).padStart(2, '0')
-  return `${month}-${day}`
-}
+// Trend Chart Option
+const trendOption = ref({
+  tooltip: {
+    trigger: 'axis',
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderColor: '#e2e8f0',
+    textStyle: {
+      color: '#1e293b'
+    }
+  },
+  grid: {
+    left: '3%',
+    right: '4%',
+    bottom: '3%',
+    containLabel: true
+  },
+  xAxis: {
+    type: 'category',
+    data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+    axisLine: { lineStyle: { color: '#e2e8f0' } },
+    axisLabel: { color: '#64748b' }
+  },
+  yAxis: [
+    {
+      type: 'value',
+      splitLine: { lineStyle: { type: 'dashed', color: '#f1f5f9' } },
+      axisLabel: { color: '#64748b' }
+    },
+    {
+      type: 'value',
+      name: '成功率',
+      min: 90,
+      max: 100,
+      position: 'right',
+      splitLine: { show: false },
+      axisLabel: { formatter: '{value}%', color: '#64748b' }
+    }
+  ],
+  series: [
+    {
+      name: '识别量',
+      type: 'bar',
+      barWidth: '40%',
+      itemStyle: {
+        color: {
+          type: 'linear',
+          x: 0, y: 0, x2: 0, y2: 1,
+          colorStops: [
+            { offset: 0, color: '#3b82f6' },
+            { offset: 1, color: '#60a5fa' }
+          ]
+        },
+        borderRadius: [4, 4, 0, 0]
+      },
+      data: [120, 132, 101, 134, 290, 230, 220]
+    },
+    {
+      name: '成功率',
+      type: 'line',
+      yAxisIndex: 1,
+      smooth: true,
+      itemStyle: { color: '#10b981' },
+      areaStyle: {
+        color: {
+            type: 'linear',
+            x: 0, y: 0, x2: 0, y2: 1,
+            colorStops: [
+                { offset: 0, color: 'rgba(16, 185, 129, 0.2)' },
+                { offset: 1, color: 'rgba(16, 185, 129, 0)' }
+            ]
+        }
+      },
+      data: [98.5, 99.2, 98.8, 99.5, 99.0, 99.8, 99.6]
+    }
+  ]
+})
+
+// Distribution Chart Option
+const pieOption = ref({
+  tooltip: {
+    trigger: 'item'
+  },
+  legend: {
+    bottom: '0%',
+    left: 'center',
+    icon: 'circle'
+  },
+  series: [
+    {
+      name: '车牌类型',
+      type: 'pie',
+      radius: ['45%', '70%'],
+      center: ['50%', '45%'],
+      avoidLabelOverlap: false,
+      itemStyle: {
+        borderRadius: 10,
+        borderColor: '#fff',
+        borderWidth: 2
+      },
+      label: {
+        show: false,
+        position: 'center'
+      },
+      emphasis: {
+        label: {
+          show: true,
+          fontSize: '20',
+          fontWeight: 'bold'
+        }
+      },
+      data: [
+        { value: 1048, name: '蓝牌', itemStyle: { color: '#3b82f6' } },
+        { value: 735, name: '绿牌', itemStyle: { color: '#10b981' } },
+        { value: 580, name: '黄牌', itemStyle: { color: '#f59e0b' } },
+        { value: 300, name: '白牌', itemStyle: { color: '#64748b' } }
+      ]
+    }
+  ]
+})
 
 const topPlates = [
   { plate: '京A·88888', count: 42, lastSeen: '10分钟前' },
@@ -309,121 +430,18 @@ const topPlates = [
   }
 }
 
-/* CSS Bar Chart */
-.bar-chart {
+/* Chart Styles */
+.chart {
   height: 100%;
+  width: 100%;
+}
+
+.card-header {
   display: flex;
-  align-items: flex-end;
   justify-content: space-between;
-  padding-bottom: 24px;
-  
-  .bar-group {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    height: 100%;
-    justify-content: flex-end;
-    margin: 0 8px;
-  
-  .bar {
-      width: 100%;
-      max-width: 40px;
-    background: #3b82f6;
-      border-radius: 6px 6px 0 0;
-      transition: height 0.5s ease;
-      position: relative;
-      cursor: pointer;
-    opacity: 0.8;
-      
-      &:hover {
-        opacity: 1;
-        .tooltip { opacity: 1; transform: translateX(-50%) translateY(-8px); }
-      }
-      
-      .tooltip {
-        position: absolute;
-        top: -30px;
-        left: 50%;
-        transform: translateX(-50%);
-        background: #1e293b;
-        color: white;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 12px;
-        opacity: 0;
-        transition: all 0.2s;
-        pointer-events: none;
-        white-space: nowrap;
-        
-        &::after {
-          content: '';
-          position: absolute;
-          bottom: -4px;
-          left: 50%;
-          transform: translateX(-50%);
-          border-left: 4px solid transparent;
-          border-right: 4px solid transparent;
-          border-top: 4px solid #1e293b;
-        }
-      }
-    }
-    
-    .x-label {
-      margin-top: 8px;
-      font-size: 12px;
-      color: #94a3b8;
-    }
-  }
-}
-
-/* CSS Pie Chart */
-.pie-chart {
-  width: 160px;
-  height: 160px;
-  border-radius: 50%;
-  position: relative;
-  background: #f1f5f9;
-  
-  .slice {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    border-radius: 50%;
-    background: conic-gradient(var(--c) calc(var(--p) * 1%), transparent 0);
-    transform: rotate(calc(var(--r) * 1deg));
-    
-    &.blue { --c: #3b82f6; }
-    &.green { --c: #10b981; }
-    &.yellow { --c: #f59e0b; }
-  }
-  
-  .center-hole {
-    position: absolute;
-    top: 50%; left: 50%;
-    transform: translate(-50%, -50%);
-    width: 60%; height: 60%;
-    background: white;
-    border-radius: 50%;
-  }
-}
-
-.legend {
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    color: #64748b;
-    margin-bottom: 8px;
-    
-    .color-dot {
-      width: 8px; height: 8px; border-radius: 50%;
-      &.blue { background: #3b82f6; }
-      &.green { background: #10b981; }
-      &.yellow { background: #f59e0b; }
-    }
-  }
+  align-items: center;
+  font-weight: 600;
+  color: #0f172a;
 }
 
 .top-plates-card {
