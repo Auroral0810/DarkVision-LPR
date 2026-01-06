@@ -1,152 +1,150 @@
 <template>
-  <el-config-provider :locale="locale">
-    <div class="history-view">
-      <div class="view-header">
-        <div class="header-left">
-          <h2>{{ t.title }}</h2>
-          <p class="subtitle">{{ t.subtitle }}</p>
-        </div>
-        <div class="header-right">
-          <el-radio-group v-model="lang" size="small" @change="handleLangChange" style="margin-right: 16px;">
-            <el-radio-button label="zh-cn">中文</el-radio-button>
-            <el-radio-button label="en">EN</el-radio-button>
-          </el-radio-group>
-          <el-button type="primary" plain icon="Download" v-if="userStore.isVIP">{{ t.export }}</el-button>
-        </div>
+  <div class="history-view">
+    <div class="view-header">
+      <div class="header-left">
+        <h2>{{ t.title }}</h2>
+        <p class="subtitle">{{ t.subtitle }}</p>
       </div>
-
-      <div class="filter-card">
-        <el-form :inline="true" class="filter-form">
-          <el-form-item :label="t.dateRange">
-            <el-date-picker
-              v-model="dateRange"
-              type="daterange"
-              :range-separator="t.to"
-              :start-placeholder="t.startDate"
-              :end-placeholder="t.endDate"
-              :shortcuts="shortcuts"
-              @change="handleFilter"
-            />
-          </el-form-item>
-          <el-form-item :label="t.plateNumber">
-            <el-input 
-              v-model="searchKeyword" 
-              :placeholder="t.searchPlaceholder" 
-              prefix-icon="Search"
-              clearable
-              @keyup.enter="handleFilter"
-            />
-          </el-form-item>
-          <el-form-item :label="t.type">
-            <el-select v-model="filterType" :placeholder="t.allTypes" clearable style="width: 120px" @change="handleFilter">
-              <el-option label="蓝牌" value="blue" />
-              <el-option label="绿牌" value="green" />
-              <el-option label="黄牌" value="yellow" />
-              <el-option label="白牌" value="white" />
-              <el-option label="其他" value="other" />
-            </el-select>
-          </el-form-item>
-          <el-form-item>
-            <el-button type="primary" @click="handleFilter">{{ t.query }}</el-button>
-            <el-button @click="resetSearch">{{ t.reset }}</el-button>
-          </el-form-item>
-        </el-form>
-      </div>
-
-      <div class="table-container">
-        <el-table 
-          v-loading="loading"
-          :data="tableData" 
-          style="width: 100%" 
-          class="data-table" 
-          :row-class-name="tableRowClassName"
-          @selection-change="handleSelectionChange"
-        >
-          <el-table-column type="selection" width="55" />
-          
-          <el-table-column :label="t.image" width="120">
-            <template #default="scope">
-              <el-image 
-                class="image-preview" 
-                :src="scope.row.original_image_url" 
-                :preview-src-list="[scope.row.original_image_url]"
-                fit="cover"
-              >
-                <template #error>
-                  <div class="image-slot">
-                    <el-icon><Picture /></el-icon>
-                  </div>
-                </template>
-              </el-image>
-            </template>
-          </el-table-column>
-          
-          <el-table-column prop="license_plate" :label="t.plateNumber" min-width="120">
-            <template #default="scope">
-              <div class="plate-cell">
-                <span class="plate-text">{{ scope.row.license_plate }}</span>
-              </div>
-            </template>
-          </el-table-column>
-          
-          <el-table-column prop="plate_type" :label="t.type" width="100">
-            <template #default="scope">
-              <el-tag :type="getPlateTypeColor(scope.row.plate_type)" effect="light" size="small">
-                {{ formatPlateType(scope.row.plate_type) }}
-              </el-tag>
-            </template>
-          </el-table-column>
-          
-          <el-table-column prop="confidence" :label="t.confidence" width="180">
-            <template #default="scope">
-              <div class="confidence-bar">
-                <span class="val">{{ (scope.row.confidence * 100).toFixed(1) }}%</span>
-                <el-progress 
-                  :percentage="scope.row.confidence * 100" 
-                  :show-text="false" 
-                  :color="getConfidenceColor(scope.row.confidence * 100)"
-                  :stroke-width="6"
-                />
-              </div>
-            </template>
-          </el-table-column>
-          
-          <el-table-column prop="created_at" :label="t.time" width="180" sortable>
-            <template #default="scope">
-              <span class="time-text">{{ formatDate(scope.row.created_at) }}</span>
-            </template>
-          </el-table-column>
-          
-          <el-table-column :label="t.actions" width="150" fixed="right">
-            <template #default="scope">
-              <el-button link type="primary" size="small">{{ t.detail }}</el-button>
-              <el-button link type="danger" size="small" @click="handleDelete(scope.row)">{{ t.delete }}</el-button>
-            </template>
-          </el-table-column>
-          
-          <template #empty>
-            <el-empty :description="t.noData" :image-size="100" />
-          </template>
-        </el-table>
-        
-        <div class="pagination-footer">
-          <div class="selection-info">
-            {{ t.selected.replace('{n}', String(selectedRows.length)) }}
-          </div>
-          <el-pagination 
-            background 
-            v-model:current-page="currentPage"
-            v-model:page-size="pageSize"
-            :page-sizes="[5, 10, 20]"
-            layout="total, sizes, prev, pager, next, jumper" 
-            :total="total"
-            @size-change="handleSizeChange"
-            @current-change="handleCurrentChange"
-          />
-        </div>
+      <div class="header-right">
+        <el-radio-group v-model="userStore.lang" size="small" @change="userStore.setLang" style="margin-right: 16px;">
+          <el-radio-button label="zh-cn">中文</el-radio-button>
+          <el-radio-button label="en">EN</el-radio-button>
+        </el-radio-group>
+        <el-button type="primary" plain icon="Download" v-if="userStore.isVIP">{{ t.export }}</el-button>
       </div>
     </div>
-  </el-config-provider>
+
+    <div class="filter-card">
+      <el-form :inline="true" class="filter-form">
+        <el-form-item :label="t.dateRange">
+          <el-date-picker
+            v-model="dateRange"
+            type="daterange"
+            :range-separator="t.to"
+            :start-placeholder="t.startDate"
+            :end-placeholder="t.endDate"
+            :shortcuts="shortcuts"
+            @change="handleFilter"
+          />
+        </el-form-item>
+        <el-form-item :label="t.plateNumber">
+          <el-input 
+            v-model="searchKeyword" 
+            :placeholder="t.searchPlaceholder" 
+            prefix-icon="Search"
+            clearable
+            @keyup.enter="handleFilter"
+          />
+        </el-form-item>
+        <el-form-item :label="t.type">
+          <el-select v-model="filterType" :placeholder="t.allTypes" clearable style="width: 120px" @change="handleFilter">
+            <el-option label="蓝牌" value="blue" />
+            <el-option label="绿牌" value="green" />
+            <el-option label="黄牌" value="yellow" />
+            <el-option label="白牌" value="white" />
+            <el-option label="其他" value="other" />
+          </el-select>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="handleFilter">{{ t.query }}</el-button>
+          <el-button @click="resetSearch">{{ t.reset }}</el-button>
+        </el-form-item>
+      </el-form>
+    </div>
+
+    <div class="table-container">
+      <el-table 
+        v-loading="loading"
+        :data="tableData" 
+        style="width: 100%" 
+        class="data-table" 
+        :row-class-name="tableRowClassName"
+        @selection-change="handleSelectionChange"
+      >
+        <el-table-column type="selection" width="55" />
+        
+        <el-table-column :label="t.image" width="120">
+          <template #default="scope">
+            <el-image 
+              class="image-preview" 
+              :src="scope.row.original_image_url" 
+              :preview-src-list="[scope.row.original_image_url]"
+              fit="cover"
+            >
+              <template #error>
+                <div class="image-slot">
+                  <el-icon><Picture /></el-icon>
+                </div>
+              </template>
+            </el-image>
+          </template>
+        </el-table-column>
+        
+        <el-table-column prop="license_plate" :label="t.plateNumber" min-width="120">
+          <template #default="scope">
+            <div class="plate-cell">
+              <span class="plate-text">{{ scope.row.license_plate }}</span>
+            </div>
+          </template>
+        </el-table-column>
+        
+        <el-table-column prop="plate_type" :label="t.type" width="100">
+          <template #default="scope">
+            <el-tag :type="getPlateTypeColor(scope.row.plate_type)" effect="light" size="small">
+              {{ formatPlateType(scope.row.plate_type) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        
+        <el-table-column prop="confidence" :label="t.confidence" width="180">
+          <template #default="scope">
+            <div class="confidence-bar">
+              <span class="val">{{ (scope.row.confidence * 100).toFixed(1) }}%</span>
+              <el-progress 
+                :percentage="scope.row.confidence * 100" 
+                :show-text="false" 
+                :color="getConfidenceColor(scope.row.confidence * 100)"
+                :stroke-width="6"
+              />
+            </div>
+          </template>
+        </el-table-column>
+        
+        <el-table-column prop="created_at" :label="t.time" width="180" sortable>
+          <template #default="scope">
+            <span class="time-text">{{ formatDate(scope.row.created_at) }}</span>
+          </template>
+        </el-table-column>
+        
+        <el-table-column :label="t.actions" width="150" fixed="right">
+          <template #default="scope">
+            <el-button link type="primary" size="small">{{ t.detail }}</el-button>
+            <el-button link type="danger" size="small" @click="handleDelete(scope.row)">{{ t.delete }}</el-button>
+          </template>
+        </el-table-column>
+        
+        <template #empty>
+          <el-empty :description="t.noData" :image-size="100" />
+        </template>
+      </el-table>
+      
+      <div class="pagination-footer">
+        <div class="selection-info">
+          {{ t.selected.replace('{n}', String(selectedRows.length)) }}
+        </div>
+        <el-pagination 
+          background 
+          v-model:current-page="currentPage"
+          v-model:page-size="pageSize"
+          :page-sizes="[5, 10, 20]"
+          layout="total, sizes, prev, pager, next, jumper" 
+          :total="total"
+          @size-change="handleSizeChange"
+          @current-change="handleCurrentChange"
+        />
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -155,15 +153,10 @@ import { useUserStore } from '@/store/user'
 import { Search, Picture, Download } from '@element-plus/icons-vue'
 import { getRecognitionHistory } from '@/api/history'
 import { ElMessageBox, ElMessage } from 'element-plus'
-import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
-import en from 'element-plus/dist/locale/en.mjs'
 
 const userStore = useUserStore()
 
 // Localization
-const lang = ref(localStorage.getItem('lang') || 'zh-cn')
-const locale = computed(() => lang.value === 'zh-cn' ? zhCn : en)
-
 const locales = {
   'zh-cn': {
     title: '识别历史',
@@ -219,12 +212,7 @@ const locales = {
   }
 }
 
-const t = computed(() => locales[lang.value as keyof typeof locales])
-
-const handleLangChange = (val: any) => {
-  lang.value = String(val)
-  localStorage.setItem('lang', String(val))
-}
+const t = computed(() => locales[userStore.lang as keyof typeof locales])
 
 // Data Handling
 const loading = ref(false)
@@ -232,7 +220,7 @@ const tableData = ref([])
 const total = ref(0)
 const currentPage = ref(1)
 const pageSize = ref(10)
-const dateRange = ref<any[]>([])
+const dateRange = ref<any>([])
 const searchKeyword = ref('')
 const filterType = ref('')
 const selectedRows = ref<any[]>([])
@@ -264,7 +252,7 @@ const fetchData = async () => {
     }
   } catch (error) {
     console.error('Fetch history error:', error)
-    ElMessage.error(lang.value === 'zh-cn' ? '获取历史记录失败' : 'Failed to fetch history')
+    ElMessage.error(userStore.lang === 'zh-cn' ? '获取历史记录失败' : 'Failed to fetch history')
   } finally {
     loading.value = false
   }
@@ -298,19 +286,19 @@ const handleSelectionChange = (val: any) => {
 }
 
 const handleDelete = (row: any) => {
-  const msg = lang.value === 'zh-cn' 
+  const msg = userStore.lang === 'zh-cn' 
     ? `确定要删除车牌 ${row.license_plate} 的记录吗？` 
     : `Are you sure to delete the record for ${row.license_plate}?`
   ElMessageBox.confirm(
     msg,
-    lang.value === 'zh-cn' ? '提示' : 'Warning',
+    userStore.lang === 'zh-cn' ? '提示' : 'Warning',
     {
-      confirmButtonText: lang.value === 'zh-cn' ? '确定' : 'Confirm',
-      cancelButtonText: lang.value === 'zh-cn' ? '取消' : 'Cancel',
+      confirmButtonText: userStore.lang === 'zh-cn' ? '确定' : 'Confirm',
+      cancelButtonText: userStore.lang === 'zh-cn' ? '取消' : 'Cancel',
       type: 'warning',
     }
   ).then(() => {
-    ElMessage.success(lang.value === 'zh-cn' ? '删除成功' : 'Delete successfully')
+    ElMessage.success(userStore.lang === 'zh-cn' ? '删除成功' : 'Delete successfully')
     // TODO: Implement real delete call
   })
 }
@@ -344,7 +332,7 @@ const getConfidenceColor = (val: number) => {
 
 const formatDate = (dateStr: string) => {
   if (!dateStr) return '-'
-  return new Date(dateStr).toLocaleString(lang.value === 'zh-cn' ? 'zh-CN' : 'en-US')
+  return new Date(dateStr).toLocaleString(userStore.lang === 'zh-cn' ? 'zh-CN' : 'en-US')
 }
 
 const tableRowClassName = () => ''

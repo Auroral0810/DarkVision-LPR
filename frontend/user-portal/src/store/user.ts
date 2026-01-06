@@ -1,5 +1,9 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
+// @ts-ignore
+import zhCn from 'element-plus/dist/locale/zh-cn.mjs'
+// @ts-ignore
+import enLocale from 'element-plus/dist/locale/en.mjs'
 
 export type UserRole = 'FREE' | 'VIP' | 'COMPANY'
 export type UserType = 'free' | 'vip' | 'enterprise' | 'admin'
@@ -125,6 +129,13 @@ export const useUserStore = defineStore('user', () => {
     { provider: 'github', open_id: '', union_id: null, bound: false }
   ])
   
+  const lang = ref(localStorage.getItem('lang') || 'zh-cn')
+  const locale = computed(() => lang.value === 'zh-cn' ? zhCn : enLocale)
+
+  function setLang(val: string) {
+    lang.value = val
+    localStorage.setItem('lang', val)
+  }
   const isLoggedIn = computed(() => !!token.value)
   const isVIP = computed(() => userInfo.value.role === 'VIP' || userInfo.value.role === 'COMPANY')
   const isCompany = computed(() => userInfo.value.role === 'COMPANY')
@@ -413,6 +424,9 @@ export const useUserStore = defineStore('user', () => {
     login,
     updateUserInfo,
     logout,
-    switchRole
+    switchRole,
+    lang,
+    locale,
+    setLang
   }
 })

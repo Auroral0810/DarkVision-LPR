@@ -36,10 +36,14 @@ async def get_recognition_history(
         plate_type=plate_type
     )
     
+    # 显式转换为 Pydantic 模型以支持序列化
+    from app.schemas.history import RecognitionHistoryItem
+    history_items = [RecognitionHistoryItem.model_validate(item) for item in items]
+    
     total_pages = (total + page_size - 1) // page_size
     
     return success_response(data={
-        "items": items,
+        "items": [item.model_dump(mode='json') for item in history_items],
         "total": total,
         "page": page,
         "page_size": page_size,

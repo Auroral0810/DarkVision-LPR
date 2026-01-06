@@ -1,8 +1,10 @@
 <script setup lang="ts">
+import { useUserStore } from '@/store/user'
+const userStore = useUserStore()
 </script>
 
 <template>
-  <el-config-provider>
+  <el-config-provider :locale="userStore.locale">
     <router-view />
   </el-config-provider>
 </template>

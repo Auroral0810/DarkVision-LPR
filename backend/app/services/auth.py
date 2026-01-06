@@ -418,7 +418,7 @@ def get_user_detail_info(db: Session, user_id: int) -> UserDetailInfo:
         cached_data = redis_client.get(cache_key)
         if cached_data:
             try:
-                data = json.loads(cached_data.decode('utf-8'))
+                data = json.loads(cached_data)
                 # logger.info(f"User detail loaded from cache: {user_id}")
                 return UserDetailInfo(**data)
             except Exception as e:
