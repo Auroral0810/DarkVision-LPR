@@ -17,7 +17,7 @@
 ![License](https://img.shields.io/badge/License-MIT-lightgrey)
 ![Email](https://img.shields.io/badge/Email-15968588744%40163.com-red)
 
-[English](./READM.md) | [中文](./README_ZH.md
+[English](./READM.md) | [中文](./README_ZH.md)
 
 ---
 
