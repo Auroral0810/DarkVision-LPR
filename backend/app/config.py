@@ -53,6 +53,7 @@ class Settings(BaseSettings):
     OSS_ACCESS_KEY_ID: Optional[str] = None
     OSS_ACCESS_KEY_SECRET: Optional[str] = None
     OSS_BUCKET_NAME: Optional[str] = None
+    OSS_URL: Optional[str] = None
     
     # LPR模型配置
     YOLO_MODEL_PATH: str = "weights/best.pt"
