@@ -1,447 +1,512 @@
 <div align="center">
-  <h1>🌙 暗视 · 低光照车牌识别系统</h1>
-  <h3>DarkVision-LPR</h3>
-  <p>基于 YOLOv12 与 Retinex 图像增强的低光照条件下车牌识别系统</p>
-
-  [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-  [![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/)
-  [![Vue](https://img.shields.io/badge/Vue-3.x-green.svg)](https://vuejs.org/)
-  [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-teal.svg)](https://fastapi.tiangolo.com/)
-  [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue.svg)](https://www.typescriptlang.org/)
+  <img src="./github-header-banner.png" alt="DarkVision-LPR Logo" />
 </div>
 
----
+[![Typing SVG](https://readme-typing-svg.herokuapp.com?font=Fira+Code&pause=1000&width=620&lines=🌙+Illuminate+Darkness%2C+Capture+Intelligence.;🌙+点亮黑暗%EF%BC%8C洞悉智行)](https://git.io/typing-svg)
 
-## 📋 目录
+![DarkVision-LPR](https://img.shields.io/badge/DarkVision--LPR-v1.0.0-blue)
+![Python](https://img.shields.io/badge/Python-3.10+-3776AB)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.104+-009688)
+![Vue3](https://img.shields.io/badge/Vue-3.3+-4FC08D)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.0+-3178C6)
+![YOLOv11m](https://img.shields.io/badge/YOLO-v11m-FF0000)
+![PyTorch](https://img.shields.io/badge/PyTorch-2.1-EE4C2C)
+![MySQL](https://img.shields.io/badge/MySQL-8.0+-4479A1)
+![Redis](https://img.shields.io/badge/Redis-6.2+-DC382D)
+![OSS](https://img.shields.io/badge/Aliyun-OSS-orange)
+![License](https://img.shields.io/badge/License-MIT-lightgrey)
+![Email](https://img.shields.io/badge/Email-15968588744%40163.com-red)
 
-- [项目简介](#项目简介)
-- [核心特性](#核心特性)
-- [技术架构](#技术架构)
-- [快速开始](#快速开始)
-- [项目结构](#项目结构)
-- [功能模块](#功能模块)
-- [部署指南](#部署指南)
-- [开发文档](#开发文档)
-- [贡献指南](#贡献指南)
-- [许可证](#许可证)
-- [联系我们](#联系我们)
-
----
-
-## 🎯 项目简介
-
-**DarkVision-LPR** 是一个专为低光照环境设计的智能车牌识别系统。通过结合先进的深度学习技术和图像增强算法，系统能够在夜间、隧道、地下停车场等极端低光照场景下实现高精度的车牌检测与识别。
-
-### 论文标题
-**基于YOLOv12与Retinex图像增强的低光照条件下车牌识别系统设计与优化**
-
-### 应用场景
-- 🚗 智能停车场管理
-- 🛣️ 高速公路收费系统
-- 🏙️ 城市交通监控
-- 🔒 小区安防系统
-- 🚓 公安交警执法
+[English](./README_EN.md) | [中文](./README.md)
 
 ---
 
-## ✨ 核心特性
+# DarkVision-LPR
 
-### 🎨 图像增强
-- ✅ **Multi-Scale Retinex (MSR)** - 多尺度图像增强
-- ✅ **CLAHE** - 自适应直方图均衡化
-- ✅ **动态参数调整** - 根据光照条件自动优化
-- ✅ **实时处理** - 毫秒级响应速度
+> A low-light oriented License Plate Recognition (LPR) system with YOLOv11m, trained on CCPD2019+CCPD2020 (**30,000** images), reaching **99.9%** accuracy.
 
-### 🎯 车牌识别
-- ✅ **YOLOv12 目标检测** - 最新版本的 YOLO 架构
-- ✅ **高精度识别** - 准确率 > 95%
-- ✅ **多车牌类型** - 支持蓝牌、黄牌、绿牌等
-- ✅ **批量处理** - 支持图片/视频批量识别
+## 📚 Project Overview
 
-### 🌐 多端支持
-- ✅ **Web 端** - 跨平台浏览器访问
-- ✅ **桌面端** - Windows/macOS/Linux 客户端
-- ✅ **移动端** - iOS/Android App（开发中）
-- ✅ **小程序** - 微信小程序（规划中）
+**DarkVision-LPR** is a high-precision License Plate Recognition (LPR) system specifically designed for **low-light environments**. Targeting complex lighting scenarios such as nighttime, underground parking garages, and tunnels, we employ the **YOLOv11m** deep learning model combined with **Retinex image enhancement algorithms**. The system was fully trained on **30,000** images from CCPD2019 and CCPD2020 datasets, achieving a model accuracy of **99.9%**.
 
-### 🔐 安全可靠
-- ✅ **JWT 身份认证** - 安全的用户认证机制
-- ✅ **RBAC 权限控制** - 细粒度权限管理
-- ✅ **数据加密** - 传输与存储双重加密
-- ✅ **操作审计** - 完整的操作日志记录
+This project adopts a modern **frontend-backend separation** architecture, integrating **real-time data analytics**, **multi-platform adaptation** (Web client, Admin portal, Official website), and a **VIP membership system**, aiming to provide stable and efficient solutions for intelligent transportation, security monitoring, and related fields.
 
-### 📊 数据分析
-- ✅ **实时统计** - 识别数据实时展示
-- ✅ **可视化报表** - 多维度数据分析
-- ✅ **趋势分析** - 识别效果趋势预测
-- ✅ **异常检测** - 智能异常车牌识别
+### Key Features
 
----
+- 🌑 **Night Vision Enhancement**: Adaptive image enhancement algorithms make license plates clearly visible even in extremely dark environments
+- ⚡ **Millisecond Recognition**: Real-time streaming detection based on high-performance YOLOv11m model
+- 📊 **Data Insights**: Built-in powerful data analytics dashboard for real-time monitoring of recognition traffic, vehicle type distribution, and KPI metrics
+- 🌐 **Full-Stack Ecosystem**: Includes user portal, admin backend, and official marketing website to meet different role requirements
+- 🔒 **Enterprise-Grade Security**: Supports real-name authentication, JWT authorization, and operation log auditing
+- 🔄 **Real-Time Progress**: WebSocket real-time progress push (upload/detection/enhancement/recognition four steps)
+- 💾 **OSS Integration**: Aliyun OSS storage with signed URL secure access
 
-## 🏗️ 技术架构
+## 🧠 Model & Dataset
 
-### 整体架构
-```
-┌─────────────┐     ┌─────────────┐     ┌─────────────┐     ┌─────────────┐
-│  前端展示层  │────▶│  后端业务层  │────▶│ AI推理服务层 │────▶│  数据存储层  │
-└─────────────┘     └─────────────┘     └─────────────┘     └─────────────┘
-```
+### Model Architecture
 
-### 技术栈
+- **Model Selection**: YOLOv11m (Medium), achieving optimal balance between speed and accuracy
+- **Training Data**: CCPD2019 + CCPD2020 datasets (total **30,000+** samples)
+- **Training Results**: Achieved **99.9%** mAP@0.5:0.95 on test set, especially optimized for skewed, blurred, and low-light plate detection
+- **Enhancement Algorithm**: Retinex image enhancement optimized for low-light scenarios
 
-#### 前端技术
-| 技术 | 版本 | 用途 |
-|------|------|------|
-| Vue 3 | 3.x | 前端框架 |
-| TypeScript | 5.x | 类型系统 |
-| Vite | 5.x | 构建工具 |
-| Element Plus | 2.x | UI 组件库 |
-| Pinia | 2.x | 状态管理 |
-| Vue Router | 4.x | 路由管理 |
-| Axios | 1.x | HTTP 客户端 |
-| Vue I18n | 9.x | 国际化 |
-| ECharts | 5.x | 数据可视化 |
+### Training Visualization (Placeholder)
 
-#### 后端技术
-| 技术 | 版本 | 用途 |
-|------|------|------|
-| Python | 3.9+ | 编程语言 |
-| FastAPI | 0.100+ | Web 框架 |
-| Uvicorn | 0.23+ | ASGI 服务器 |
-| SQLAlchemy | 2.0+ | ORM 框架 |
-| Alembic | 1.12+ | 数据库迁移 |
-| Pydantic | 2.0+ | 数据验证 |
-| PyJWT | 2.8+ | JWT 认证 |
-| Loguru | 0.7+ | 日志系统 |
+> *(Placeholder: Training process visualization charts such as Loss curves, mAP changes, etc.)*  
+> Suggested screenshot: `docs/ai/training_metrics.png`
 
-#### AI 服务
-| 技术 | 版本 | 用途 |
-|------|------|------|
-| PyTorch | 2.0+ | 深度学习框架 |
-| YOLOv12 | Latest | 目标检测模型 |
-| OpenCV | 4.8+ | 图像处理 |
-| NumPy | 1.24+ | 数值计算 |
-| Pillow | 10.0+ | 图像处理 |
+## 🏗️ System Architecture
 
-#### 数据库
-| 技术 | 版本 | 用途 |
-|------|------|------|
-| MySQL | 8.0+ | 关系型数据库 |
-| Redis | 7.0+ | 缓存数据库 |
-| MinIO | Latest | 对象存储 |
-| 阿里云 OSS | - | 云端存储 |
+DarkVision-LPR adopts a layered, decoupled cloud-native architecture design with clear module responsibilities and excellent scalability.
 
-#### 部署运维
-| 技术 | 版本 | 用途 |
-|------|------|------|
-| Docker | Latest | 容器化 |
-| Docker Compose | Latest | 容器编排 |
-| Nginx | 1.24+ | 反向代理 |
-| Kubernetes | 1.27+ | 容器编排（可选）|
+### Technical Architecture Diagram
 
----
+> *(Placeholder: Overall system technical architecture diagram showing frontend, API gateway, backend services, AI inference service, and database interactions)*  
+> Suggested screenshot: `docs/architecture/system_architecture.png`
 
-## 🚀 快速开始
+- **Frontend Layer**: Built with Vue 3 + TypeScript, using Element Plus component library for excellent user experience
+- **Gateway Layer**: FastAPI provides unified RESTful API entry, handling route distribution and authentication
+- **Business Services**: Handle core business logic such as user management, recharge, and history record queries
+- **AI Inference Layer**: Independently deployed inference service integrating YOLOv11m model and image preprocessing pipeline
+- **Data Layer**: MySQL stores structured business data, Redis handles caching and session management, OSS object storage manages massive images
 
-### 前置要求
+### Core Algorithms & Models
 
-确保你的开发环境满足以下要求：
+- **Detection Model**: YOLOv11m for license plate detection
+- **Recognition Model**: LPRNet for character recognition
+- **Enhancement Algorithm**: Retinex for low-light image enhancement
+- **Real-Time Communication**: WebSocket for four-step progress push (25%/50%/75%/100%)
 
-- **Node.js**: >= 18.x (推荐 20.x)
-- **Python**: >= 3.9
-- **pnpm**: >= 8.x
-- **MySQL**: >= 8.0
-- **Redis**: >= 7.0
-- **CUDA**: >= 11.8 (如需 GPU 加速)
+## 🗂️ Database Design
 
-### 安装步骤
+Core database design as follows (ER Diagram):
 
-#### 1. 克隆项目
+> *(Placeholder: Database ER diagram)*  
+> Suggested screenshot: `docs/architecture/database_er.png`
+
+### Core Data Tables
+
+- `users` - User basic information table
+- `user_profiles` - User extended information table (gender, birthday, address, etc.)
+- `user_memberships` - Membership information table
+- `recognition_tasks` - Recognition task table
+- `recognition_results` - Recognition result table
+- `recognition_statistics` - Recognition statistics table (quota management)
+- `real_name_verifications` - Real-name verification table
+- `sub_accounts` - Enterprise sub-account table
+
+## ✨ Core Features
+
+### 1. Recognition Features
+
+- **Single Image Recognition**: Support drag-and-drop upload or click selection with real-time progress display
+- **Batch Recognition**: Support multiple image batch upload (VIP feature)
+- **Video Recognition**: Support video file upload (VIP feature)
+- **Real-Time Progress**: WebSocket real-time push of four-step progress (Image Upload → Plate Detection → Image Enhancement → Character Recognition)
+
+### 2. User System
+
+- **Account Management**: Registration, login, password reset, personal profile management
+- **Membership System**: Free, VIP Monthly, VIP Yearly, Enterprise
+- **Quota Management**: Daily recognition quota statistics and usage tracking
+- **Real-Name Authentication**: ID card upload, manual review, status query
+
+### 3. History Records
+
+- **Record Query**: Support filtering by date, license plate number, type
+- **Data Export**: VIP users support CSV format export
+- **Detail View**: View recognition details, original images, enhanced images
+- **Data Statistics**: Recognition success rate, change rate compared to yesterday
+
+### 4. Admin Backend
+
+- **User Management**: User list, permission management, status control
+- **Task Monitoring**: Real-time recognition task monitoring, failure retry
+- **Data Statistics**: Platform usage, popular resource analysis
+- **System Settings**: System configuration, parameter adjustment
+
+## 🧰 Tech Stack Details
+
+### Backend Tech Stack
+
+| Technology | Version | Description |
+| :--- | :--- | :--- |
+| **Python** | 3.10+ | Core programming language |
+| **FastAPI** | 0.104+ | High-performance Web framework (ASGI) |
+| **YOLOv11** | v11m | Object detection core algorithm |
+| **PyTorch** | 2.1.0 | Deep learning inference framework |
+| **OpenCV** | 4.8+ | Image preprocessing and enhancement |
+| **SQLAlchemy** | 2.0+ | Modern ORM framework |
+| **MySQL** | 8.0 | Relational database |
+| **Redis** | 6.x | High-speed cache and task queue |
+| **Aliyun OSS** | SDK | Aliyun object storage integration |
+| **WebSocket** | - | Real-time communication protocol |
+
+### Frontend Tech Stack
+
+| Technology | Version | Description |
+| :--- | :--- | :--- |
+| **Vue** | 3.3+ | Progressive JavaScript framework |
+| **Vite** | 5.0+ | Next-generation frontend build tool |
+| **TypeScript** | 5.0+ | Strongly typed development language |
+| **Element Plus** | 2.4+ | Beautiful and practical UI component library |
+| **Pinia** | 2.1+ | Modern state management library |
+| **ECharts** | 5.4+ | Powerful data visualization chart library |
+| **Vue Router** | 4.2+ | Route manager |
+| **Axios** | 1.x | HTTP client |
+| **Sass** | 1.69+ | CSS preprocessor |
+
+## 📸 System Features & Interface Showcase
+
+### Recognition Feature Demo
+
+> *(Placeholder: Recognition page screenshot showing recognition results and enhancement effects after image upload)*  
+> Suggested screenshot: `docs/shots/recognition.png`
+
+### Data Analytics Dashboard
+
+> *(Placeholder: VIP data analytics dashboard screenshot showing ECharts charts)*  
+> Suggested screenshot: `docs/shots/dashboard.png`
+
+### Admin Backend
+
+> *(Placeholder: Admin backend screenshot showing user list and system settings)*  
+> Suggested screenshot: `docs/shots/admin.png`
+
+### History Records
+
+> *(Placeholder: History records page screenshot)*  
+> Suggested screenshot: `docs/shots/history.png`
+
+## 📁 Project Structure
+
 ```bash
-git clone https://github.com/your-username/DarkVision-LPR.git
-cd DarkVision-LPR
+DarkVision-LPR/
+├── backend/                  # Backend service root directory
+│   ├── app/
+│   │   ├── api/             # API routes (v1)
+│   │   │   ├── v1/
+│   │   │   │   ├── auth.py      # Authentication APIs
+│   │   │   │   ├── recognition.py # Recognition APIs
+│   │   │   │   ├── upload.py     # File upload APIs
+│   │   │   │   ├── history.py    # History record APIs
+│   │   │   │   ├── users.py      # User management APIs
+│   │   │   │   └── websocket.py  # WebSocket APIs
+│   │   ├── core/            # Core configuration and utilities
+│   │   │   ├── config.py        # Configuration management
+│   │   │   ├── database.py      # Database connection
+│   │   │   ├── security.py      # Security utilities (JWT)
+│   │   │   └── response.py     # Unified response format
+│   │   ├── models/          # SQLAlchemy data models
+│   │   │   ├── user.py          # User model
+│   │   │   └── recognition.py   # Recognition models
+│   │   ├── schemas/         # Pydantic data schemas
+│   │   │   ├── user.py          # User Schema
+│   │   │   └── recognition.py  # Recognition Schema
+│   │   ├── services/        # Business logic service layer
+│   │   │   ├── auth.py          # Authentication service
+│   │   │   ├── recognition.py  # Recognition service
+│   │   │   └── websocket_manager.py # WebSocket manager
+│   │   ├── utils/           # Utility functions
+│   │   │   ├── oss.py           # OSS utilities
+│   │   │   └── ...
+│   │   └── main.py          # Application entry point
+│   ├── weights/             # YOLO model weight files
+│   │   ├── best.pt              # YOLOv11m detection model
+│   │   └── Final_LPRNet_model.pth # LPRNet recognition model
+│   └── requirements.txt     # Python dependencies
+│
+├── frontend/                 # Frontend project collection
+│   ├── user-portal/         # C-end user portal (Vue3)
+│   │   ├── src/
+│   │   │   ├── api/             # API interface encapsulation
+│   │   │   ├── components/      # Common components
+│   │   │   ├── views/           # Page components
+│   │   │   ├── store/           # Pinia state management
+│   │   │   └── router/          # Route configuration
+│   │   └── vite.config.ts       # Vite configuration
+│   ├── admin-portal/        # B-end admin backend (Vue3)
+│   └── official-website/    # Official marketing website (Vue3)
+│
+└── docs/                    # Project documentation and resources
+    ├── architecture/        # Architecture diagrams
+    ├── ai/                  # AI model related
+    └── shots/               # Screenshot resources
 ```
 
-#### 2. 安装前端依赖
+## 📦 Quick Deployment Guide
+
+### Environment Requirements
+
+- **OS**: macOS / Linux / Windows
+- **Python**: 3.10+
+- **Node.js**: 18+
+- **Database**: MySQL 8.0+, Redis 6.0+
+- **OSS**: Aliyun OSS account (optional, for image storage)
+
+### 1. Database Preparation
+
+#### MySQL Database Initialization
+
 ```bash
-# 官网前端
-cd frontend/official-website
-pnpm install
-pnpm dev
-
-# 用户端前端
-cd ../user-portal
-pnpm install
-pnpm dev
-
-# 管理员端前端
-cd ../admin-portal
-pnpm install
-pnpm dev
-```
-
-#### 3. 安装后端依赖
-```bash
-cd ../../backend
-
-# 创建虚拟环境
-python -m venv venv
-source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# 安装依赖
-pip install -r requirements.txt
-
-# 初始化数据库
-python scripts/init_db.py
-
-# 创建管理员账户
-python scripts/create_admin.py
-
-# 启动后端服务
-uvicorn app.main:app --reload --port 8000
-```
-
-#### 4. 安装 AI 推理服务
-```bash
-cd ../ai-service
-
-# 创建虚拟环境
-python -m venv venv
-source venv/bin/activate
-
-# 安装依赖
-pip install -r requirements.txt
-
-# 下载预训练模型（根据文档说明）
-# 放置模型文件到 models/yolov12/weights/
-
-# 启动 AI 服务
-uvicorn main:app --reload --port 8001
-```
-
-#### 5. 配置数据库
-```bash
-# 创建 MySQL 数据库
+# Login to MySQL
 mysql -u root -p
+
+# Create database
 CREATE DATABASE darkvision_lpr CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
-# 启动 Redis
+# Import database structure (if SQL file exists)
+mysql -u root -p darkvision_lpr < darkvision_lpr.sql
+```
+
+#### Redis Startup
+
+```bash
+# Start Redis using Docker (recommended)
+docker run -d --name redis -p 6379:6379 redis:6.2-alpine
+
+# Or use local Redis
 redis-server
 ```
 
-#### 6. 配置环境变量
+### 2. Backend Configuration & Startup
+
+#### 2.1 Create Virtual Environment
+
 ```bash
-# 后端配置
 cd backend
-cp .env.example .env
-# 编辑 .env 文件，填入数据库连接信息等
+python -m venv venv
 
-# 前端配置已在各项目中包含 .env.development
+# macOS/Linux
+source venv/bin/activate
+
+# Windows
+venv\Scripts\activate
 ```
 
-#### 7. 访问系统
+#### 2.2 Install Dependencies
 
-- 官网: http://localhost:3000
-- 用户端: http://localhost:3001
-- 管理员端: http://localhost:3002
-- 后端 API: http://localhost:8000/docs
-- AI 服务 API: http://localhost:8001/docs
-
----
-
-## 📁 项目结构
-```
-DarkVision-LPR/
-├── frontend/                    # 前端项目
-│   ├── official-website/       # 官网
-│   ├── user-portal/            # 用户端
-│   └── admin-portal/           # 管理员端
-├── backend/                     # 后端服务
-│   ├── app/                    # 应用主目录
-│   │   ├── api/               # API 路由
-│   │   ├── models/            # 数据模型
-│   │   ├── schemas/           # Pydantic 模型
-│   │   ├── services/          # 业务逻辑
-│   │   └── core/              # 核心功能
-│   └── alembic/               # 数据库迁移
-├── ai-service/                  # AI 推理服务
-│   ├── models/                 # 模型文件
-│   ├── services/               # AI 服务
-│   └── api/                    # API 接口
-├── desktop-client/              # 桌面客户端 (Tauri)
-├── mobile-app/                  # 移动端 (uni-app)
-├── nginx/                       # Nginx 配置
-├── deployment/                  # 部署配置
-│   ├── docker/                 # Docker 文件
-│   └── kubernetes/             # K8s 配置
-└── docs/                        # 项目文档
-```
-
-详细的目录结构说明请参考 [项目结构文档](docs/architecture/project-structure.md)
-
----
-
-## 🎮 功能模块
-
-### 用户端功能
-
-#### 普通用户 (FREE)
-- ✅ 单张图片识别（20次/日）
-- ✅ 识别历史记录（最近7天）
-- ✅ 账户管理
-- ✅ 实名认证（可选）
-
-#### VIP 用户
-- ✅ 批量图片识别（500次/日）
-- ✅ 视频识别（10个/月）
-- ✅ 实时摄像头识别
-- ✅ 高精度模式
-- ✅ API 调用（5000次/日）
-- ✅ 数据分析报表
-- ✅ 无限历史记录
-
-#### 企业用户
-- ✅ 无限识别次数
-- ✅ 多账户管理（50个子账户）
-- ✅ 团队协作
-- ✅ 定制化模型训练
-- ✅ 无限 API 调用
-- ✅ 私有化部署
-- ✅ 7×24 专属技术支持
-
-### 管理员端功能
-
-- 👥 **用户管理**: 用户信息、权限、实名认证审核
-- 🔐 **权限管理**: 角色管理、权限分配、管理员账户
-- 🎯 **识别服务**: 任务监控、识别记录、模型管理
-- ⚙️ **系统配置**: 基础配置、识别参数、用户限额
-- 📝 **内容管理**: 官网内容、文档、公告、FAQ
-- 💰 **订单财务**: 订单管理、套餐配置、财务报表
-- 📊 **统计分析**: 用户统计、识别统计、性能监控
-- 📋 **日志安全**: 操作日志、系统日志、安全管理
-- 💬 **消息通知**: 消息推送、客服管理
-- 🔧 **系统维护**: 数据备份、缓存管理、任务调度
-
----
-
-## 🐳 部署指南
-
-### Docker 部署（推荐）
 ```bash
-# 使用 Docker Compose 一键部署
-docker-compose up -d
-
-# 查看服务状态
-docker-compose ps
-
-# 查看日志
-docker-compose logs -f
+pip install -r requirements.txt
 ```
 
-### 手动部署
+#### 2.3 Configure Environment Variables
 
-详细的部署步骤请参考：
-- [生产环境部署指南](docs/deployment/production.md)
-- [Docker 部署指南](docs/deployment/docker.md)
-- [Kubernetes 部署指南](docs/deployment/kubernetes.md)
+Create a `.env` file in the `backend` directory:
 
----
+```bash
+# Database Configuration
+MYSQL_HOST=localhost
+MYSQL_PORT=3306
+MYSQL_USER=root
+MYSQL_PASSWORD=123456
+MYSQL_DATABASE=darkvision_lpr
 
-## 📚 开发文档
+# Redis Configuration
+REDIS_HOST=localhost
+REDIS_PORT=6379
+REDIS_PASSWORD=
+REDIS_DB=0
 
-### API 文档
-- [后端 API 文档](http://localhost:8000/docs)
-- [AI 服务 API 文档](http://localhost:8001/docs)
+# JWT Secret Key (change in production)
+SECRET_KEY=your-secret-key-here-change-in-production
+ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=10080
 
-### 技术文档
-- [架构设计](docs/architecture/design.md)
-- [数据库设计](docs/architecture/database.md)
-- [前端开发指南](docs/development/frontend.md)
-- [后端开发指南](docs/development/backend.md)
-- [AI 模型训练](docs/development/ai-training.md)
+# OSS Configuration (Aliyun)
+OSS_ENDPOINT=https://oss-cn-beijing.aliyuncs.com
+OSS_ACCESS_KEY_ID=your-access-key-id
+OSS_ACCESS_KEY_SECRET=your-access-key-secret
+OSS_BUCKET_NAME=your-bucket-name
+OSS_URL=https://your-bucket-name.oss-cn-beijing.aliyuncs.com
 
-### 用户文档
-- [快速入门](docs/user-guide/quickstart.md)
-- [功能使用手册](docs/user-guide/features.md)
-- [常见问题 FAQ](docs/user-guide/faq.md)
+# Email Configuration (for verification codes)
+MAIL_HOST=smtp.163.com
+MAIL_PORT=465
+MAIL_USERNAME=your-email@163.com
+MAIL_PASSWORD=your-email-auth-code
+MAIL_FROM=your-email@163.com
+MAIL_FROM_NAME=DarkVision-LPR
+MAIL_USE_SSL=true
 
----
+# SMS Configuration (SMS Bao, optional)
+SMS_PROVIDER=smsbao
+SMS_API_URL=http://api.smsbao.com/sms
+SMS_USER=your-sms-username
+SMS_PASSWORD=your-sms-password
+SMS_SIGN_NAME=DarkVision-LPR
 
-## 🤝 贡献指南
+# Real-Name Verification Configuration (Aliyun Market)
+ALIYUN_MARKET_APPCODE=your-appcode
 
-我们欢迎所有形式的贡献！
+# Model Paths
+YOLO_MODEL_PATH=weights/best.pt
+LPRNET_MODEL_PATH=weights/Final_LPRNet_model.pth
 
-### 如何贡献
-
-1. Fork 本项目
-2. 创建特性分支 (`git checkout -b feature/AmazingFeature`)
-3. 提交更改 (`git commit -m 'Add some AmazingFeature'`)
-4. 推送到分支 (`git push origin feature/AmazingFeature`)
-5. 开启 Pull Request
-
-### 代码规范
-
-- **Python**: 遵循 PEP 8 规范
-- **TypeScript/JavaScript**: 遵循 Airbnb 规范
-- **Git Commit**: 遵循 Conventional Commits 规范
-
-### 提交规范示例
+# Development Mode
+DEBUG=true
+RETURN_VERIFICATION_CODE=true
 ```
-feat: 添加视频批量识别功能
-fix: 修复低光照下识别准确率问题
-docs: 更新部署文档
-style: 格式化代码
-refactor: 重构图像增强模块
-test: 添加单元测试
-chore: 更新依赖版本
+
+#### 2.4 Download Model Files
+
+Ensure the following model files exist in the `backend/weights/` directory:
+
+- `best.pt` - YOLOv11m detection model
+- `Final_LPRNet_model.pth` - LPRNet recognition model
+
+#### 2.5 Start Backend Service
+
+```bash
+# Development mode (auto-reload)
+uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# Production mode
+uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 4
 ```
 
----
+Backend service will start at `http://localhost:8000`, API documentation: `http://localhost:8000/docs`
 
-## 📄 许可证
+### 3. Frontend Configuration & Startup
 
-本项目采用 [MIT License](LICENSE) 开源协议。
+#### 3.1 User Portal
 
----
+```bash
+cd frontend/user-portal
 
-## 📞 联系我们
+# Install dependencies
+npm install
 
-### 开发团队
-- **项目负责人**: [Yunfeng Yu]
-- **技术支持**: 15968588744@163.com
-- **商务合作**: business@darkvision-lpr.com
+# Start development server
+npm run dev
+```
 
-### 社交媒体
-- 🌐 官网: https://darkvision-lpr.com
-- 📧 邮箱: contact@darkvision-lpr.com
-- 💬 微信: DarkVision-LPR
-- 🐦 Twitter: @DarkVisionLPR
-- 📱 GitHub: https://github.com/Auroral0810/DarkVision-LPR
+Frontend service will start at `http://localhost:3001`
 
-### 问题反馈
-- [GitHub Issues](https://github.com/Auroral0810/DarkVision-LPR/issues)
-- [讨论区](https://github.com/Auroral0810/DarkVision-LPR/discussions)
+#### 3.2 Admin Portal
 
----
+```bash
+cd frontend/admin-portal
 
-## 🌟 Star History
+# Install dependencies
+npm install
 
-[![Star History Chart](https://api.star-history.com/svg?repos=Auroral0810/DarkVision-LPR&type=Date)](https://star-history.com/#Auroral0810/DarkVision-LPR&Date)
+# Start development server
+npm run dev
+```
 
----
+Admin portal will start at `http://localhost:3002`
 
-## 📈 项目统计
+#### 3.3 Official Website
 
-![GitHub stars](https://img.shields.io/github/stars/Auroral0810/DarkVision-LPR?style=social)
+```bash
+cd frontend/official-website
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
+```
+
+Official website will start at `http://localhost:3000`
+
+### 4. Frontend Environment Variables (Optional)
+
+If you need to modify the API address, create `.env.development` files in each frontend project root:
+
+```bash
+# user-portal/.env.development
+VITE_API_BASE_URL=http://localhost:8000
+
+# admin-portal/.env.development
+VITE_API_BASE_URL=http://localhost:8000
+```
+
+### 5. Verify Deployment
+
+1. **Backend Health Check**: Visit `http://localhost:8000/docs` to view API documentation
+2. **Frontend Access**: Visit `http://localhost:3001` to view user portal
+3. **Database Connection**: Check backend logs to confirm database connection success
+4. **Redis Connection**: Check backend logs to confirm Redis connection success
+
+## 🔧 Configuration Guide
+
+### Required Configuration
+
+- **MySQL**: Database connection information
+- **Redis**: Cache service connection information
+- **SECRET_KEY**: JWT secret key (must be changed in production)
+
+### Optional Configuration
+
+- **OSS**: Image upload feature will be unavailable if not configured
+- **Email Service**: Email verification code feature will be unavailable if not configured
+- **SMS Service**: SMS verification code feature will be unavailable if not configured
+
+### Production Environment Recommendations
+
+1. **Change SECRET_KEY**: Use strong random string
+2. **Disable DEBUG**: Set `DEBUG=false`
+3. **Disable Verification Code Return**: Set `RETURN_VERIFICATION_CODE=false`
+4. **Use HTTPS**: Configure SSL certificate
+5. **Configure CORS**: Limit allowed frontend domains
+6. **Database Optimization**: Configure connection pool, index optimization
+7. **Redis Persistence**: Configure RDB or AOF
+8. **Log Management**: Configure log rotation and monitoring
+
+## 🔭 Roadmap
+
+- [ ] Batch recognition UI optimization and process improvement
+- [ ] Complete video recognition feature implementation
+- [ ] Admin backend data analytics dashboard
+- [ ] More model variants and A/B testing support
+- [ ] Complete internationalization coverage
+- [ ] Docker containerization deployment solution
+- [ ] Kubernetes cluster deployment solution
+
+## 🤝 Join Us
+
+We are a passionate technical team dedicated to empowering traditional industries with AI. If you are interested in computer vision, Web development, or open-source projects, welcome to join us!
+
+### Contact Information
+
+<table>
+<tr>
+<td align="center">
+<strong>QQ</strong><br/>
+<img src="./frontend/official-website/src/assets/images/QQ.jpg" width="150" alt="QQ QR Code" />
+</td>
+<td align="center">
+<strong>WeChat / 微信</strong><br/>
+<img src="./frontend/official-website/src/assets/images/wechat.jpg" width="150" alt="WeChat QR Code" />
+</td>
+</tr>
+</table>
+
+- **Email**: [15968588744@163.com](mailto:15968588744@163.com)
+- **Phone / 手机**: 15968588744
+- **QQ**: 1957689514
+- **WeChat / 微信**: Lucky_ff0810
+
+### Core Team
+
+- **Auroral** - Project Founder & Full-Stack Architect
+
+## ⭐ Star & Stats
+
+[![Star History Chart](https://starchart.cc/Auroral0810/DarkVision-LPR.svg)](https://starchart.cc/Auroral0810/DarkVision-LPR)
+
+![GitHub Repo stars](https://img.shields.io/github/stars/Auroral0810/DarkVision-LPR?style=social)
 ![GitHub forks](https://img.shields.io/github/forks/Auroral0810/DarkVision-LPR?style=social)
 ![GitHub watchers](https://img.shields.io/github/watchers/Auroral0810/DarkVision-LPR?style=social)
 ![GitHub issues](https://img.shields.io/github/issues/Auroral0810/DarkVision-LPR)
 ![GitHub pull requests](https://img.shields.io/github/issues-pr/Auroral0810/DarkVision-LPR)
-![GitHub last commit](https://img.shields.io/github/last-commit/Auroral0810/DarkVision-LPR)
 
 ---
 
 <div align="center">
-  <p>Made with ❤️ by DarkVision-LPR Team</p>
+  <p>Made with ❤️ by DarkVision Team</p>
   <p>© 2026 DarkVision-LPR. All rights reserved.</p>
 </div>
+
