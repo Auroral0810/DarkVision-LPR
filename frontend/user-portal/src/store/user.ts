@@ -199,9 +199,72 @@ export const useUserStore = defineStore('user', () => {
       created_at: payloadUser?.created_at || defaultUser.created_at,
       last_login_at: payloadUser?.last_login_at ?? null,
     }
+    
+    // 更新profile信息（如果有）
+    if (payloadUser?.gender || payloadUser?.birthday || payloadUser?.address) {
+      userProfile.value = {
+        ...defaultProfile,
+        gender: payloadUser?.gender ?? null,
+        birthday: payloadUser?.birthday ?? null,
+        address: payloadUser?.address ?? null,
+        real_name: payloadUser?.real_name ?? null,
+        id_card_number: null,
+      }
+    }
 
     storage.setItem('userInfo', JSON.stringify(userInfo.value))
     otherStorage.removeItem('userInfo')
+  }
+  
+  /**
+   * 更新用户信息（在获取到详细信息后调用）
+   */
+  function updateUserInfo(detailedUserInfo: any) {
+    const userType = detailedUserInfo?.user_type || 'free'
+    let normalizedRole: UserRole = 'FREE'
+    if (userType === 'vip') {
+      normalizedRole = 'VIP'
+    } else if (userType === 'enterprise') {
+      normalizedRole = 'COMPANY'
+    } else {
+      normalizedRole = 'FREE'
+    }
+
+    userInfo.value = {
+      ...userInfo.value,
+      ...detailedUserInfo,
+      role: normalizedRole,
+    }
+    
+    // 更新profile信息
+    if (detailedUserInfo?.gender || detailedUserInfo?.birthday || detailedUserInfo?.address) {
+      userProfile.value = {
+        ...userProfile.value,
+        gender: detailedUserInfo?.gender ?? null,
+        birthday: detailedUserInfo?.birthday ?? null,
+        address: detailedUserInfo?.address ?? null,
+        real_name: detailedUserInfo?.real_name ?? null,
+      }
+    }
+    
+    // 更新membership信息
+    if (detailedUserInfo?.membership_type) {
+      membership.value = {
+        membership_type: detailedUserInfo.membership_type as MembershipType,
+        start_date: detailedUserInfo.created_at || '2026-01-01 00:00:00',
+        expire_date: detailedUserInfo.membership_expire_date ?? null,
+        is_active: detailedUserInfo.is_membership_active ?? false,
+      }
+    }
+    
+    // 更新verification状态
+    if (detailedUserInfo?.is_verified !== undefined) {
+      verification.value.status = detailedUserInfo.is_verified ? 'approved' : 'pending'
+    }
+    
+    // 保存到storage
+    const storage = localStorage.getItem('token') ? localStorage : sessionStorage
+    storage.setItem('userInfo', JSON.stringify(userInfo.value))
   }
 
   function logout() {
@@ -286,6 +349,7 @@ export const useUserStore = defineStore('user', () => {
     quota,
     membershipInfo,
     login,
+    updateUserInfo,
     logout,
     switchRole
   }

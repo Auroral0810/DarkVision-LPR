@@ -113,6 +113,12 @@ class UserDetailInfo(UserBasicInfo):
     membership_expire_date: Optional[datetime] = None
     is_membership_active: bool = False
     
+    # Profile信息（来自user_profiles表）
+    gender: Optional[str] = None
+    birthday: Optional[str] = None  # YYYY-MM-DD格式
+    address: Optional[str] = None
+    real_name: Optional[str] = None
+    
     # 识别额度
     daily_quota: int = 0
     used_quota_today: int = 0
@@ -120,7 +126,6 @@ class UserDetailInfo(UserBasicInfo):
     
     # 实名认证状态
     is_verified: bool = False
-    real_name: Optional[str] = None
     
     # 企业信息
     is_enterprise_main: bool = False

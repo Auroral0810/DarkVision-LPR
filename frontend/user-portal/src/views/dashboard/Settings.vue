@@ -634,64 +634,8 @@ const formatAddress = (province: string, city: string, district: string, detail:
   return parts.join('/')
 }
 
-// Profile Form - 初始化时需要先解析地址
-const initAddressParts = () => {
-  const address = userStore.userProfile.address
-  if (!address) return { province: '', city: '', district: '', detailAddress: '' }
-  
-  const parts = address.split('/')
-  const provinceName = parts[0] || ''
-  const cityName = parts[1] || ''
-  const districtName = parts[2] || ''
-  const detailAddress = parts.slice(3).join('/') || ''
-  
-  // 查找省份代码
-  const provinceCode = Object.keys(provinceCityData).find(
-    code => provinceCityData[code].name === provinceName
-  ) || ''
-  
-  // 如果找到省份，查找城市代码
-  let cityCode = ''
-  if (provinceCode) {
-    const provinceData = provinceCityData[provinceCode]
-    cityCode = Object.keys(provinceData.cities).find(
-      code => provinceData.cities[code].name === cityName
-    ) || ''
-  }
-  
-  // 如果找到城市，查找区县代码
-  let districtCode = ''
-  if (provinceCode && cityCode) {
-    const provinceData = provinceCityData[provinceCode]
-    const cityData = provinceData.cities[cityCode]
-    if (cityData) {
-      const index = cityData.districts.findIndex(d => d === districtName)
-      if (index !== -1) {
-        districtCode = `${cityCode}${String(index + 1).padStart(2, '0')}`
-      }
-    }
-  }
-  
-  return {
-    province: provinceCode,
-    city: cityCode,
-    district: districtCode,
-    detailAddress
-  }
-}
-
-const addressParts = initAddressParts()
-const profileForm = reactive({
-  nickname: userStore.userInfo.nickname,
-  gender: userStore.userProfile.gender || 'unknown',
-  birthday: userStore.userProfile.birthday || '',
-  province: addressParts.province,
-  city: addressParts.city,
-  district: addressParts.district,
-  detailAddress: addressParts.detailAddress
-})
-
 // 省市区数据（硬编码，主要省份和城市）
+// 注意：必须在 initAddressParts 之前定义
 const provinceCityData: Record<string, { name: string; cities: Record<string, { name: string; districts: string[] }> }> = {
   '110000': {
     name: '北京市',
@@ -777,6 +721,63 @@ const provinceCityData: Record<string, { name: string; cities: Record<string, { 
     }
   }
 }
+
+// Profile Form - 初始化时需要先解析地址
+const initAddressParts = () => {
+  const address = userStore.userProfile.address
+  if (!address) return { province: '', city: '', district: '', detailAddress: '' }
+  
+  const parts = address.split('/')
+  const provinceName = parts[0] || ''
+  const cityName = parts[1] || ''
+  const districtName = parts[2] || ''
+  const detailAddress = parts.slice(3).join('/') || ''
+  
+  // 查找省份代码
+  const provinceCode = Object.keys(provinceCityData).find(
+    code => provinceCityData[code].name === provinceName
+  ) || ''
+  
+  // 如果找到省份，查找城市代码
+  let cityCode = ''
+  if (provinceCode) {
+    const provinceData = provinceCityData[provinceCode]
+    cityCode = Object.keys(provinceData.cities).find(
+      code => provinceData.cities[code].name === cityName
+    ) || ''
+  }
+  
+  // 如果找到城市，查找区县代码
+  let districtCode = ''
+  if (provinceCode && cityCode) {
+    const provinceData = provinceCityData[provinceCode]
+    const cityData = provinceData.cities[cityCode]
+    if (cityData) {
+      const index = cityData.districts.findIndex(d => d === districtName)
+      if (index !== -1) {
+        districtCode = `${cityCode}${String(index + 1).padStart(2, '0')}`
+      }
+    }
+  }
+  
+  return {
+    province: provinceCode,
+    city: cityCode,
+    district: districtCode,
+    detailAddress
+  }
+}
+
+const addressParts = initAddressParts()
+const profileForm = reactive({
+  nickname: userStore.userInfo.nickname,
+  gender: userStore.userProfile.gender || 'unknown',
+  birthday: userStore.userProfile.birthday || '',
+  province: addressParts.province,
+  city: addressParts.city,
+  district: addressParts.district,
+  detailAddress: addressParts.detailAddress
+})
 
 // 省份列表
 const provinces = computed(() => {

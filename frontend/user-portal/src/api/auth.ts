@@ -68,3 +68,8 @@ export function changePassword(data: any): Promise<UnifiedResponse> {
   return request.put('/users/password', data)
 }
 
+// 获取当前用户详细信息
+export function getCurrentUserInfo(): Promise<UnifiedResponse<any>> {
+  return request.get('/auth/me')
+}
+

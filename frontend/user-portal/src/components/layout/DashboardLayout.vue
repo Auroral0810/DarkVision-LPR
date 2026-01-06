@@ -96,11 +96,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { Odometer, Camera, List, TrendCharts, Setting, MoreFilled, Trophy } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import { getCurrentUserInfo } from '@/api/auth'
 
 const route = useRoute()
 const router = useRouter()
@@ -117,6 +118,18 @@ const roleText = computed(() => {
     case 'VIP': return '专业版'
     case 'COMPANY': return '企业版'
     default: return ''
+  }
+})
+
+// 初始化时获取用户完整信息
+onMounted(async () => {
+  try {
+    const res = await getCurrentUserInfo()
+    if (res.code === 20000 && res.data) {
+      userStore.updateUserInfo(res.data)
+    }
+  } catch (error) {
+    console.error('Failed to fetch user info:', error)
   }
 })
 

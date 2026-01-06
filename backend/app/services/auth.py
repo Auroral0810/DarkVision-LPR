@@ -352,11 +352,13 @@ def get_user_detail_info(db: Session, user_id: int) -> UserDetailInfo:
     ).first()
     
     is_verified = verification is not None
-    real_name = None
-    if verification and hasattr(verification, 'real_name'):
-        # 从 user_profiles 表获取
-        profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
-        real_name = profile.real_name if profile else None
+    
+    # 获取用户Profile信息
+    profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
+    real_name = profile.real_name if profile else None
+    gender = profile.gender if profile else None
+    birthday = profile.birthday.strftime('%Y-%m-%d') if profile and profile.birthday else None
+    address = profile.address if profile else None
     
     # 检查是否是企业主账户
     from app.models.user import SubAccount
@@ -396,6 +398,9 @@ def get_user_detail_info(db: Session, user_id: int) -> UserDetailInfo:
         membership_type=membership.membership_type if membership else "free",
         membership_expire_date=membership.expire_date if membership else None,
         is_membership_active=membership.is_active if membership else False,
+        gender=gender,
+        birthday=birthday,
+        address=address,
         daily_quota=daily_quota,
         used_quota_today=used_quota_today,
         remaining_quota_today=max(0, daily_quota - used_quota_today),
