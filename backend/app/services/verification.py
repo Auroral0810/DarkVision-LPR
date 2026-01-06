@@ -173,8 +173,18 @@ class VerificationCodeService:
         # 设置频率限制
         cls.set_send_frequency_limit(phone)
         
-        # TODO: 实际发送短信（对接短信服务商）
-        logger.info(f"SMS code sent to {phone}: {code} (scene: {scene})")
+        # 实际发送短信（短信宝）
+        try:
+            from app.services.sms import sms_service
+            sms_service.send_verification_code(phone, code, scene)
+            logger.info(f"SMS code sent to {phone}: {code} (scene: {scene})")
+        except Exception as e:
+            logger.error(f"Failed to send SMS: {e}")
+            # 即使短信发送失败，验证码也已存储，开发环境可以使用返回的验证码
+            # 生产环境应该抛出异常
+            from app.config import settings
+            if not settings.RETURN_VERIFICATION_CODE:
+                raise
         
         # 开发环境返回验证码，生产环境不返回
         from app.config import settings

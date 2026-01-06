@@ -170,3 +170,9 @@ class InternalException(APIException):
     def __init__(self, message: str = None):
         super().__init__(ResponseCode.INTERNAL_ERROR, message)
 
+
+class ThirdPartyException(APIException):
+    """第三方服务异常"""
+    def __init__(self, message: str = None):
+        super().__init__(ResponseCode.THIRD_PARTY_ERROR, message)
+

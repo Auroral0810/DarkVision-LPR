@@ -41,12 +41,12 @@ class Settings(BaseSettings):
     MAIL_USE_TLS: bool = False
     MAIL_USE_SSL: bool = True
     
-    # 短信配置（腾讯云）
-    SMS_SECRET_ID: Optional[str] = None
-    SMS_SECRET_KEY: Optional[str] = None
-    SMS_SDK_APP_ID: Optional[str] = None
-    SMS_SIGN_NAME: Optional[str] = None
-    SMS_TEMPLATE_ID: Optional[str] = None
+    # 短信配置（短信宝）
+    SMS_PROVIDER: str = "smsbao"  # 短信服务商
+    SMS_API_URL: str = "http://api.smsbao.com/sms"  # 短信宝API地址
+    SMS_USER: Optional[str] = None  # 短信宝账号
+    SMS_PASSWORD: Optional[str] = None  # 短信宝密码（原始密码，会自动MD5加密）
+    SMS_SIGN_NAME: str = "DarkVision-LPR"  # 短信签名
     
     # OSS配置（阿里云）
     OSS_ENDPOINT: Optional[str] = None

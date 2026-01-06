@@ -70,6 +70,11 @@ class ResponseCode(int, Enum):
     RATE_LIMIT = 40700  # 请求过于频繁
     TOO_MANY_REQUESTS = 40701  # 请求次数超限
     
+    # 验证码相关错误 (40800-40899)
+    VERIFICATION_CODE_INVALID = 40800  # 验证码错误
+    VERIFICATION_CODE_EXPIRED = 40801  # 验证码已过期
+    VERIFICATION_CODE_SEND_FAILED = 40802  # 验证码发送失败
+    
     # ===== 服务器错误类 (50000-59999) =====
     INTERNAL_ERROR = 50000  # 服务器内部错误
     DATABASE_ERROR = 50001  # 数据库错误
@@ -146,6 +151,11 @@ class ResponseMessage:
         # 频率限制
         ResponseCode.RATE_LIMIT: "请求过于频繁，请稍后再试",
         ResponseCode.TOO_MANY_REQUESTS: "请求次数超过限制",
+        
+        # 验证码相关
+        ResponseCode.VERIFICATION_CODE_INVALID: "验证码错误",
+        ResponseCode.VERIFICATION_CODE_EXPIRED: "验证码已过期",
+        ResponseCode.VERIFICATION_CODE_SEND_FAILED: "验证码发送失败",
         
         # 服务器错误
         ResponseCode.INTERNAL_ERROR: "服务器内部错误",
