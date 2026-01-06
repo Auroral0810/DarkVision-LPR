@@ -41,31 +41,38 @@
             <el-radio-button label="month">本月</el-radio-button>
             <el-radio-button label="year">全年</el-radio-button>
           </el-radio-group>
-          <el-button :icon="Refresh" circle plain />
+          <el-button :icon="Refresh" circle plain @click="fetchData" />
           <el-button :icon="Download" plain>导出报告</el-button>
         </div>
       </div>
 
       <!-- KPI Cards -->
-      <div class="kpi-grid">
+      <div class="kpi-grid" v-loading="loading">
         <div class="kpi-card">
           <div class="label">总识别次数</div>
-          <div class="value">12,543</div>
-          <div class="trend up">+12.5%</div>
+          <div class="value">{{ kpiData.total_count }}</div>
+          <div class="trend" :class="kpiData.total_count_trend >= 0 ? 'up' : 'down'">
+            {{ kpiData.total_count_trend >= 0 ? '+' : '' }}{{ kpiData.total_count_trend }}%
+          </div>
         </div>
         <div class="kpi-card">
           <div class="label">平均置信度</div>
-          <div class="value">98.2%</div>
-          <div class="trend up">+0.4%</div>
+          <div class="value">{{ kpiData.avg_confidence }}%</div>
+          <div class="trend" :class="kpiData.avg_confidence_trend >= 0 ? 'up' : 'down'">
+            {{ kpiData.avg_confidence_trend >= 0 ? '+' : '' }}{{ kpiData.avg_confidence_trend }}%
+          </div>
         </div>
         <div class="kpi-card">
           <div class="label">异常车牌</div>
-          <div class="value">23</div>
-          <div class="trend down">-2.1%</div>
+          <div class="value">{{ kpiData.error_count }}</div>
+          <div class="trend" :class="kpiData.error_count_trend <= 0 ? 'up' : 'down'">
+             <!-- Error trend: lower is better (usually), but simpler to just show change -->
+            {{ kpiData.error_count_trend >= 0 ? '+' : '' }}{{ kpiData.error_count_trend }}%
+          </div>
         </div>
         <div class="kpi-card">
           <div class="label">平均耗时</div>
-          <div class="value">45ms</div>
+          <div class="value">{{ kpiData.avg_time_ms }}ms</div>
           <div class="trend flat">0.0%</div>
         </div>
       </div>
@@ -115,7 +122,7 @@
             </template>
           </el-table-column>
           <el-table-column prop="count" label="识别次数" align="right" />
-          <el-table-column prop="lastSeen" label="最近出现" align="right" />
+          <el-table-column prop="last_seen" label="最近出现" align="right" />
           <el-table-column label="趋势" width="100" align="center">
             <template #default>
               <el-icon color="#ef4444"><Top /></el-icon>
@@ -128,7 +135,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, provide } from 'vue'
+import { ref, provide, onMounted, watch } from 'vue'
 import { useUserStore } from '@/store/user'
 import { TrendCharts, Download, Top, Refresh } from '@element-plus/icons-vue'
 import VChart, { THEME_KEY } from 'vue-echarts'
@@ -142,6 +149,8 @@ import {
   TitleComponent,
   DatasetComponent
 } from 'echarts/components'
+import { getAnalysisData, type AnalysisParams } from '@/api/analysis'
+import { ElMessage } from 'element-plus'
 
 // Register ECharts components
 use([
@@ -159,135 +168,167 @@ use([
 provide(THEME_KEY, 'light')
 
 const userStore = useUserStore()
-const timeRange = ref('week')
+const timeRange = ref<AnalysisParams['time_range']>('week')
+const loading = ref(false)
 
-// Trend Chart Option
-const trendOption = ref({
-  tooltip: {
-    trigger: 'axis',
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
-    borderColor: '#e2e8f0',
-    textStyle: {
-      color: '#1e293b'
-    }
-  },
-  grid: {
-    left: '3%',
-    right: '4%',
-    bottom: '3%',
-    containLabel: true
-  },
-  xAxis: {
-    type: 'category',
-    data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
-    axisLine: { lineStyle: { color: '#e2e8f0' } },
-    axisLabel: { color: '#64748b' }
-  },
-  yAxis: [
-    {
-      type: 'value',
-      splitLine: { lineStyle: { type: 'dashed', color: '#f1f5f9' } },
-      axisLabel: { color: '#64748b' }
-    },
-    {
-      type: 'value',
-      name: '成功率',
-      min: 90,
-      max: 100,
-      position: 'right',
-      splitLine: { show: false },
-      axisLabel: { formatter: '{value}%', color: '#64748b' }
-    }
-  ],
-  series: [
-    {
-      name: '识别量',
-      type: 'bar',
-      barWidth: '40%',
-      itemStyle: {
-        color: {
-          type: 'linear',
-          x: 0, y: 0, x2: 0, y2: 1,
-          colorStops: [
-            { offset: 0, color: '#3b82f6' },
-            { offset: 1, color: '#60a5fa' }
-          ]
-        },
-        borderRadius: [4, 4, 0, 0]
-      },
-      data: [120, 132, 101, 134, 290, 230, 220]
-    },
-    {
-      name: '成功率',
-      type: 'line',
-      yAxisIndex: 1,
-      smooth: true,
-      itemStyle: { color: '#10b981' },
-      areaStyle: {
-        color: {
-            type: 'linear',
-            x: 0, y: 0, x2: 0, y2: 1,
-            colorStops: [
-                { offset: 0, color: 'rgba(16, 185, 129, 0.2)' },
-                { offset: 1, color: 'rgba(16, 185, 129, 0)' }
-            ]
-        }
-      },
-      data: [98.5, 99.2, 98.8, 99.5, 99.0, 99.8, 99.6]
-    }
-  ]
+// Data State
+const kpiData = ref({
+  total_count: 0,
+  avg_confidence: 0,
+  error_count: 0,
+  avg_time_ms: 0,
+  total_count_trend: 0,
+  avg_confidence_trend: 0,
+  error_count_trend: 0,
+  avg_time_trend: 0
 })
 
-// Distribution Chart Option
-const pieOption = ref({
-  tooltip: {
-    trigger: 'item'
-  },
-  legend: {
-    bottom: '0%',
-    left: 'center',
-    icon: 'circle'
-  },
-  series: [
-    {
-      name: '车牌类型',
-      type: 'pie',
-      radius: ['45%', '70%'],
-      center: ['50%', '45%'],
-      avoidLabelOverlap: false,
-      itemStyle: {
-        borderRadius: 10,
-        borderColor: '#fff',
-        borderWidth: 2
+const topPlates = ref<any[]>([])
+
+// Chart Options (Reactive)
+const trendOption = ref<any>({})
+const pieOption = ref<any>({})
+
+const fetchData = async () => {
+  loading.value = true
+  try {
+    const res = await getAnalysisData({ time_range: timeRange.value })
+    const data = res as any // Type assertion if needed, or define full response type
+    
+    // Update KPI
+    kpiData.value = data.kpi
+    
+    // Update Top Plates
+    topPlates.value = data.top_plates
+
+    // Update Trend Chart
+    const dates = data.trend.map((item: any) => item.date)
+    const counts = data.trend.map((item: any) => item.count)
+    const rates = data.trend.map((item: any) => item.success_rate)
+    
+    trendOption.value = {
+      tooltip: {
+        trigger: 'axis',
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        borderColor: '#e2e8f0',
+        textStyle: { color: '#1e293b' }
       },
-      label: {
-        show: false,
-        position: 'center'
+      grid: {
+        left: '3%', right: '4%', bottom: '3%', containLabel: true
       },
-      emphasis: {
-        label: {
-          show: true,
-          fontSize: '20',
-          fontWeight: 'bold'
+      xAxis: {
+        type: 'category',
+        data: dates,
+        axisLine: { lineStyle: { color: '#e2e8f0' } },
+        axisLabel: { color: '#64748b' }
+      },
+      yAxis: [
+        {
+          type: 'value',
+          splitLine: { lineStyle: { type: 'dashed', color: '#f1f5f9' } },
+          axisLabel: { color: '#64748b' }
+        },
+        {
+          type: 'value',
+          name: '成功率',
+          min: 0, max: 100,
+          position: 'right',
+          splitLine: { show: false },
+          axisLabel: { formatter: '{value}%', color: '#64748b' }
         }
-      },
-      data: [
-        { value: 1048, name: '蓝牌', itemStyle: { color: '#3b82f6' } },
-        { value: 735, name: '绿牌', itemStyle: { color: '#10b981' } },
-        { value: 580, name: '黄牌', itemStyle: { color: '#f59e0b' } },
-        { value: 300, name: '白牌', itemStyle: { color: '#64748b' } }
+      ],
+      series: [
+        {
+          name: '识别量',
+          type: 'bar',
+          barWidth: '40%',
+          itemStyle: {
+            color: {
+              type: 'linear',
+              x: 0, y: 0, x2: 0, y2: 1,
+              colorStops: [
+                { offset: 0, color: '#3b82f6' },
+                { offset: 1, color: '#60a5fa' }
+              ]
+            },
+            borderRadius: [4, 4, 0, 0]
+          },
+          data: counts
+        },
+        {
+          name: '成功率',
+          type: 'line',
+          yAxisIndex: 1,
+          smooth: true,
+          itemStyle: { color: '#10b981' },
+          areaStyle: {
+            color: {
+                type: 'linear',
+                x: 0, y: 0, x2: 0, y2: 1,
+                colorStops: [
+                    { offset: 0, color: 'rgba(16, 185, 129, 0.2)' },
+                    { offset: 1, color: 'rgba(16, 185, 129, 0)' }
+                ]
+            }
+          },
+          data: rates
+        }
       ]
     }
-  ]
+
+    // Update Distribution Chart
+    pieOption.value = {
+      tooltip: { trigger: 'item' },
+      legend: { bottom: '0%', left: 'center', icon: 'circle' },
+      series: [
+        {
+          name: '车牌类型',
+          type: 'pie',
+          radius: ['45%', '70%'],
+          center: ['50%', '45%'],
+          avoidLabelOverlap: false,
+          itemStyle: { borderRadius: 10, borderColor: '#fff', borderWidth: 2 },
+          label: { show: false, position: 'center' },
+          emphasis: {
+            label: { show: true, fontSize: '20', fontWeight: 'bold' }
+          },
+          data: data.distribution.map((item: any) => ({
+             value: item.value, 
+             name: item.name,
+             itemStyle: { color: getPlateColor(item.name) } 
+          }))
+        }
+      ]
+    }
+
+  } catch (error) {
+    console.error(error)
+    ElMessage.error('获取分析数据失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+const getPlateColor = (name: string) => {
+  const map: Record<string, string> = {
+    '蓝牌': '#3b82f6',
+    '绿牌': '#10b981',
+    '黄牌': '#f59e0b',
+    '白牌': '#64748b',
+    '其他': '#94a3b8'
+  }
+  return map[name] || '#94a3b8'
+}
+
+watch(timeRange, () => {
+  fetchData()
 })
 
-const topPlates = [
-  { plate: '京A·88888', count: 42, lastSeen: '10分钟前' },
-  { plate: '沪C·12345', count: 38, lastSeen: '2小时前' },
-  { plate: '苏E·67890', count: 25, lastSeen: '昨天' },
-  { plate: '浙B·54321', count: 18, lastSeen: '3天前' },
-  { plate: '粤B·99999', count: 12, lastSeen: '1周前' },
-]
+onMounted(() => {
+  if (userStore.isVIP) {
+    fetchData()
+  }
+})
 </script>
 
 <style scoped lang="scss">
