@@ -236,7 +236,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useUserStore } from '@/store/user'
 import { Search, Picture, Download } from '@element-plus/icons-vue'
-import { getRecognitionHistory } from '@/api/history'
+import { getRecognitionHistory, deleteRecognitionRecord } from '@/api/history'
 import { ElMessageBox, ElMessage } from 'element-plus'
 
 const userStore = useUserStore()
@@ -398,9 +398,15 @@ const handleDelete = (row: any) => {
       cancelButtonText: userStore.lang === 'zh-cn' ? '取消' : 'Cancel',
       type: 'warning',
     }
-  ).then(() => {
-    ElMessage.success(userStore.lang === 'zh-cn' ? '删除成功' : 'Delete successfully')
-    // TODO: Implement real delete call
+  ).then(async () => {
+    try {
+      await deleteRecognitionRecord(row.id)
+      ElMessage.success(userStore.lang === 'zh-cn' ? '删除成功' : 'Delete successfully')
+      fetchData()
+    } catch (error: any) {
+      console.error(error)
+      // Error is handled by request interceptor usually, but good to have fallback
+    }
   }).catch(() => {})
 }
 
@@ -424,10 +430,15 @@ const handleDeleteFromDetail = () => {
       cancelButtonText: userStore.lang === 'zh-cn' ? '取消' : 'Cancel',
       type: 'warning',
     }
-  ).then(() => {
-    detailVisible.value = false
-    ElMessage.success(userStore.lang === 'zh-cn' ? '删除成功' : 'Delete successfully')
-    // TODO: Implement real delete call
+  ).then(async () => {
+    try {
+      await deleteRecognitionRecord(currentRecord.value.id)
+      detailVisible.value = false
+      ElMessage.success(userStore.lang === 'zh-cn' ? '删除成功' : 'Delete successfully')
+      fetchData()
+    } catch (error: any) {
+      console.error(error)
+    }
   }).catch(() => {})
 }
 

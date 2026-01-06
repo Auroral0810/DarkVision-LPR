@@ -309,7 +309,8 @@ def get_recent_recognition_records(db: Session, user_id: int, limit: int = 5) ->
     try:
         # 查询最近的识别结果
         results = db.query(RecognitionRecord).filter(
-            RecognitionRecord.user_id == user_id
+            RecognitionRecord.user_id == user_id,
+            RecognitionRecord.is_deleted == False
         ).order_by(
             RecognitionRecord.processed_at.desc()
         ).limit(limit).all()

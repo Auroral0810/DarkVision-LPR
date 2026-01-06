@@ -16,7 +16,7 @@ export function getRecognitionHistory(params: any) {
  */
 export function deleteRecognitionRecord(id: number | string) {
   return request({
-    url: `/api/v1/history/${id}`, // TODO: Implement delete endpoint if needed
+    url: `/history/${id}`,
     method: 'delete'
   })
 }

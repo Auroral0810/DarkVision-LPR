@@ -1,4 +1,4 @@
-from sqlalchemy import Column, BigInteger, String, DateTime, Text, ForeignKey, Enum, Float, Integer, JSON, DECIMAL, Date
+from sqlalchemy import Column, BigInteger, String, DateTime, Text, ForeignKey, Enum, Float, Integer, JSON, DECIMAL, Date, Boolean
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.core.database import Base
@@ -20,6 +20,7 @@ class RecognitionTask(Base):
     started_at = Column(DateTime, nullable=True, comment="开始时间")
     finished_at = Column(DateTime, nullable=True, comment="结束时间")
     created_at = Column(DateTime, server_default=func.now(), comment="创建时间")
+    is_deleted = Column(Boolean, default=False, nullable=False, comment="是否软删除")
     
     results = relationship("RecognitionRecord", back_populates="task")
 
@@ -41,6 +42,7 @@ class RecognitionRecord(Base):
     model_version = Column(String(20), nullable=True, comment="模型版本")
     processed_at = Column(DateTime, nullable=False, comment="处理时间")
     created_at = Column(DateTime, server_default=func.now(), index=True, comment="创建时间")
+    is_deleted = Column(Boolean, default=False, nullable=False, comment="是否软删除")
 
     task = relationship("RecognitionTask", back_populates="results")
 

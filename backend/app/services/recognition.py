@@ -354,7 +354,10 @@ class RecognitionService:
         plate_type: Optional[str] = None
     ):
         """获取识别历史记录"""
-        query = db.query(RecognitionRecord).filter(RecognitionRecord.user_id == user_id)
+        query = db.query(RecognitionRecord).filter(
+            RecognitionRecord.user_id == user_id,
+            RecognitionRecord.is_deleted == False
+        )
         
         if start_date:
             query = query.filter(RecognitionRecord.created_at >= start_date)
@@ -374,5 +377,41 @@ class RecognitionService:
         items = query.offset((page - 1) * page_size).limit(page_size).all()
         
         return items, total
+
+    def delete_history(self, user_id: int, record_id: int, db: Session) -> bool:
+        """删除识别记录"""
+        record = db.query(RecognitionRecord).filter(
+            RecognitionRecord.id == record_id,
+            RecognitionRecord.user_id == user_id
+        ).first()
+        
+        if not record:
+            return False
+            
+        task_id = record.task_id
+        
+        # 软删除记录
+        record.is_deleted = True
+        
+        # 检查关联的任务是否还有其他结果
+        if task_id:
+            remaining_results = db.query(RecognitionRecord).filter(
+                RecognitionRecord.task_id == task_id,
+                RecognitionRecord.is_deleted == False
+            ).count()
+            
+            # 如果该任务下没有由于其他结果，则删除空任务 (防止产生大量空任务数据)
+            if remaining_results == 0:
+                task = db.query(RecognitionTask).filter(RecognitionTask.id == task_id).first()
+                if task:
+                     task.is_deleted = True
+                    
+        db.commit()
+        
+        # Invalidate user cache to update recent_records
+        from app.services.auth import invalidate_user_cache
+        invalidate_user_cache(user_id)
+        
+        return True
 
 recognition_service = RecognitionService()

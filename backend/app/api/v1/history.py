@@ -72,3 +72,19 @@ async def get_recognition_history(
         "page_size": page_size,
         "total_pages": total_pages
     })
+
+@router.delete("/{record_id}", response_model=UnifiedResponse, summary="删除识别记录")
+async def delete_recognition_record(
+    record_id: int,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    删除指定的识别记录
+    """
+    success = recognition_service.delete_history(current_user.id, record_id, db)
+    if not success:
+        from app.core.exceptions import NotFoundException
+        raise NotFoundException("记录不存在或无权删除")
+        
+    return success_response(message="删除成功")
