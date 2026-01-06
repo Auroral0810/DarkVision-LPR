@@ -490,120 +490,190 @@
     <!-- Password Dialog (Handles both Change and Reset) -->
     <el-dialog 
       v-model="showPasswordDialog" 
-      :title="passwordMode === 'change' ? '修改密码' : '找回密码'" 
-      width="500px"
+      class="custom-password-dialog split-layout"
+      width="850px"
+      align-center
+      destroy-on-close
+      :show-close="true"
       @closed="resetPasswordDialog"
     >
-      <el-form 
-        v-if="passwordMode === 'change'"
-        :model="passwordForm" 
-        :rules="passwordRules" 
-        ref="passwordFormRef" 
-        label-position="top"
-      >
-        <el-form-item label="当前密码" prop="oldPassword">
-          <el-input v-model="passwordForm.oldPassword" type="password" show-password placeholder="请输入当前密码" />
-        </el-form-item>
-        <el-form-item label="新密码" prop="newPassword">
-          <el-input v-model="passwordForm.newPassword" type="password" show-password placeholder="请输入新密码（6-20位）" />
-        </el-form-item>
-        <el-form-item label="确认新密码" prop="confirmPassword">
-          <el-input v-model="passwordForm.confirmPassword" type="password" show-password placeholder="请再次输入新密码" />
-        </el-form-item>
-        <div class="form-link">
-          <el-button link type="primary" @click="switchPasswordMode('reset')">忘记密码？</el-button>
+      <div class="dialog-split-container">
+        <!-- Left Sidebar -->
+        <div class="dialog-sidebar">
+          <div class="sidebar-content">
+            <div class="brand-area">
+              <div class="logo-icon">
+                <el-icon><Lock /></el-icon>
+              </div>
+              <h3>{{ passwordMode === 'change' ? '安全中心' : '找回密码' }}</h3>
+              <p class="desc">{{ passwordMode === 'change' ? '定期更新密码可以有效保护您的账户安全' : '我们将帮助您通过安全的方式重置密码' }}</p>
+            </div>
+            
+            <div class="security-features">
+              <div class="feature-item">
+                <el-icon><CircleCheckFilled /></el-icon>
+                <span>银行级数据加密</span>
+              </div>
+              <div class="feature-item">
+                <el-icon><CircleCheckFilled /></el-icon>
+                <span>实时安全监控</span>
+              </div>
+              <div class="feature-item">
+                <el-icon><CircleCheckFilled /></el-icon>
+                <span>异常登录提醒</span>
+              </div>
+            </div>
+            
+            <div class="sidebar-footer">
+              <p>DarkVision LPR</p>
+              <span>Security Center</span>
+            </div>
+          </div>
+          <div class="sidebar-bg-decor"></div>
         </div>
-      </el-form>
 
-      <el-form 
-        v-else
-        :model="forgotPasswordForm" 
-        :rules="forgotPasswordRules" 
-        ref="forgotPasswordFormRef" 
-        label-position="top"
-      >
-        <el-form-item label="验证方式" v-if="availableMethods.length > 1">
-          <el-radio-group v-model="forgotPasswordMethod" @change="handleMethodChange">
-            <el-radio label="phone" v-if="userStore.userInfo.phone">手机号</el-radio>
-            <el-radio label="email" v-if="userStore.userInfo.email">邮箱</el-radio>
-          </el-radio-group>
-        </el-form-item>
+        <!-- Right Form Area -->
+        <div class="dialog-main">
+          <div class="main-header">
+            <h3>{{ passwordMode === 'change' ? '修改密码' : '重置密码' }}</h3>
+          </div>
 
-        <el-form-item :label="forgotPasswordMethod === 'phone' ? '手机号' : '邮箱'" prop="account">
-          <el-input 
-            v-model="forgotPasswordForm.account" 
-            :placeholder="forgotPasswordMethod === 'phone' ? '手机号' : '邮箱'"
-            disabled
-            class="readonly-input"
+          <el-form 
+            v-if="passwordMode === 'change'"
+            :model="passwordForm" 
+            :rules="passwordRules" 
+            ref="passwordFormRef" 
+            label-position="top"
+            class="modern-form"
+            hide-required-asterisk
           >
-            <template #prefix>
-              <el-icon v-if="forgotPasswordMethod === 'phone'"><Iphone /></el-icon>
-              <el-icon v-else><Message /></el-icon>
-            </template>
-          </el-input>
-        </el-form-item>
-        <el-form-item label="验证码" prop="code">
-          <el-input 
-            v-model="forgotPasswordForm.code" 
-            placeholder="请输入验证码" 
-            maxlength="6"
-          >
-            <template #prefix>
-              <el-icon><Key /></el-icon>
-            </template>
-            <template #append>
+            <el-form-item label="当前密码" prop="oldPassword">
+              <el-input 
+                v-model="passwordForm.oldPassword" 
+                type="password" 
+                show-password 
+                placeholder="请输入当前密码"
+                class="custom-input"
+              />
+            </el-form-item>
+            <el-form-item label="新密码" prop="newPassword">
+              <el-input 
+                v-model="passwordForm.newPassword" 
+                type="password" 
+                show-password 
+                placeholder="请输入新密码（6-20位）"
+                class="custom-input"
+              />
+            </el-form-item>
+            <el-form-item label="确认新密码" prop="confirmPassword">
+              <el-input 
+                v-model="passwordForm.confirmPassword" 
+                type="password" 
+                show-password 
+                placeholder="请再次输入新密码"
+                class="custom-input"
+              />
+            </el-form-item>
+            
+            <div class="form-actions">
+              <div class="action-link" @click="switchPasswordMode('reset')">
+                <span>忘记密码？</span>
+              </div>
               <el-button 
-                @click="sendForgotPasswordCode" 
-                :disabled="forgotPasswordCodeDisabled"
-                :loading="sendingForgotPasswordCode"
-                class="send-code-btn"
+                type="primary" 
+                class="submit-btn" 
+                @click="handlePasswordSubmit" 
+                :loading="passwordLoading"
               >
-                {{ forgotPasswordCodeButtonText }}
+                确认修改
               </el-button>
-            </template>
-          </el-input>
-        </el-form-item>
-        <el-form-item label="新密码" prop="newPassword">
-          <el-input
-            v-model="forgotPasswordForm.newPassword"
-            type="password"
-            placeholder="请输入新密码（6-20位）"
-            show-password
-          >
-            <template #prefix>
-              <el-icon><Lock /></el-icon>
-            </template>
-          </el-input>
-        </el-form-item>
-        <el-form-item label="确认新密码" prop="confirmPassword">
-          <el-input
-            v-model="forgotPasswordForm.confirmPassword"
-            type="password"
-            placeholder="请再次输入新密码"
-            show-password
-          >
-            <template #prefix>
-              <el-icon><Lock /></el-icon>
-            </template>
-          </el-input>
-        </el-form-item>
-        <div class="form-link">
-          <el-button link type="primary" @click="switchPasswordMode('change')">想起密码了？返回修改</el-button>
-        </div>
-      </el-form>
+            </div>
+          </el-form>
 
-      <template #footer>
-        <el-button @click="showPasswordDialog = false">取消</el-button>
-        <el-button 
-          type="primary" 
-          @click="handlePasswordSubmit" 
-          :loading="passwordLoading"
-        >
-          确定
-        </el-button>
-      </template>
-    </el-dialog>
-    
+          <el-form 
+            v-else
+            :model="forgotPasswordForm" 
+            :rules="forgotPasswordRules" 
+            ref="forgotPasswordFormRef" 
+            label-position="top"
+            class="modern-form"
+            hide-required-asterisk
+          >
+            <!-- 简化布局，移除多余Icon，保持干净 -->
+            <el-form-item label="验证方式" v-if="availableMethods.length > 1" class="method-select">
+              <el-radio-group v-model="forgotPasswordMethod" @change="handleMethodChange" class="custom-radio-group">
+                <el-radio-button label="phone" v-if="userStore.userInfo.phone">手机号</el-radio-button>
+                <el-radio-button label="email" v-if="userStore.userInfo.email">邮箱</el-radio-button>
+              </el-radio-group>
+            </el-form-item>
+
+            <el-form-item :label="forgotPasswordMethod === 'phone' ? '手机号' : '邮箱'" prop="account">
+              <el-input 
+                v-model="forgotPasswordForm.account" 
+                disabled
+                class="custom-input readonly"
+              />
+            </el-form-item>
+            
+            <el-form-item label="验证码" prop="code">
+              <div class="code-input-group">
+                <el-input 
+                  v-model="forgotPasswordForm.code" 
+                  placeholder="6位验证码" 
+                  maxlength="6"
+                  class="custom-input code-field"
+                />
+                <el-button 
+                  type="primary" 
+                  plain
+                  @click="sendForgotPasswordCode" 
+                  :disabled="forgotPasswordCodeDisabled"
+                  :loading="sendingForgotPasswordCode"
+                  class="send-code-btn"
+                >
+                  {{ forgotPasswordCodeButtonText }}
+                </el-button>
+              </div>
+            </el-form-item>
+            
+            <el-form-item label="设置新密码" prop="newPassword">
+              <el-input
+                v-model="forgotPasswordForm.newPassword"
+                type="password"
+                placeholder="请输入新密码（6-20位）"
+                show-password
+                class="custom-input"
+              />
+            </el-form-item>
+            
+            <el-form-item label="确认新密码" prop="confirmPassword">
+              <el-input
+                v-model="forgotPasswordForm.confirmPassword"
+                type="password"
+                placeholder="请再次输入新密码"
+                show-password
+                class="custom-input"
+              />
+            </el-form-item>
+            
+            <div class="form-actions">
+              <div class="action-link" @click="switchPasswordMode('change')">
+                <el-icon><User /></el-icon>
+                <span>返回修改</span>
+              </div>
+              <el-button 
+                type="primary" 
+                class="submit-btn" 
+                @click="handlePasswordSubmit" 
+                :loading="passwordLoading"
+              >
+                重置密码
+              </el-button>
+            </div>
+          </el-form>
+        </div>
+      </div>
+    </el-dialog>    
     <el-dialog v-model="showPhoneDialog" title="更换手机号" width="500px">
       <el-form :model="phoneForm" :rules="phoneRules" ref="phoneFormRef" label-position="top">
         <el-form-item label="新手机号" prop="phone">
@@ -1922,6 +1992,306 @@ watch(() => userStore.verification, () => {
     text-align: center;
     padding-top: 24px;
     border-top: 1px solid #e2e8f0;
+  }
+}
+
+/* Split Layout Password Dialog Styles */
+.custom-password-dialog {
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+  
+  .el-dialog__header {
+    margin: 0;
+    padding: 0;
+    display: none; /* Hide default header */
+  }
+  
+  .el-dialog__body {
+    padding: 0;
+  }
+}
+
+.dialog-split-container {
+  display: flex;
+  height: 520px; /* Reduced height to fit better */
+  
+  /* Left Sidebar Styling */
+  .dialog-sidebar {
+    width: 300px;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+    position: relative;
+    overflow: hidden;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    
+    .sidebar-bg-decor {
+      position: absolute;
+      top: -100px;
+      right: -100px;
+      width: 300px;
+      height: 300px;
+      background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
+      border-radius: 50%;
+    }
+    
+    .sidebar-content {
+      position: relative;
+      z-index: 1;
+      padding: 32px 24px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      
+      .brand-area {
+        margin-bottom: 32px;
+        
+        .logo-icon {
+          width: 42px;
+          height: 42px;
+          background: rgba(255, 255, 255, 0.2);
+          backdrop-filter: blur(10px);
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 20px;
+          margin-bottom: 16px;
+          border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        h3 {
+          margin: 0 0 8px;
+          font-size: 20px;
+          font-weight: 700;
+          letter-spacing: -0.025em;
+        }
+        
+        .desc {
+          margin: 0;
+          font-size: 13px;
+          opacity: 0.8;
+          line-height: 1.5;
+        }
+      }
+      
+      .security-features {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        
+        .feature-item {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          font-size: 13px;
+          
+          .el-icon {
+            font-size: 16px;
+            color: #60a5fa; /* Lighter blue for icons */
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px;
+            border-radius: 50%;
+          }
+        }
+      }
+      
+      .sidebar-footer {
+        border-top: 1px solid rgba(255, 255, 255, 0.1);
+        padding-top: 16px;
+        
+        p {
+          margin: 0 0 2px;
+          font-weight: 600;
+          font-size: 13px;
+        }
+        
+        span {
+          font-size: 11px;
+          opacity: 0.6;
+          text-transform: uppercase;
+          letter-spacing: 0.05em;
+        }
+      }
+    }
+  }
+  
+  /* Right Main Content Styling */
+  .dialog-main {
+    flex: 1;
+    padding: 32px 40px;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    position: relative;
+    
+    .main-header {
+      margin-bottom: 24px;
+      text-align: center;
+      
+      h3 {
+        margin: 0;
+        font-size: 22px;
+        color: #0f172a;
+        font-weight: 700;
+      }
+    }
+  }
+}
+
+.modern-form {
+  .el-form-item {
+    margin-bottom: 20px; /* Reduced margin */
+    
+    :deep(.el-form-item__label) {
+      padding-bottom: 6px;
+      font-weight: 500;
+      font-size: 13px;
+      color: #334155;
+      line-height: 1.2;
+    }
+  }
+  
+  .custom-input {
+    :deep(.el-input__wrapper) {
+      padding: 6px 12px; /* Reduced padding */
+      border-radius: 8px; 
+      background-color: #f8fafc;
+      box-shadow: 0 0 0 1px #e2e8f0 inset;
+      transition: all 0.2s;
+      
+      &:hover {
+        background-color: #fff;
+        box-shadow: 0 0 0 1px #cbd5e1 inset;
+      }
+      
+      &.is-focus {
+        background-color: #fff;
+        box-shadow: 0 0 0 2px #3b82f6 inset;
+      }
+    }
+    
+    :deep(.el-input__inner) {
+      height: 32px; /* Reduced height */
+      font-size: 14px;
+    }
+
+    &.readonly {
+      :deep(.el-input__wrapper) {
+        background-color: #f1f5f9;
+        box-shadow: none;
+      }
+    }
+    
+    &.code-field {
+      :deep(.el-input__wrapper) {
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+      }
+    }
+  }
+
+  .method-select {
+    margin-bottom: 20px;
+    
+    .custom-radio-group {
+      width: 100%;
+      display: flex;
+      gap: 12px;
+      
+      :deep(.el-radio-button) {
+        flex: 1;
+      }
+      
+      :deep(.el-radio-button__inner) {
+        width: 100%;
+        border-radius: 8px !important;
+        border: 1px solid #e2e8f0;
+        box-shadow: none !important;
+        padding: 6px;
+        height: auto;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 13px;
+        background: white;
+        color: #64748b;
+        transition: all 0.2s;
+      }
+      
+      :deep(.el-radio-button__original-radio:checked + .el-radio-button__inner) {
+        background: #eff6ff;
+        border-color: #3b82f6;
+        color: #3b82f6;
+        box-shadow: 0 0 0 1px #3b82f6 !important;
+        font-weight: 600;
+      }
+    }
+  }
+
+  .code-input-group {
+    display: flex;
+    gap: 0;
+    width: 100%; /* Ensure full width alignment */
+    
+    .code-field {
+      flex: 1;
+    }
+    
+    .send-code-btn {
+      height: 46px; /* Matched to new input total height (32+12+2) */
+      border-radius: 0 8px 8px 0;
+      padding: 0 16px;
+      font-weight: 500;
+      margin-left: -1px;
+      z-index: 1;
+      font-size: 13px;
+    }
+  }
+  
+  .form-actions {
+    margin-top: 24px;
+    
+    .submit-btn {
+      width: 100%;
+      height: 44px; /* Slightly reduced */
+      border-radius: 22px;
+      font-size: 15px;
+      font-weight: 600;
+      background: linear-gradient(90deg, #2563eb 0%, #3b82f6 100%);
+      border: none;
+      box-shadow: 0 4px 12px rgba(37, 99, 235, 0.3);
+      transition: all 0.2s;
+      
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 16px rgba(37, 99, 235, 0.4);
+      }
+      
+      &:active {
+        transform: translateY(0);
+      }
+    }
+    
+    .action-link {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 16px;
+      color: #64748b;
+      cursor: pointer;
+      font-size: 13px;
+      transition: color 0.2s;
+      
+      &:hover {
+        color: #3b82f6;
+      }
+    }
   }
 }
 </style>

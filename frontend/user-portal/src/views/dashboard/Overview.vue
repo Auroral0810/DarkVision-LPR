@@ -108,8 +108,22 @@
               </template>
             </el-table-column>
             <el-table-column label="预览图" width="120">
-               <template #default>
-                 <div class="thumbnail-placeholder">
+               <template #default="scope">
+                 <el-image 
+                   v-if="scope.row.image_url"
+                   class="thumbnail-image" 
+                   :src="scope.row.image_url" 
+                   :preview-src-list="[scope.row.image_url]"
+                   fit="cover"
+                   :lazy="true"
+                 >
+                   <template #error>
+                     <div class="thumbnail-placeholder">
+                       <el-icon><Picture /></el-icon>
+                     </div>
+                   </template>
+                 </el-image>
+                 <div v-else class="thumbnail-placeholder">
                    <el-icon><Picture /></el-icon>
                  </div>
                </template>
@@ -492,11 +506,29 @@ onMounted(async () => {
     .el-progress { flex: 1; }
   }
   
+  .thumbnail-image {
+    width: 80px;
+    height: 50px;
+    border-radius: 6px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s;
+    
+    &:hover {
+      transform: scale(1.05);
+    }
+    
+    :deep(.el-image__inner) {
+      object-fit: cover;
+    }
+  }
+  
   .thumbnail-placeholder {
-    width: 50px; height: 36px;
+    width: 80px; 
+    height: 50px;
     background: #f8fafc;
     border: 1px dashed #cbd5e1;
-    border-radius: 4px;
+    border-radius: 6px;
     display: flex;
     align-items: center;
     justify-content: center;

@@ -314,6 +314,21 @@ def get_recent_recognition_records(db: Session, user_id: int, limit: int = 5) ->
             RecognitionRecord.processed_at.desc()
         ).limit(limit).all()
         
+        # 辅助函数：生成签名URL
+        def get_signed_url(url: Optional[str]) -> Optional[str]:
+            if not url or 'oss-accesspoint.aliyuncs.com' not in url:
+                return url
+            try:
+                from app.utils.oss import oss_uploader
+                import re
+                match = re.search(r'oss-accesspoint\.aliyuncs\.com/(.+)', url)
+                if match:
+                    object_key = match.group(1)
+                    return oss_uploader.generate_presigned_url(object_key, expires=86400)
+            except Exception as e:
+                logger.warning(f"Failed to generate presigned URL for image: {e}")
+            return url
+        
         records = []
         for result in results:
             # 映射车牌类型
@@ -332,13 +347,16 @@ def get_recent_recognition_records(db: Session, user_id: int, limit: int = 5) ->
             # 置信度转为百分比
             confidence = round(float(result.confidence) * 100, 1) if result.confidence else 0.0
             
+            # 生成签名URL
+            signed_image_url = get_signed_url(result.original_image_url)
+            
             records.append(RecentRecognitionRecord(
                 id=result.id,
                 date=date_str,
                 plate=result.license_plate or '',
                 type=plate_type,
                 confidence=confidence,
-                image_url=result.original_image_url
+                image_url=signed_image_url
             ))
         
         return records

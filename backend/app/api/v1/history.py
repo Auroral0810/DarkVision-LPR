@@ -2,14 +2,30 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from datetime import datetime
 from typing import Optional
+import re
 from app.core.database import get_db
 from app.api.deps import get_current_user
 from app.models.user import User
 from app.schemas.history import RecognitionHistoryList
 from app.services.recognition import recognition_service
 from app.core.response import success_response, UnifiedResponse
+from app.utils.oss import oss_uploader
+from app.core.logger import logger
 
 router = APIRouter()
+
+def get_signed_url(url: Optional[str]) -> Optional[str]:
+    """生成OSS签名URL"""
+    if not url or 'oss-accesspoint.aliyuncs.com' not in url:
+        return url
+    try:
+        match = re.search(r'oss-accesspoint\.aliyuncs\.com/(.+)', url)
+        if match:
+            object_key = match.group(1)
+            return oss_uploader.generate_presigned_url(object_key, expires=86400)
+    except Exception as e:
+        logger.warning(f"Failed to generate presigned URL for image: {e}")
+    return url
 
 @router.get("", response_model=UnifiedResponse[RecognitionHistoryList], summary="查询识别历史记录")
 async def get_recognition_history(
@@ -39,6 +55,13 @@ async def get_recognition_history(
     # 显式转换为 Pydantic 模型以支持序列化
     from app.schemas.history import RecognitionHistoryItem
     history_items = [RecognitionHistoryItem.model_validate(item) for item in items]
+    
+    # 为每个item的图片URL生成签名
+    for item in history_items:
+        if hasattr(item, 'original_image_url') and item.original_image_url:
+            item.original_image_url = get_signed_url(item.original_image_url)
+        if hasattr(item, 'enhanced_image_url') and item.enhanced_image_url:
+            item.enhanced_image_url = get_signed_url(item.enhanced_image_url)
     
     total_pages = (total + page_size - 1) // page_size
     
