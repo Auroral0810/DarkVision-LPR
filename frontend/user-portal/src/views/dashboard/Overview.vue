@@ -215,21 +215,23 @@ const currentDate = new Date().toLocaleDateString('zh-CN', {
   weekday: 'long'
 })
 
-// Mock Data
-const todayUsage = 12
+// Bound to userStore
+const todayUsage = computed(() => userStore.userInfo.used_quota_today)
 
 const maxUsageDisplay = computed(() => {
-  return userStore.quota.daily === Infinity ? '无限' : userStore.quota.daily
+  if (userStore.quota.daily === Infinity) return '无限'
+  return userStore.userInfo.daily_quota
 })
 
 const remainingUsageDisplay = computed(() => {
   if (userStore.quota.daily === Infinity) return '无限'
-  return Math.max(0, userStore.quota.daily - todayUsage)
+  return userStore.userInfo.remaining_quota_today
 })
 
 const usagePercentage = computed(() => {
-  if (userStore.quota.daily === Infinity) return 0
-  return Math.min(100, Math.round((todayUsage / userStore.quota.daily) * 100))
+  const daily = userStore.userInfo.daily_quota
+  if (daily === Infinity || daily === 0) return 0
+  return Math.min(100, Math.round((userStore.userInfo.used_quota_today / daily) * 100))
 })
 
 const recentRecords = [

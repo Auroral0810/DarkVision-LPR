@@ -18,6 +18,9 @@ export interface UserInfo {
   status: 'active' | 'inactive' | 'banned'
   created_at: string
   last_login_at: string | null
+  daily_quota: number
+  used_quota_today: number
+  remaining_quota_today: number
 }
 
 export interface UserProfile {
@@ -61,7 +64,10 @@ const defaultUser: UserInfo = {
   role: 'FREE',
   status: 'active',
   created_at: '2026-01-01 00:00:00',
-  last_login_at: null
+  last_login_at: null,
+  daily_quota: 10,
+  used_quota_today: 0,
+  remaining_quota_today: 10
 }
 
 const defaultProfile: UserProfile = {
@@ -198,6 +204,9 @@ export const useUserStore = defineStore('user', () => {
       status: (payloadUser?.status || 'active') as 'active' | 'inactive' | 'banned',
       created_at: payloadUser?.created_at || defaultUser.created_at,
       last_login_at: payloadUser?.last_login_at ?? null,
+      daily_quota: payloadUser?.daily_quota ?? 10,
+      used_quota_today: payloadUser?.used_quota_today ?? 0,
+      remaining_quota_today: payloadUser?.remaining_quota_today ?? 10,
     }
     
     // 更新profile信息（如果有）
@@ -234,6 +243,9 @@ export const useUserStore = defineStore('user', () => {
       ...userInfo.value,
       ...detailedUserInfo,
       role: normalizedRole,
+      daily_quota: detailedUserInfo?.daily_quota ?? userInfo.value.daily_quota,
+      used_quota_today: detailedUserInfo?.used_quota_today ?? userInfo.value.used_quota_today,
+      remaining_quota_today: detailedUserInfo?.remaining_quota_today ?? userInfo.value.remaining_quota_today,
     }
     
     // 更新profile信息
