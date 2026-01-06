@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, UploadFile, File, Body
+from fastapi import APIRouter, Depends, UploadFile, File, Body, BackgroundTasks
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.response import success, error, UnifiedResponse
-from app.api.v1.auth import get_current_user
+from app.api.deps import get_current_user
 from app.models.user import User
 from app.services.recognition import recognition_service
 from app.schemas.recognition import RecognitionResultResponse
@@ -58,3 +58,37 @@ async def recognize_by_url(
         print(f"Recognition error: {e}")
         return error(message="服务器内部错误，请检查日志")
 
+
+@router.post("/start-single", summary="开始单张图片识别任务（WebSocket）")
+async def start_recognition_task(
+    background_tasks: BackgroundTasks,
+    request: RecognizeByUrlRequest = Body(...),
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    开始识别任务（支持WebSocket进度）
+    1. 检查额度
+    2. 扣除额度
+    3. 创建任务
+    4. 后台异步执行识别（通过WebSocket推送进度）
+    """
+    # 1. 检查额度
+    if not recognition_service.check_quota(current_user.id, db):
+        return error(message="今日识别额度已用尽")
+        
+    # 2. 扣除额度
+    recognition_service.deduct_quota(current_user.id, db)
+    
+    # 3. 创建任务
+    task = recognition_service.create_task(current_user.id, "single", db)
+    
+    # 4. 后台执行
+    background_tasks.add_task(
+        recognition_service.process_task_async, 
+        task.task_uuid, 
+        request.image_url, 
+        current_user.id
+    )
+    
+    return success(data={"task_uuid": task.task_uuid})

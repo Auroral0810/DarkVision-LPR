@@ -1,4 +1,4 @@
-from sqlalchemy import Column, BigInteger, String, DateTime, Text, ForeignKey, Enum, Float, Integer, JSON, DECIMAL
+from sqlalchemy import Column, BigInteger, String, DateTime, Text, ForeignKey, Enum, Float, Integer, JSON, DECIMAL, Date
 from sqlalchemy.sql import func
 from sqlalchemy.orm import relationship
 from app.core.database import Base
@@ -43,3 +43,16 @@ class RecognitionRecord(Base):
     created_at = Column(DateTime, server_default=func.now(), index=True, comment="创建时间")
 
     task = relationship("RecognitionTask", back_populates="results")
+
+
+class RecognitionStatistic(Base):
+    """识别统计（限额）"""
+    __tablename__ = "recognition_statistics"
+
+    user_id = Column(BigInteger, ForeignKey("users.id"), primary_key=True, nullable=False)
+    sub_user_id = Column(BigInteger, ForeignKey("users.id"), nullable=True, comment="子账户独立统计")
+    stat_date = Column(Date, primary_key=True, nullable=False)
+    daily_count = Column(Integer, default=0)
+    monthly_count = Column(Integer, default=0)
+    video_count = Column(Integer, default=0)
+    api_count = Column(Integer, default=0)

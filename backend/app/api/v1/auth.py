@@ -27,11 +27,14 @@ from app.services.auth import (
 )
 from app.services.verification import verification_service
 from app.core.exceptions import UnauthorizedException, TokenInvalidException, ParameterException
+from app.api.deps import get_current_user as deps_get_current_user
+from app.models.user import User
 
 router = APIRouter()
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/v1/auth/login")
-
+# oauth2_scheme is now in deps.py, but for login/register we don't need it.
+# We do need it for /me and /logout, but we can use deps_get_current_user for /me.
+# For /logout, we can use the dependency too.
 
 @router.post("/register", response_model=UnifiedResponse, summary="用户注册", tags=["认证"])
 def register(user_data: UserRegister, db: Session = Depends(get_db)):
@@ -276,8 +279,8 @@ def send_email_code(code_request: EmailCodeRequest):
 
 
 @router.get("/me", response_model=UnifiedResponse, summary="获取当前用户信息", tags=["认证"])
-def get_current_user(
-    token: str = Depends(oauth2_scheme),
+def read_users_me(
+    current_user: User = Depends(deps_get_current_user),
     db: Session = Depends(get_db)
 ):
     """
@@ -295,17 +298,8 @@ def get_current_user(
     - 实名认证状态
     - 企业信息（如果是企业用户）
     """
-    # 解析token
-    payload = decode_access_token(token)
-    if not payload:
-        raise TokenInvalidException()
-    
-    user_id = payload.get("user_id")
-    if not user_id:
-        raise UnauthorizedException()
-    
     # 获取用户详细信息（优先从缓存）
-    user_detail = get_user_detail_info(db, user_id)
+    user_detail = get_user_detail_info(db, current_user.id)
     
     return success(
         data=user_detail.model_dump(mode='json'),
@@ -315,19 +309,14 @@ def get_current_user(
 
 @router.post("/logout", response_model=UnifiedResponse, summary="用户登出", tags=["认证"])
 def logout(
-    token: str = Depends(oauth2_scheme),
+    current_user: User = Depends(deps_get_current_user),
 ):
     """
     用户登出接口
     
     清除服务器端的token和用户信息缓存
     """
-    # 解析token获取用户ID
-    payload = decode_access_token(token)
-    if payload:
-        user_id = payload.get("user_id")
-        if user_id:
-            logout_user(user_id)
+    logout_user(current_user.id)
     
     return success(message="登出成功")
 

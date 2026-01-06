@@ -3,15 +3,26 @@ import numpy as np
 from ultralytics import YOLO
 from app.services.lpr.constants import KPT_SHAPE, KPT_NAMES
 import os
+import sys
 
 class PlateDetector:
     def __init__(self, model_path: str, conf_threshold: float = 0.25):
         if not os.path.exists(model_path):
             raise FileNotFoundError(f"YOLO model not found at {model_path}")
         
-        self.model = YOLO(model_path)
+        try:
+            self.model = YOLO(model_path)
+        except AttributeError as e:
+            if "'C3k2'" in str(e):
+                raise RuntimeError(
+                    "Failed to load YOLO model due to version mismatch. "
+                    "The model requires a newer version of 'ultralytics'. "
+                    "Please upgrade by running: pip install --upgrade ultralytics"
+                ) from e
+            raise e
+            
         # Initialize KPT_SHAPE if needed (though ultralytics usually handles this)
-        if hasattr(self.model, 'model'):
+        if hasattr(self.model, 'model') and hasattr(self.model.model, 'kpt_shape'):
             self.model.model.kpt_shape = KPT_SHAPE
         self.conf_threshold = conf_threshold
 
@@ -44,10 +55,19 @@ class PlateDetector:
             keypoints = None
             if hasattr(results[0], 'keypoints') and results[0].keypoints is not None:
                 # 获取完整的关键点数据
-                kpts_data = results[0].keypoints[i].data[0].cpu().numpy()  # shape: [4, 3]
+                # Check for different ultralytics versions (some use .xy, some .data, some .cpu().numpy())
+                if hasattr(results[0].keypoints[i], 'data'):
+                    kpts_data = results[0].keypoints[i].data[0].cpu().numpy()  # shape: [4, 3]
+                elif hasattr(results[0].keypoints[i], 'xy'):
+                    kpts_data = results[0].keypoints[i].xy[0].cpu().numpy()
+                else:
+                    kpts_data = []
+
                 if len(kpts_data) == 4:  # 4个角点
                     # 提取xy坐标（忽略visibility），shape: [4, 2]
-                    keypoints = kpts_data[:, :2]
+                    # Check dim
+                    if kpts_data.shape[-1] >= 2:
+                        keypoints = kpts_data[:, :2]
             
             detections.append({
                 'bbox': (x1, y1, x2, y2),
@@ -57,4 +77,3 @@ class PlateDetector:
             })
         
         return img_rgb, detections
-

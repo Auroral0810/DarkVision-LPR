@@ -37,6 +37,13 @@ class OSSUploader:
                     base_url = settings.OSS_URL
                     if not base_url.startswith("http"):
                         base_url = f"https://{base_url}"
+                    
+                    # Ensure no double slashes
+                    if base_url.endswith("/"):
+                        base_url = base_url[:-1]
+                    if filename.startswith("/"):
+                        filename = filename[1:]
+                        
                     return f"{base_url}/{filename}"
                 else:
                     return f"https://{self.url_prefix}/{filename}"
@@ -47,5 +54,20 @@ class OSSUploader:
             logger.error(f"OSS Upload Exception: {e}")
             raise e
 
-oss_uploader = OSSUploader()
+    def get_file_content(self, object_key: str) -> bytes:
+        """
+        获取文件内容
+        :param object_key: OSS Object Key
+        :return: bytes
+        """
+        if not self.enabled:
+            raise Exception("OSS is not configured")
+            
+        try:
+            result = self.bucket.get_object(object_key)
+            return result.read()
+        except Exception as e:
+            logger.error(f"OSS Download Exception: {e}")
+            raise e
 
+oss_uploader = OSSUploader()

@@ -17,12 +17,23 @@ export const uploadImage = (file: File) => {
 }
 
 /**
- * 通过OSS URL进行车牌识别
+ * 通过OSS URL进行车牌识别 (同步返回)
  * @param imageUrl OSS图片URL
  * @returns Promise<识别结果>
  */
 export const recognizePlateByUrl = (imageUrl: string) => {
   return request.post('/recognition/by-url', {
+    image_url: imageUrl
+  })
+}
+
+/**
+ * 开始识别任务 (WebSocket模式)
+ * @param imageUrl OSS图片URL
+ * @returns Promise<{task_uuid: string}>
+ */
+export const startRecognitionTask = (imageUrl: string) => {
+  return request.post('/recognition/start-single', {
     image_url: imageUrl
   })
 }
