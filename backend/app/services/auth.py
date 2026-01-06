@@ -1,12 +1,13 @@
 from sqlalchemy.orm import Session
-from sqlalchemy import func
-from datetime import datetime, date
+from sqlalchemy import func, and_
+from datetime import datetime, date, timedelta
 from typing import Optional
 from app.models.user import User, UserType, UserStatus, UserProfile, UserMembership, LoginLog
+from app.models.recognition import RecognitionTask, RecognitionRecord
 from app.core.security import verify_password, get_password_hash, create_access_token
 from app.schemas.user import (
     UserRegister, UserLoginByPhone, UserLoginByEmail,
-    UserDetailInfo, PasswordChange
+    UserDetailInfo, PasswordChange, RecentRecognitionRecord, RecognitionStats
 )
 from app.core.cache import get_redis
 from app.core.logger import logger
@@ -20,6 +21,7 @@ from app.core.exceptions import (
     ParameterException
 )
 from app.services.verification import verification_service
+from app.utils.oss import oss_uploader
 import re
 import json
 
@@ -291,6 +293,112 @@ def update_password(db: Session, user_id: int, password_data: PasswordChange) ->
     return user
 
 
+def get_recent_recognition_records(db: Session, user_id: int, limit: int = 5) -> list[RecentRecognitionRecord]:
+    """
+    获取用户最近的识别记录
+    
+    Args:
+        db: 数据库会话
+        user_id: 用户ID
+        limit: 返回记录数量，默认5条
+        
+    Returns:
+        list[RecentRecognitionRecord]: 识别记录列表
+    """
+    try:
+        # 查询最近的识别结果
+        results = db.query(RecognitionRecord).filter(
+            RecognitionRecord.user_id == user_id
+        ).order_by(
+            RecognitionRecord.processed_at.desc()
+        ).limit(limit).all()
+        
+        records = []
+        for result in results:
+            # 映射车牌类型
+            plate_type_map = {
+                'blue': '蓝牌',
+                'yellow': '黄牌',
+                'green': '绿牌',
+                'white': '白牌',
+                'other': '其他'
+            }
+            plate_type = plate_type_map.get(result.plate_type, '其他')
+            
+            # 格式化时间
+            date_str = result.processed_at.strftime('%Y-%m-%d %H:%M:%S') if result.processed_at else ''
+            
+            # 置信度转为百分比
+            confidence = round(float(result.confidence) * 100, 1) if result.confidence else 0.0
+            
+            records.append(RecentRecognitionRecord(
+                id=result.id,
+                date=date_str,
+                plate=result.license_plate or '',
+                type=plate_type,
+                confidence=confidence,
+                image_url=result.original_image_url
+            ))
+        
+        return records
+    except Exception as e:
+        logger.error(f"Failed to get recent recognition records for user {user_id}: {e}")
+        return []
+
+
+def get_recognition_stats(db: Session, user_id: int) -> RecognitionStats:
+    """
+    获取用户识别成功率统计
+    
+    Args:
+        db: 数据库会话
+        user_id: 用户ID
+        
+    Returns:
+        RecognitionStats: 识别统计数据
+    """
+    try:
+        today = date.today()
+        yesterday = today - timedelta(days=1)
+        
+        # 今日统计
+        today_tasks = db.query(RecognitionTask).filter(
+            RecognitionTask.user_id == user_id,
+            func.date(RecognitionTask.created_at) == today
+        ).all()
+        
+        today_total = len(today_tasks)
+        today_success = sum(1 for task in today_tasks if task.status == 'completed')
+        success_rate_today = round((today_success / today_total * 100), 1) if today_total > 0 else 0.0
+        
+        # 昨日统计
+        yesterday_tasks = db.query(RecognitionTask).filter(
+            RecognitionTask.user_id == user_id,
+            func.date(RecognitionTask.created_at) == yesterday
+        ).all()
+        
+        yesterday_total = len(yesterday_tasks)
+        yesterday_success = sum(1 for task in yesterday_tasks if task.status == 'completed')
+        success_rate_yesterday = round((yesterday_success / yesterday_total * 100), 1) if yesterday_total > 0 else 0.0
+        
+        # 计算变化
+        rate_change = round(success_rate_today - success_rate_yesterday, 1)
+        
+        return RecognitionStats(
+            success_rate_today=success_rate_today,
+            success_rate_yesterday=success_rate_yesterday,
+            rate_change=rate_change
+        )
+    except Exception as e:
+        logger.error(f"Failed to get recognition stats for user {user_id}: {e}")
+        # 返回默认值
+        return RecognitionStats(
+            success_rate_today=0.0,
+            success_rate_yesterday=0.0,
+            rate_change=0.0
+        )
+
+
 def get_user_detail_info(db: Session, user_id: int) -> UserDetailInfo:
     """
     获取用户详细信息（包含会员、额度、认证状态等）
@@ -328,7 +436,6 @@ def get_user_detail_info(db: Session, user_id: int) -> UserDetailInfo:
     ).first()
     
     # 获取今日已用额度
-    from app.models.recognition import RecognitionRecord
     today = date.today()
     used_quota_today = db.query(func.count(RecognitionRecord.id)).filter(
         RecognitionRecord.user_id == user_id,
@@ -386,6 +493,12 @@ def get_user_detail_info(db: Session, user_id: int) -> UserDetailInfo:
             logger.warning(f"Failed to generate presigned URL for avatar: {e}")
             # 如果签名失败，保持原URL
     
+    # 获取最近识别记录（实时数据，不缓存）
+    recent_records = get_recent_recognition_records(db, user_id, limit=5)
+    
+    # 获取识别成功率统计（实时数据，不缓存）
+    recognition_stats = get_recognition_stats(db, user_id)
+    
     # 构建详细信息
     user_detail = UserDetailInfo(
         id=user.id,
@@ -409,7 +522,9 @@ def get_user_detail_info(db: Session, user_id: int) -> UserDetailInfo:
         is_enterprise_main=is_enterprise_main,
         sub_account_count=sub_account_count,
         created_at=user.created_at,
-        last_login_at=user.last_login_at
+        last_login_at=user.last_login_at,
+        recent_records=recent_records,
+        recognition_stats=recognition_stats
     )
     
     # 缓存到 Redis（5分钟）

@@ -46,6 +46,21 @@ export interface Verification {
   reject_reason: string | null
 }
 
+export interface RecentRecognitionRecord {
+  id: number
+  date: string
+  plate: string
+  type: string
+  confidence: number
+  image_url?: string
+}
+
+export interface RecognitionStats {
+  success_rate_today: number
+  success_rate_yesterday: number
+  rate_change: number
+}
+
 export interface ThirdPartyLogin {
   provider: 'wechat' | 'qq' | 'github'
   open_id: string
@@ -102,6 +117,8 @@ export const useUserStore = defineStore('user', () => {
   const userProfile = ref<UserProfile>({ ...defaultProfile })
   const membership = ref<Membership>({ ...defaultMembership })
   const verification = ref<Verification>({ ...defaultVerification })
+  const recentRecords = ref<RecentRecognitionRecord[]>([])
+  const recognitionStats = ref<RecognitionStats | null>(null)
   const thirdPartyLogins = ref<ThirdPartyLogin[]>([
     { provider: 'wechat', open_id: '', union_id: null, bound: false },
     { provider: 'qq', open_id: '', union_id: null, bound: false },
@@ -228,8 +245,27 @@ export const useUserStore = defineStore('user', () => {
   /**
    * 更新用户信息（在获取到详细信息后调用）
    */
-  function updateUserInfo(detailedUserInfo: any) {
-    const userType = detailedUserInfo?.user_type || 'free'
+  async function updateUserInfo(fullUserInfo?: any) {
+    // 如果没有传入数据，则从API获取
+    if (!fullUserInfo) {
+      try {
+        const { getCurrentUserInfo } = await import('@/api/auth')
+        const res = await getCurrentUserInfo()
+        if (res.code === 20000 && res.data) {
+          fullUserInfo = res.data
+        } else {
+          console.error('Failed to fetch user info:', res.message)
+          return
+        }
+      } catch (error) {
+        console.error('Failed to fetch user info:', error)
+        return
+      }
+    }
+    
+    if (!fullUserInfo) return
+    
+    const userType = fullUserInfo?.user_type || 'free'
     let normalizedRole: UserRole = 'FREE'
     if (userType === 'vip') {
       normalizedRole = 'VIP'
@@ -241,37 +277,47 @@ export const useUserStore = defineStore('user', () => {
 
     userInfo.value = {
       ...userInfo.value,
-      ...detailedUserInfo,
+      ...fullUserInfo,
       role: normalizedRole,
-      daily_quota: detailedUserInfo?.daily_quota ?? userInfo.value.daily_quota,
-      used_quota_today: detailedUserInfo?.used_quota_today ?? userInfo.value.used_quota_today,
-      remaining_quota_today: detailedUserInfo?.remaining_quota_today ?? userInfo.value.remaining_quota_today,
+      daily_quota: fullUserInfo?.daily_quota ?? userInfo.value.daily_quota,
+      used_quota_today: fullUserInfo?.used_quota_today ?? userInfo.value.used_quota_today,
+      remaining_quota_today: fullUserInfo?.remaining_quota_today ?? userInfo.value.remaining_quota_today,
     }
     
     // 更新profile信息
-    if (detailedUserInfo?.gender || detailedUserInfo?.birthday || detailedUserInfo?.address) {
+    if (fullUserInfo?.gender || fullUserInfo?.birthday || fullUserInfo?.address) {
       userProfile.value = {
         ...userProfile.value,
-        gender: detailedUserInfo?.gender ?? null,
-        birthday: detailedUserInfo?.birthday ?? null,
-        address: detailedUserInfo?.address ?? null,
-        real_name: detailedUserInfo?.real_name ?? null,
+        gender: fullUserInfo?.gender ?? null,
+        birthday: fullUserInfo?.birthday ?? null,
+        address: fullUserInfo?.address ?? null,
+        real_name: fullUserInfo?.real_name ?? null,
       }
     }
     
     // 更新membership信息
-    if (detailedUserInfo?.membership_type) {
+    if (fullUserInfo?.membership_type) {
       membership.value = {
-        membership_type: detailedUserInfo.membership_type as MembershipType,
-        start_date: detailedUserInfo.created_at || '2026-01-01 00:00:00',
-        expire_date: detailedUserInfo.membership_expire_date ?? null,
-        is_active: detailedUserInfo.is_membership_active ?? false,
+        membership_type: fullUserInfo.membership_type as MembershipType,
+        start_date: fullUserInfo.created_at || '2026-01-01 00:00:00',
+        expire_date: fullUserInfo.membership_expire_date ?? null,
+        is_active: fullUserInfo.is_membership_active ?? false,
       }
     }
     
     // 更新verification状态
-    if (detailedUserInfo?.is_verified !== undefined) {
-      verification.value.status = detailedUserInfo.is_verified ? 'approved' : 'pending'
+    if (fullUserInfo?.is_verified !== undefined) {
+      verification.value.status = fullUserInfo.is_verified ? 'approved' : 'pending'
+    }
+    
+    // 更新识别记录
+    if (fullUserInfo?.recent_records) {
+      recentRecords.value = fullUserInfo.recent_records
+    }
+    
+    // 更新识别统计
+    if (fullUserInfo?.recognition_stats) {
+      recognitionStats.value = fullUserInfo.recognition_stats
     }
     
     // 保存到storage
@@ -289,6 +335,8 @@ export const useUserStore = defineStore('user', () => {
     userProfile.value = { ...defaultProfile }
     membership.value = { ...defaultMembership }
     verification.value = { ...defaultVerification }
+    recentRecords.value = []
+    recognitionStats.value = null
   }
 
   // Debug function to switch roles
@@ -353,6 +401,8 @@ export const useUserStore = defineStore('user', () => {
     userProfile,
     membership,
     verification,
+    recentRecords,
+    recognitionStats,
     thirdPartyLogins,
     isLoggedIn,
     isVIP,

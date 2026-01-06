@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field, model_validator
-from typing import Optional
+from typing import Optional, List
 from datetime import datetime
 from app.models.user import UserType, UserStatus
 
@@ -106,6 +106,30 @@ class UserBasicInfo(BaseModel):
         from_attributes = True
 
 
+# ===== 识别记录相关 =====
+class RecentRecognitionRecord(BaseModel):
+    """最近识别记录"""
+    id: int
+    date: str  # 格式化的时间，如 "2026-01-04 14:23:01"
+    plate: str  # 车牌号
+    type: str  # 车牌类型：蓝牌、绿牌、黄牌等
+    confidence: float  # 置信度（百分比，如 99.2）
+    image_url: Optional[str] = None  # 原始图片URL
+    
+    class Config:
+        from_attributes = True
+
+
+class RecognitionStats(BaseModel):
+    """识别统计数据"""
+    success_rate_today: float  # 今日成功率（百分比）
+    success_rate_yesterday: float  # 昨日成功率（百分比）
+    rate_change: float  # 较昨日变化（百分点，如 +0.2）
+    
+    class Config:
+        from_attributes = True
+
+
 class UserDetailInfo(UserBasicInfo):
     """用户详细信息（包含会员和统计）"""
     # 会员信息
@@ -134,6 +158,10 @@ class UserDetailInfo(UserBasicInfo):
     # 时间信息
     created_at: datetime
     last_login_at: Optional[datetime] = None
+    
+    # 识别统计（新增）
+    recent_records: List[RecentRecognitionRecord] = []
+    recognition_stats: Optional[RecognitionStats] = None
     
     class Config:
         from_attributes = True
@@ -178,3 +206,4 @@ class UserProfileUpdate(BaseModel):
     gender: Optional[str] = Field(None, pattern="^(male|female|unknown)$")
     birthday: Optional[str] = None  # YYYY-MM-DD格式
     address: Optional[str] = None  # 省/市/区/详细地址
+

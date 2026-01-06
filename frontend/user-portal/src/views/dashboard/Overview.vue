@@ -57,13 +57,13 @@
             </div>
             <div class="card-value-row">
               <div class="value-group">
-                <span class="value">99.8</span>
+                <span class="value">{{ successRate.toFixed(1) }}</span>
                 <span class="unit">%</span>
               </div>
             </div>
-            <div class="trend up">
-              <el-icon><Top /></el-icon>
-              <span>较昨日 +0.2%</span>
+            <div class="trend" :class="rateChange >= 0 ? 'up' : 'down'">
+              <el-icon><Top v-if="rateChange >= 0" /><Bottom v-else /></el-icon>
+              <span>较昨日 {{ rateChangeFormatted }}%</span>
             </div>
           </div>
 
@@ -102,8 +102,8 @@
             <el-table-column prop="date" label="时间" width="180">
               <template #default="scope">
                 <div class="date-cell">
-                  <span class="time">{{ scope.row.date.split(' ')[1] }}</span>
-                  <span class="date">{{ scope.row.date.split(' ')[0] }}</span>
+                  <span class="time">{{ scope.row.date.split(' ')[1] || '' }}</span>
+                  <span class="date">{{ scope.row.date.split(' ')[0] || '' }}</span>
                 </div>
               </template>
             </el-table-column>
@@ -144,6 +144,9 @@
                 <el-button link type="primary" size="small">详情</el-button>
               </template>
             </el-table-column>
+            <template #empty>
+              <el-empty description="暂无识别记录" :image-size="100" />
+            </template>
           </el-table>
         </div>
       </div>
@@ -196,11 +199,11 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/store/user'
 import { 
-  Camera, CircleCheck, Files, Plus, ArrowRight, Top, 
+  Camera, CircleCheck, Files, Plus, ArrowRight, Top, Bottom,
   Trophy, Picture 
 } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
@@ -234,12 +237,29 @@ const usagePercentage = computed(() => {
   return Math.min(100, Math.round((userStore.userInfo.used_quota_today / daily) * 100))
 })
 
-const recentRecords = [
-  { date: '2026-01-04 14:23:01', plate: '京A·88888', type: '蓝牌', confidence: 99.2 },
-  { date: '2026-01-04 14:20:15', plate: '沪C·12345', type: '蓝牌', confidence: 95.5 },
-  { date: '2026-01-04 13:55:42', plate: '苏E·67890', type: '绿牌', confidence: 98.1 },
-  { date: '2026-01-04 12:30:11', plate: '浙B·54321', type: '黄牌', confidence: 88.4 },
-]
+// 从 userStore 获取最近识别记录
+const recentRecords = computed(() => {
+  if (!userStore.recentRecords || userStore.recentRecords.length === 0) {
+    // 如果没有数据，返回空数组
+    return []
+  }
+  return userStore.recentRecords
+})
+
+// 从 userStore 获取识别成功率
+const successRate = computed(() => {
+  return userStore.recognitionStats?.success_rate_today || 0.0
+})
+
+const rateChange = computed(() => {
+  return userStore.recognitionStats?.rate_change || 0.0
+})
+
+const rateChangeFormatted = computed(() => {
+  const change = rateChange.value
+  if (change > 0) return `+${change.toFixed(1)}`
+  return change.toFixed(1)
+})
 
 const getPlateTypeColor = (type: string) => {
   if (type === '蓝牌') return ''
@@ -258,6 +278,13 @@ const handleUpgrade = () => {
   ElMessage.info('正在跳转至订阅页面...')
   // router.push('/subscription')
 }
+
+// 组件挂载时更新用户信息
+onMounted(async () => {
+  if (userStore.isLoggedIn) {
+    await userStore.updateUserInfo()
+  }
+})
 </script>
 
 <style scoped lang="scss">
@@ -402,6 +429,7 @@ const handleUpgrade = () => {
     gap: 4px;
     font-size: 12px;
     &.up { color: #10b981; }
+    &.down { color: #ef4444; }
   }
 
   .action-link {
