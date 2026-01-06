@@ -586,7 +586,7 @@ import {
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { uploadImage } from '@/api/recognition'
-import { updateProfile, resetPassword, changePassword, sendSmsCode, sendEmailCode } from '@/api/auth'
+import { updateProfile, resetPassword, changePassword, sendSmsCode as sendSmsCodeAPI, sendEmailCode as sendEmailCodeAPI } from '@/api/auth'
 
 const userStore = useUserStore()
 const activeTab = ref('profile')
@@ -1178,22 +1178,32 @@ const handleChangeEmail = async () => {
   })
 }
 
-const sendPhoneCode = () => {
+const sendPhoneCode = async () => {
   if (!phoneForm.phone) {
     ElMessage.warning('请先输入手机号')
     return
   }
-  // TODO: Call API
-  ElMessage.success('验证码已发送')
+  try {
+    await sendSmsCodeAPI(phoneForm.phone, 'bind')
+    ElMessage.success('验证码已发送')
+  } catch (error: any) {
+    console.error('Send code error:', error)
+    ElMessage.error(error?.response?.data?.message || '验证码发送失败')
+  }
 }
 
-const sendEmailCode = () => {
+const sendEmailCode = async () => {
   if (!emailForm.email) {
     ElMessage.warning('请先输入邮箱')
     return
   }
-  // TODO: Call API
-  ElMessage.success('验证码已发送')
+  try {
+    await sendEmailCodeAPI(emailForm.email, 'bind')
+    ElMessage.success('验证码已发送')
+  } catch (error: any) {
+    console.error('Send code error:', error)
+    ElMessage.error(error?.response?.data?.message || '验证码发送失败')
+  }
 }
 
 const handleSubmitVerification = () => {
@@ -1242,9 +1252,9 @@ const sendForgotPasswordCode = async () => {
   try {
     sendingForgotPasswordCode.value = true
     if (forgotPasswordMethod.value === 'email') {
-      await sendEmailCode(forgotPasswordForm.account, 'reset_password')
+      await sendEmailCodeAPI(forgotPasswordForm.account, 'reset_password')
     } else {
-      await sendSmsCode(forgotPasswordForm.account, 'reset_password')
+      await sendSmsCodeAPI(forgotPasswordForm.account, 'reset_password')
     }
     ElMessage.success('验证码已发送')
     startForgotPasswordCountdown()
@@ -1401,21 +1411,12 @@ onMounted(() => {
   margin-bottom: 10px;
 }
 
-.send-code-btn {
-  width: 110px;
-  height: 100%;
-  border-top-left-radius: 0;
-  border-bottom-left-radius: 0;
-  color: var(--el-color-primary);
-  font-weight: 500;
+.code-input {
+  display: flex;
+  gap: 12px;
   
-  &:hover {
-    color: var(--el-color-primary-light-3);
-    background-color: transparent;
-  }
-  
-  &.is-disabled {
-    color: var(--el-text-color-placeholder);
+  .el-input {
+    flex: 1;
   }
 }
 
@@ -1522,22 +1523,6 @@ onMounted(() => {
         p { margin: 0; font-size: 13px; color: #94a3b8; }
       }
     }
-  }
-}
-
-.send-code-btn {
-  width: 112px;
-  color: var(--el-color-primary);
-  font-weight: normal;
-  
-  &:hover {
-    color: var(--el-color-primary-light-3);
-    background-color: var(--el-color-primary-light-9);
-  }
-  
-  &.is-disabled {
-    color: var(--el-text-color-placeholder);
-    background-color: transparent;
   }
 }
 
