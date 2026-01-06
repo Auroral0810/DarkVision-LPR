@@ -54,6 +54,11 @@ class Settings(BaseSettings):
     OSS_ACCESS_KEY_SECRET: Optional[str] = None
     OSS_BUCKET_NAME: Optional[str] = None
     
+    # LPR模型配置
+    YOLO_MODEL_PATH: str = "weights/best.pt"
+    LPRNET_MODEL_PATH: str = "weights/Final_LPRNet_model.pth"
+    UPLOAD_DIR: str = "static/uploads"
+
     # 开发模式
     DEBUG: bool = True
     RETURN_VERIFICATION_CODE: bool = True  # 开发环境返回验证码

@@ -1,17 +1,18 @@
 """
 统一响应格式和工具函数
 """
-from typing import Any, Optional, Union, Dict
+from typing import Any, Optional, Union, Dict, Generic, TypeVar
 from pydantic import BaseModel
 from fastapi.responses import JSONResponse
 from app.core.codes import ResponseCode, ResponseMessage, get_http_status
 
+T = TypeVar("T")
 
-class UnifiedResponse(BaseModel):
+class UnifiedResponse(BaseModel, Generic[T]):
     """统一响应模型"""
     code: int  # 业务状态码
     message: str  # 响应消息
-    data: Optional[Any] = None  # 响应数据
+    data: Optional[T] = None  # 响应数据
     
     class Config:
         json_schema_extra = {

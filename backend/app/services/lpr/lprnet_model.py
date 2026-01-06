@@ -80,10 +80,9 @@ class LPRNet(nn.Module):
         return logits
 
 def build_lprnet(lpr_max_len=8, phase=False, class_num=66, dropout_rate=0.5):
-
     Net = LPRNet(lpr_max_len, phase, class_num, dropout_rate)
-
     if phase == "train":
         return Net.train()
     else:
         return Net.eval()
+
