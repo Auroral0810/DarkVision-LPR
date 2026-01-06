@@ -73,3 +73,14 @@ export function getCurrentUserInfo(): Promise<UnifiedResponse<any>> {
   return request.get('/auth/me')
 }
 
+export interface VerificationSubmitRequest {
+  real_name: string
+  id_card_number: string
+  id_card_front: string
+  id_card_back: string
+  face_photo?: string
+}
+
+export function submitVerification(data: VerificationSubmitRequest): Promise<UnifiedResponse> {
+  return request.post('/users/verify', data)
+}

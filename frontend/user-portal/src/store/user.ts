@@ -9,7 +9,7 @@ export type UserRole = 'FREE' | 'VIP' | 'COMPANY'
 export type UserType = 'free' | 'vip' | 'enterprise' | 'admin'
 export type MembershipType = 'free' | 'vip_monthly' | 'vip_yearly' | 'enterprise_custom'
 export type Gender = 'male' | 'female' | 'unknown'
-export type VerificationStatus = 'pending' | 'approved' | 'rejected'
+export type VerificationStatus = 'unverified' | 'pending' | 'approved' | 'rejected'
 
 export interface UserInfo {
   id: string | number
@@ -43,6 +43,8 @@ export interface Membership {
 }
 
 export interface Verification {
+  real_name: string | null
+  id_card_number: string | null
   id_card_front: string | null
   id_card_back: string | null
   face_photo: string | null
@@ -105,10 +107,12 @@ const defaultMembership: Membership = {
 }
 
 const defaultVerification: Verification = {
+  real_name: null,
+  id_card_number: null,
   id_card_front: null,
   id_card_back: null,
   face_photo: null,
-  status: 'pending',
+  status: 'unverified',
   reject_reason: null
 }
 
@@ -318,7 +322,34 @@ export const useUserStore = defineStore('user', () => {
     
     // 更新verification状态
     if (fullUserInfo?.is_verified !== undefined) {
-      verification.value.status = fullUserInfo.is_verified ? 'approved' : 'pending'
+      if (fullUserInfo.is_verified) {
+        verification.value.status = 'approved'
+      } else if (fullUserInfo.verification_status === 'pending') {
+        verification.value.status = 'pending'
+      } else if (fullUserInfo.verification_status === 'rejected') {
+        verification.value.status = 'rejected'
+      } else {
+        verification.value.status = 'unverified'
+      }
+    }
+    
+    if (fullUserInfo?.real_name) {
+      verification.value.real_name = fullUserInfo.real_name
+    }
+    if (fullUserInfo?.id_card_number) {
+      verification.value.id_card_number = fullUserInfo.id_card_number
+    }
+    if (fullUserInfo?.id_card_front) {
+      verification.value.id_card_front = fullUserInfo.id_card_front
+    }
+    if (fullUserInfo?.id_card_back) {
+      verification.value.id_card_back = fullUserInfo.id_card_back
+    }
+    if (fullUserInfo?.face_photo) {
+      verification.value.face_photo = fullUserInfo.face_photo
+    }
+    if (fullUserInfo?.reject_reason) {
+      verification.value.reject_reason = fullUserInfo.reject_reason
     }
     
     // 更新识别记录
@@ -348,6 +379,12 @@ export const useUserStore = defineStore('user', () => {
     verification.value = { ...defaultVerification }
     recentRecords.value = []
     recognitionStats.value = null
+  }
+
+  function withdrawVerification() {
+    verification.value.status = 'unverified'
+    // Actually we should call an API here to notify the backend
+    console.log('Verification withdrawn locally')
   }
 
   // Debug function to switch roles
@@ -424,6 +461,7 @@ export const useUserStore = defineStore('user', () => {
     login,
     updateUserInfo,
     logout,
+    withdrawVerification,
     switchRole,
     lang,
     locale,

@@ -4,12 +4,13 @@ from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.response import success, UnifiedResponse
 from app.core.security import decode_access_token
-from app.schemas.user import UserProfileUpdate, UserDetailInfo, PasswordChange
+from app.schemas.user import UserProfileUpdate, UserDetailInfo, PasswordChange, RealNameVerificationSubmit
 from app.services.auth import (
     get_user_by_id,
     update_user_profile,
     get_user_detail_info,
-    update_password
+    update_password,
+    submit_real_name_verification
 )
 from app.core.exceptions import UnauthorizedException, TokenInvalidException
 
@@ -96,3 +97,18 @@ def change_password(
     
     return success(message="密码修改成功，请重新登录")
 
+@router.post("/verify", response_model=UnifiedResponse, summary="提交实名认证", tags=["用户"])
+def verify_real_name(
+    verify_data: RealNameVerificationSubmit,
+    user_id: int = Depends(get_current_user_id),
+    db: Session = Depends(get_db)
+):
+    """
+    提交实名认证申请
+    
+    1. 调用第三方接口核验姓名和身份证号
+    2. 核验通过后，记录申请信息等待管理员人工审核照片
+    3. 如果核验失败，直接返回失败原因
+    """
+    submit_real_name_verification(db, user_id, verify_data)
+    return success(message="实名认证已经提交，请等待管理员审核照片")

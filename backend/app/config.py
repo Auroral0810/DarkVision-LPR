@@ -55,6 +55,9 @@ class Settings(BaseSettings):
     OSS_BUCKET_NAME: Optional[str] = None
     OSS_URL: Optional[str] = None
     
+    # 实名认证配置（阿里云市场）
+    ALIYUN_MARKET_APPCODE: str = "387511e0bc40494ea8f35dc670493eb7"
+    
     # LPR模型配置
     YOLO_MODEL_PATH: str = "weights/best.pt"
     LPRNET_MODEL_PATH: str = "weights/Final_LPRNet_model.pth"

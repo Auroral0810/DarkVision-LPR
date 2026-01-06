@@ -7,7 +7,8 @@ from app.models.recognition import RecognitionTask, RecognitionRecord
 from app.core.security import verify_password, get_password_hash, create_access_token
 from app.schemas.user import (
     UserRegister, UserLoginByPhone, UserLoginByEmail,
-    UserDetailInfo, PasswordChange, RecentRecognitionRecord, RecognitionStats
+    UserDetailInfo, PasswordChange, RecentRecognitionRecord, RecognitionStats, 
+    RealNameVerificationSubmit
 )
 from app.core.cache import get_redis
 from app.core.logger import logger
@@ -454,11 +455,17 @@ def get_user_detail_info(db: Session, user_id: int) -> UserDetailInfo:
     # 检查实名认证状态
     from app.models.user import RealNameVerification
     verification = db.query(RealNameVerification).filter(
-        RealNameVerification.user_id == user_id,
-        RealNameVerification.status == "approved"
+        RealNameVerification.user_id == user_id
     ).first()
     
-    is_verified = verification is not None
+    is_verified = (verification.status == "approved") if verification else False
+    verification_status = verification.status if verification else None
+    reject_reason = verification.reject_reason if verification else None
+    
+    # 获取原始照片URL
+    id_card_front = verification.id_card_front if verification else None
+    id_card_back = verification.id_card_back if verification else None
+    face_photo = verification.face_photo if verification else None
     
     # 获取用户Profile信息
     profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
@@ -476,22 +483,24 @@ def get_user_detail_info(db: Session, user_id: int) -> UserDetailInfo:
             SubAccount.enterprise_user_id == user_id
         ).scalar() or 0
     
-    # 处理头像URL：如果是OSS URL，生成带签名的临时访问URL
-    avatar_display_url = user.avatar_url
-    if avatar_display_url and 'oss-accesspoint.aliyuncs.com' in avatar_display_url:
+    # 处理OSS URL：生成带签名的临时访问URL
+    def get_signed_url(url: Optional[str]) -> Optional[str]:
+        if not url or 'oss-accesspoint.aliyuncs.com' not in url:
+            return url
         try:
             from app.utils.oss import oss_uploader
-            # 从完整URL中提取object_key
-            # 例如: https://xxx.oss-accesspoint.aliyuncs.com/lpr/upload/xxx.jpg
-            import re
-            match = re.search(r'oss-accesspoint\.aliyuncs\.com/(.+)', avatar_display_url)
+            match = re.search(r'oss-accesspoint\.aliyuncs\.com/(.+)', url)
             if match:
                 object_key = match.group(1)
-                # 生成24小时有效的签名URL
-                avatar_display_url = oss_uploader.generate_presigned_url(object_key, expires=86400)
+                return oss_uploader.generate_presigned_url(object_key, expires=86400)
         except Exception as e:
-            logger.warning(f"Failed to generate presigned URL for avatar: {e}")
-            # 如果签名失败，保持原URL
+            logger.warning(f"Failed to generate presigned URL: {e}")
+        return url
+
+    avatar_display_url = get_signed_url(user.avatar_url)
+    id_card_front_url = get_signed_url(id_card_front)
+    id_card_back_url = get_signed_url(id_card_back)
+    face_photo_url = get_signed_url(face_photo)
     
     # 获取最近识别记录（实时数据，不缓存）
     recent_records = get_recent_recognition_records(db, user_id, limit=5)
@@ -505,7 +514,7 @@ def get_user_detail_info(db: Session, user_id: int) -> UserDetailInfo:
         phone=user.phone,
         nickname=user.nickname,
         email=user.email,
-        avatar_url=avatar_display_url,  # 使用签名后的URL
+        avatar_url=avatar_display_url,
         user_type=user.user_type,
         status=user.status,
         membership_type=membership.membership_type if membership else "free",
@@ -518,6 +527,11 @@ def get_user_detail_info(db: Session, user_id: int) -> UserDetailInfo:
         used_quota_today=used_quota_today,
         remaining_quota_today=max(0, daily_quota - used_quota_today),
         is_verified=is_verified,
+        verification_status=verification_status,
+        id_card_front=id_card_front_url,
+        id_card_back=id_card_back_url,
+        face_photo=face_photo_url,
+        reject_reason=reject_reason,
         real_name=real_name,
         is_enterprise_main=is_enterprise_main,
         sub_account_count=sub_account_count,
@@ -728,3 +742,62 @@ def log_login_attempt(
     except Exception as e:
         logger.error(f"Failed to log login attempt: {e}")
         db.rollback()
+
+
+def submit_real_name_verification(db: Session, user_id: int, verify_data: RealNameVerificationSubmit):
+    """
+    提交实名认证申请
+    
+    1. 调用第三方接口核验姓名和身份证号
+    2. 核验通过后，记录申请信息等待管理员人工审核照片
+    """
+    from app.services.id_verification import id_verification_service
+    from app.models.user import RealNameVerification, UserProfile
+    
+    # 1. 调用第三方接口核验
+    res = id_verification_service.verify_id_card(verify_data.real_name, verify_data.id_card_number)
+    
+    if not res["success"]:
+        # 如果是核验结果不一致（res="2" or "3"），抛出具体异常
+        if res["res"] in ["2", "3"]:
+            raise ParameterException(f"实名认证失败：{res['description']}")
+        # 其他接口请求错误
+        raise ParameterException(f"实名核验接口异常: {res['description']}")
+    
+    # 2. 如果核验一致 (res="1")，记录申请等待照片人工审核
+    # 检查是否已有申请
+    verification = db.query(RealNameVerification).filter(RealNameVerification.user_id == user_id).first()
+    if verification:
+        verification.id_card_front = verify_data.id_card_front
+        verification.id_card_back = verify_data.id_card_back
+        verification.face_photo = verify_data.face_photo
+        verification.status = "pending"
+        verification.reject_reason = None
+        verification.created_at = datetime.now()
+    else:
+        verification = RealNameVerification(
+            user_id=user_id,
+            id_card_front=verify_data.id_card_front,
+            id_card_back=verify_data.id_card_back,
+            face_photo=verify_data.face_photo,
+            status="pending"
+        )
+        db.add(verification)
+    
+    # 同时同步更新 UserProfile 中的姓名和身份证号
+    profile = db.query(UserProfile).filter(UserProfile.user_id == user_id).first()
+    if not profile:
+        profile = UserProfile(user_id=user_id)
+        db.add(profile)
+    
+    profile.real_name = verify_data.real_name
+    profile.id_card_number = verify_data.id_card_number
+    
+    db.commit()
+    
+    # 清除用户信息缓存，确保下次获取详细信息时能看到最新状态
+    redis_client = get_redis()
+    if redis_client:
+        redis_client.delete(f"user_detail:{user_id}")
+    
+    return True

@@ -150,6 +150,11 @@ class UserDetailInfo(UserBasicInfo):
     
     # 实名认证状态
     is_verified: bool = False
+    verification_status: Optional[str] = None  # pending/approved/rejected/None
+    id_card_front: Optional[str] = None
+    id_card_back: Optional[str] = None
+    face_photo: Optional[str] = None
+    reject_reason: Optional[str] = None
     
     # 企业信息
     is_enterprise_main: bool = False
@@ -207,3 +212,11 @@ class UserProfileUpdate(BaseModel):
     birthday: Optional[str] = None  # YYYY-MM-DD格式
     address: Optional[str] = None  # 省/市/区/详细地址
 
+# ===== 实名认证提交 =====
+class RealNameVerificationSubmit(BaseModel):
+    """提交实名认证"""
+    real_name: str = Field(..., min_length=2, max_length=50)
+    id_card_number: str = Field(..., pattern=r"(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)")
+    id_card_front: str = Field(..., description="身份证正面照URL")
+    id_card_back: str = Field(..., description="身份证反面照URL")
+    face_photo: Optional[str] = Field(None, description="手持身份证/人脸照URL")

@@ -234,7 +234,9 @@
         <!-- Verification Section -->
         <div v-show="activeTab === 'verification'" class="content-section">
           <h3>实名认证</h3>
-          <div class="verification-status" v-if="userStore.verification.status === 'approved'">
+          
+          <!-- 已认证状态展示 -->
+          <div class="verification-status" v-if="userStore.verification.status === 'approved' && !showReverifyForm">
             <div class="status-success">
               <el-icon><CircleCheckFilled /></el-icon>
               <div class="status-text">
@@ -242,78 +244,146 @@
                 <p>您已完成实名认证，已解锁所有高级功能权限</p>
               </div>
             </div>
+            
+            <div class="verified-info-card">
+              <div class="info-row">
+                <span class="label">真实姓名</span>
+                <span class="value">{{ maskName(userStore.verification.real_name) }}</span>
+              </div>
+              <div class="info-row">
+                <span class="label">身份证号</span>
+                <span class="value">{{ maskIdCard(userStore.verification.id_card_number) }}</span>
+              </div>
+              <div class="info-actions">
+                <el-button type="primary" plain @click="showReverifyForm = true">更换认证信息</el-button>
+              </div>
+            </div>
           </div>
           
-          <div class="verification-status" v-else-if="userStore.verification.status === 'pending'">
+          <!-- 审核中状态 -->
+          <div class="verification-status" v-else-if="userStore.verification.status === 'pending' && !showReverifyForm">
             <div class="status-pending">
               <el-icon><Clock /></el-icon>
               <div class="status-text">
                 <h4>审核中</h4>
                 <p>您的认证资料正在审核中，请耐心等待</p>
               </div>
+              <div class="status-actions" style="margin-left: auto">
+                <el-button type="danger" plain @click="handleWithdrawVerification">撤回申请</el-button>
+              </div>
             </div>
           </div>
           
-          <div class="verification-status" v-else-if="userStore.verification.status === 'rejected'">
-            <el-alert
-              type="error"
-              :title="`认证失败: ${userStore.verification.reject_reason || '资料不符合要求'}`"
-              :closable="false"
-              show-icon
-            />
-          </div>
-          
-          <div class="verification-form" v-if="userStore.verification.status !== 'approved'">
-            <el-form label-position="top">
-              <el-form-item label="身份证正面">
-                <el-upload
-                  action="#"
-                  :show-file-list="false"
-                  :before-upload="(file) => handleIdCardUpload(file, 'front')"
-                >
-                  <div class="id-card-upload">
-                    <el-icon v-if="!userStore.verification.id_card_front"><Plus /></el-icon>
-                    <img v-else :src="userStore.verification.id_card_front" alt="身份证正面" />
-                    <span>{{ userStore.verification.id_card_front ? '重新上传' : '点击上传' }}</span>
-                  </div>
-                </el-upload>
-              </el-form-item>
+          <!-- 认证表单（未认证、审核失败或点击更换时显示） -->
+          <div class="verification-form" v-else>
+            <div v-if="userStore.verification.status === 'rejected'" class="reject-alert">
+              <el-alert
+                type="error"
+                :title="`认证失败: ${userStore.verification.reject_reason || '资料不符合要求'}`"
+                :closable="false"
+                show-icon
+                style="margin-bottom: 24px"
+              />
+            </div>
+            
+            <el-form 
+              :model="verifyForm" 
+              :rules="verifyRules" 
+              ref="verifyFormRef" 
+              label-position="top"
+            >
+              <el-row :gutter="24">
+                <el-col :span="12">
+                  <el-form-item label="真实姓名" prop="realName">
+                    <el-input v-model="verifyForm.realName" placeholder="依照身份证上的姓名填写" />
+                  </el-form-item>
+                </el-col>
+                <el-col :span="12">
+                  <el-form-item label="身份证号码" prop="idCardNumber">
+                    <el-input v-model="verifyForm.idCardNumber" placeholder="18位二代身份证号码" maxlength="18" />
+                  </el-form-item>
+                </el-col>
+              </el-row>
+
+              <el-row :gutter="24">
+                <el-col :span="8">
+                  <el-form-item label="身份证正面" prop="idCardFront">
+                    <el-upload
+                      action="#"
+                      :show-file-list="false"
+                      :before-upload="(file) => handleIdCardUpload(file, 'front')"
+                      class="id-card-uploader"
+                    >
+                      <div class="id-card-upload" :class="{ loading: uploadingIdFront }">
+                        <img v-if="verifyPreview.idCardFront" :src="verifyPreview.idCardFront" alt="身份证正面" />
+                        <div v-else class="upload-placeholder">
+                          <el-icon><Plus /></el-icon>
+                          <span>点击上传正面</span>
+                        </div>
+                        <div v-if="uploadingIdFront" class="upload-loading">
+                          <el-icon class="is-loading"><Loading /></el-icon>
+                        </div>
+                      </div>
+                    </el-upload>
+                  </el-form-item>
+                </el-col>
+                <el-col :span="8">
+                  <el-form-item label="身份证反面" prop="idCardBack">
+                    <el-upload
+                      action="#"
+                      :show-file-list="false"
+                      :before-upload="(file) => handleIdCardUpload(file, 'back')"
+                    >
+                      <div class="id-card-upload" :class="{ loading: uploadingIdBack }">
+                        <img v-if="verifyPreview.idCardBack" :src="verifyPreview.idCardBack" alt="身份证反面" />
+                        <div v-else class="upload-placeholder">
+                          <el-icon><Plus /></el-icon>
+                          <span>点击上传反面</span>
+                        </div>
+                        <div v-if="uploadingIdBack" class="upload-loading">
+                          <el-icon class="is-loading"><Loading /></el-icon>
+                        </div>
+                      </div>
+                    </el-upload>
+                  </el-form-item>
+                </el-col>
+                <el-col :span="8">
+                  <el-form-item label="手持身份证/人脸照片 (可选)" prop="facePhoto">
+                    <el-upload
+                      action="#"
+                      :show-file-list="false"
+                      :before-upload="(file) => handleIdCardUpload(file, 'face')"
+                    >
+                      <div class="id-card-upload" :class="{ loading: uploadingFace }">
+                        <img v-if="verifyPreview.facePhoto" :src="verifyPreview.facePhoto" alt="手持照片" />
+                        <div v-else class="upload-placeholder">
+                          <el-icon><Plus /></el-icon>
+                          <span>点击上传照片</span>
+                        </div>
+                        <div v-if="uploadingFace" class="upload-loading">
+                          <el-icon class="is-loading"><Loading /></el-icon>
+                        </div>
+                      </div>
+                    </el-upload>
+                  </el-form-item>
+                </el-col>
+              </el-row>
               
-              <el-form-item label="身份证反面">
-                <el-upload
-                  action="#"
-                  :show-file-list="false"
-                  :before-upload="(file) => handleIdCardUpload(file, 'back')"
-                >
-                  <div class="id-card-upload">
-                    <el-icon v-if="!userStore.verification.id_card_back"><Plus /></el-icon>
-                    <img v-else :src="userStore.verification.id_card_back" alt="身份证反面" />
-                    <span>{{ userStore.verification.id_card_back ? '重新上传' : '点击上传' }}</span>
-                  </div>
-                </el-upload>
-              </el-form-item>
-              
-              <el-form-item label="人脸活体照片（可选）">
-                <el-upload
-                  action="#"
-                  :show-file-list="false"
-                  :before-upload="(file) => handleIdCardUpload(file, 'face')"
-                >
-                  <div class="id-card-upload">
-                    <el-icon v-if="!userStore.verification.face_photo"><Plus /></el-icon>
-                    <img v-else :src="userStore.verification.face_photo" alt="人脸照片" />
-                    <span>{{ userStore.verification.face_photo ? '重新上传' : '点击上传' }}</span>
-                  </div>
-                </el-upload>
-              </el-form-item>
-              
-              <el-form-item>
+              <el-form-item style="margin-top: 32px">
                 <el-button 
                   type="primary" 
-                  :disabled="!userStore.verification.id_card_front || !userStore.verification.id_card_back"
+                  size="large"
                   @click="handleSubmitVerification"
+                  :loading="submittingVerify"
                 >
                   提交认证
+                </el-button>
+                <el-button 
+                  v-if="userStore.verification.status === 'approved' || userStore.verification.status === 'pending'"
+                  size="large"
+                  @click="showReverifyForm = false"
+                >
+                  取消
                 </el-button>
               </el-form-item>
             </el-form>
@@ -576,17 +646,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { useUserStore } from '@/store/user'
 import { 
   User, Lock, Postcard, Link, Trophy, Iphone, Message, 
-  CircleCheckFilled, WarningFilled, Clock, Plus, Check,
-  ChatDotRound, Key
+  CircleCheckFilled, Clock, Plus, Loading, 
+  Check, ChatDotRound, Key
 } from '@element-plus/icons-vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { uploadImage } from '@/api/recognition'
-import { updateProfile, resetPassword, changePassword, sendSmsCode as sendSmsCodeAPI, sendEmailCode as sendEmailCodeAPI } from '@/api/auth'
+import { updateProfile, resetPassword, changePassword, sendSmsCode as sendSmsCodeAPI, sendEmailCode as sendEmailCodeAPI, submitVerification } from '@/api/auth'
 
 const userStore = useUserStore()
 const activeTab = ref('profile')
@@ -596,13 +666,19 @@ const passwordFormRef = ref<FormInstance>()
 const forgotPasswordFormRef = ref<FormInstance>()
 const phoneFormRef = ref<FormInstance>()
 const emailFormRef = ref<FormInstance>()
+const verifyFormRef = ref<FormInstance>()
 
 const showPasswordDialog = ref(false)
 const passwordMode = ref<'change' | 'reset'>('change')
 const showPhoneDialog = ref(false)
 const showEmailDialog = ref(false)
 const uploadingAvatar = ref(false)
+const uploadingIdFront = ref(false)
+const uploadingIdBack = ref(false)
+const uploadingFace = ref(false)
 const savingProfile = ref(false)
+const submittingVerify = ref(false)
+const showReverifyForm = ref(false)
 const passwordLoading = ref(false)
 const sendingForgotPasswordCode = ref(false)
 const forgotPasswordCodeDisabled = ref(false)
@@ -619,9 +695,10 @@ const availableMethods = computed(() => {
   return methods
 })
 
-const handleMethodChange = (val: 'phone' | 'email') => {
-  forgotPasswordMethod.value = val
-  if (val === 'phone') {
+const handleMethodChange = (val: any) => {
+  const method = val as 'phone' | 'email'
+  forgotPasswordMethod.value = method
+  if (method === 'phone') {
     forgotPasswordForm.account = userStore.userInfo.phone || ''
   } else {
     forgotPasswordForm.account = userStore.userInfo.email || ''
@@ -933,6 +1010,34 @@ const startForgotPasswordCountdown = () => {
   }, 1000)
 }
 
+// Verification Form
+const verifyForm = reactive({
+  realName: '',
+  idCardNumber: '',
+  idCardFront: '',
+  idCardBack: '',
+  facePhoto: ''
+})
+
+const verifyPreview = reactive({
+  idCardFront: '',
+  idCardBack: '',
+  facePhoto: ''
+})
+
+const verifyRules: FormRules = {
+  realName: [
+    { required: true, message: '请输入真实姓名', trigger: 'blur' },
+    { min: 2, max: 20, message: '姓名长度为2-20个字符', trigger: 'blur' }
+  ],
+  idCardNumber: [
+    { required: true, message: '请输入身份证号码', trigger: 'blur' },
+    { pattern: /(^\d{15}$)|(^\d{18}$)|(^\d{17}(\d|X|x)$)/, message: '请输入正确的身份证号码', trigger: 'blur' }
+  ],
+  idCardFront: [{ required: true, message: '请上传身份证正面照片', trigger: 'change' }],
+  idCardBack: [{ required: true, message: '请上传身份证反面照片', trigger: 'change' }]
+}
+
 // Methods
 const maskPhone = (phone: string | null | undefined) => {
   if (!phone) return '未绑定'
@@ -942,6 +1047,18 @@ const maskPhone = (phone: string | null | undefined) => {
 const maskOpenId = (openId: string) => {
   if (!openId) return ''
   return openId.length > 8 ? openId.slice(0, 4) + '****' + openId.slice(-4) : '****'
+}
+
+const maskName = (name: string | null) => {
+  if (!name) return ''
+  if (name.length <= 1) return '*'
+  return name.charAt(0) + '*'.repeat(name.length - 1)
+}
+
+const maskIdCard = (idCard: string | null) => {
+  if (!idCard) return ''
+  if (idCard.length < 10) return idCard
+  return idCard.slice(0, 3) + '***********' + idCard.slice(-4)
 }
 
 const getProviderName = (provider: string) => {
@@ -973,7 +1090,7 @@ const handleAvatarUpload = async (file: File) => {
   
   try {
     uploadingAvatar.value = true
-    const res = await uploadImage(file)
+    const res: any = await uploadImage(file)
     if (res.code === 20000 && res.data) {
       // 保存原始OSS URL（用于后端保存）
       originalAvatarUrl.value = res.data.url
@@ -993,21 +1110,51 @@ const handleAvatarUpload = async (file: File) => {
   return false
 }
 
-const handleIdCardUpload = (file: File, type: 'front' | 'back' | 'face') => {
-  // TODO: Upload to OSS
-  const reader = new FileReader()
-  reader.onload = (e) => {
-    const url = e.target?.result as string
-    if (type === 'front') {
-      userStore.verification.id_card_front = url
-    } else if (type === 'back') {
-      userStore.verification.id_card_back = url
-    } else {
-      userStore.verification.face_photo = url
-    }
-    ElMessage.success('上传成功')
+const handleIdCardUpload = async (file: File, type: 'front' | 'back' | 'face') => {
+  // 验证文件类型
+  if (!file.type.startsWith('image/')) {
+    ElMessage.error('请上传图片文件')
+    return false
   }
-  reader.readAsDataURL(file)
+  
+  // 验证文件大小（5MB）
+  if (file.size > 5 * 1024 * 1024) {
+    ElMessage.error('图片大小不能超过5MB')
+    return false
+  }
+
+  try {
+    if (type === 'front') uploadingIdFront.value = true
+    else if (type === 'back') uploadingIdBack.value = true
+    else uploadingFace.value = true
+
+    const res: any = await uploadImage(file)
+    if (res.code === 20000 && res.data) {
+      const url = res.data.url
+      const signedUrl = res.data.signed_url || url
+      
+      if (type === 'front') {
+        verifyForm.idCardFront = url
+        verifyPreview.idCardFront = signedUrl
+      } else if (type === 'back') {
+        verifyForm.idCardBack = url
+        verifyPreview.idCardBack = signedUrl
+      } else {
+        verifyForm.facePhoto = url
+        verifyPreview.facePhoto = signedUrl
+      }
+      ElMessage.success('上传成功')
+    } else {
+      ElMessage.error(res.message || '上传失败')
+    }
+  } catch (error: any) {
+    console.error('Upload error:', error)
+    ElMessage.error(error?.response?.data?.message || '上传失败')
+  } finally {
+    if (type === 'front') uploadingIdFront.value = false
+    else if (type === 'back') uploadingIdBack.value = false
+    else uploadingFace.value = false
+  }
   return false
 }
 
@@ -1220,10 +1367,50 @@ const sendEmailCode = async () => {
   }
 }
 
-const handleSubmitVerification = () => {
-  // TODO: Call API
-  userStore.verification.status = 'pending'
-  ElMessage.success('认证资料已提交，请等待审核')
+const handleSubmitVerification = async () => {
+  if (!verifyFormRef.value) return
+  await verifyFormRef.value.validate(async (valid) => {
+    if (valid) {
+      try {
+        submittingVerify.value = true
+        
+        await submitVerification({
+          real_name: verifyForm.realName,
+          id_card_number: verifyForm.idCardNumber,
+          id_card_front: verifyForm.idCardFront,
+          id_card_back: verifyForm.idCardBack,
+          face_photo: verifyForm.facePhoto || undefined
+        })
+        
+        ElMessage.success('实名认证资料提交成功，请等待审核')
+        showReverifyForm.value = false
+        
+        // 刷新用户信息以获取最新状态
+        await userStore.updateUserInfo()
+      } catch (error: any) {
+        console.error('Verify submit error:', error)
+        ElMessage.error(error?.response?.data?.message || '资料提交失败，请重试')
+      } finally {
+        submittingVerify.value = false
+      }
+    }
+  })
+}
+
+const handleWithdrawVerification = async () => {
+  try {
+    await ElMessageBox.confirm('确定要撤回实名认证申请吗？', '提示', {
+      type: 'warning',
+      confirmButtonText: '确定撤回',
+      cancelButtonText: '取消'
+    })
+    
+    userStore.withdrawVerification()
+    ElMessage.success('已撤回申请')
+    resetVerifyForm() 
+  } catch {
+    // 用户取消了操作
+  }
 }
 
 const handleThirdPartyBind = async (provider: string) => {
@@ -1283,9 +1470,37 @@ const sendForgotPasswordCode = async () => {
 // 移除原来的 handleForgotPassword, 因为已经重写了
 
 
+const resetVerifyForm = () => {
+  verifyForm.realName = userStore.verification.real_name || ''
+  verifyForm.idCardNumber = userStore.verification.id_card_number || ''
+  verifyForm.idCardFront = userStore.verification.id_card_front || ''
+  verifyForm.idCardBack = userStore.verification.id_card_back || ''
+  verifyForm.facePhoto = userStore.verification.face_photo || ''
+  verifyPreview.idCardFront = userStore.verification.id_card_front || ''
+  verifyPreview.idCardBack = userStore.verification.id_card_back || ''
+  verifyPreview.facePhoto = userStore.verification.face_photo || ''
+  if (verifyFormRef.value) {
+    verifyFormRef.value.clearValidate()
+  }
+}
+
 onMounted(() => {
   resetProfileForm()
+  resetVerifyForm()
 })
+
+// 监听 store 数据变化，确保异步加载的数据能同步到表单
+watch(() => userStore.userProfile, () => {
+  resetProfileForm()
+}, { deep: true })
+
+watch(() => userStore.userInfo, () => {
+  resetProfileForm()
+}, { deep: true })
+
+watch(() => userStore.verification, () => {
+  resetVerifyForm()
+}, { deep: true })
 </script>
 
 <style scoped lang="scss">
@@ -1481,6 +1696,7 @@ onMounted(() => {
   cursor: pointer;
   transition: all 0.2s;
   background: #f8fafc;
+  position: relative;
   
   &:hover {
     border-color: #3b82f6;
@@ -1498,6 +1714,69 @@ onMounted(() => {
     font-size: 12px;
     color: #64748b;
   }
+
+  &.loading {
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  .upload-placeholder {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .upload-loading {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.7);
+    border-radius: 6px;
+    font-size: 24px;
+    color: #3b82f6;
+  }
+}
+
+.verified-info-card {
+  background: #f8fafc;
+  border-radius: 12px;
+  padding: 24px;
+  margin-top: 24px;
+  border: 1px solid #e2e8f0;
+  
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid #f1f5f9;
+    
+    &:last-child {
+      border-bottom: none;
+    }
+    
+    .label {
+      color: #64748b;
+      font-size: 14px;
+    }
+    
+    .value {
+      color: #0f172a;
+      font-weight: 600;
+      font-family: monospace;
+    }
+  }
+  
+  .info-actions {
+    margin-top: 20px;
+    text-align: right;
+  }
+}
+
+.verification-form {
+  margin-top: 8px;
 }
 
 .third-party-list {
