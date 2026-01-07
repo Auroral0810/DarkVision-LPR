@@ -201,6 +201,9 @@ def list_users_for_admin(
         outerjoin(ParentUser, User.parent_id == ParentUser.id).\
         options(joinedload(User.admin_roles).joinedload(AdminRole.role))
     
+    # 默认排除管理员账号
+    query = query.filter(User.user_type != 'admin')
+    
     if params.keyword:
         keyword = f"%{params.keyword}%"
         query = query.filter(
