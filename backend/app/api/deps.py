@@ -39,3 +39,30 @@ def get_current_user(
         
     return user
 
+
+def get_current_active_user(
+    current_user: User = Depends(get_current_user)
+) -> User:
+    """确认用户状态活跃"""
+    if current_user.status == "inactive":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="用户已被禁用"
+        )
+    return current_user
+
+
+def get_current_active_admin(
+    current_user: User = Depends(get_current_user)
+) -> User:
+    """确认用户是管理员且状态活跃"""
+    if current_user.user_type != "admin":
+        from app.core.exceptions import ForbiddenException
+        raise ForbiddenException()
+    if current_user.status != "active":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="管理员账号已被禁用"
+        )
+    return current_user
+

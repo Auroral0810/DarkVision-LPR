@@ -9,7 +9,7 @@ export type UserStatus = 'active' | 'inactive' | 'banned'
 
 export interface User {
   id: number
-  phone: string
+  phone: string | null
   nickname: string
   email: string | null
   avatar_url: string | null
@@ -21,6 +21,42 @@ export interface User {
   last_login_ip: string | null
   created_at: string
   updated_at: string
+  // 额外增强字段
+  is_admin?: boolean
+  roles?: any[]
+  parent_id?: number | null
+  parent_nickname?: string | null
+  sub_account_role?: string | null
+  login_count?: number
+  registration_ip?: string | null
+  total_recognition_count?: number
+  total_order_amount?: number
+  order_count?: number
+  last_recognition_at?: string | null
+  is_verified?: boolean
+  verification_status?: string | null
+  id_card_front?: string | null
+  id_card_back?: string | null
+  face_photo?: string | null
+  gender?: string | null
+  birthday?: string | null
+  address?: string | null
+  real_name?: string | null
+  is_deleted?: boolean
+  reject_reason?: string | null
+  is_enterprise_main?: boolean
+  sub_account_count?: number
+  // 会员相关
+  membership_type?: string
+  membership_expire_date?: string | null
+  is_membership_active?: boolean
+  // 配额
+  daily_quota?: number
+  used_quota_today?: number
+  remaining_quota_today?: number
+  // 详情数据
+  recent_records?: any[]
+  recognition_stats?: any | null
 }
 
 export interface UserProfile {

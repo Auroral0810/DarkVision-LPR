@@ -153,6 +153,15 @@ class UserDetailInfo(UserBasicInfo):
     address: Optional[str] = None
     real_name: Optional[str] = None
     
+    # 封禁信息
+    banned_reason: Optional[str] = None
+    banned_until: Optional[datetime] = None
+
+    # 上级账号信息 (企业子账号用)
+    parent_id: Optional[int] = None
+    parent_nickname: Optional[str] = None
+    sub_account_role: Optional[str] = None
+
     # 识别额度
     daily_quota: int = 0
     used_quota_today: int = 0
@@ -170,11 +179,20 @@ class UserDetailInfo(UserBasicInfo):
     is_enterprise_main: bool = False
     sub_account_count: int = 0
     
-    # 时间信息
+    # 时间与安全信息
     created_at: datetime
     last_login_at: Optional[datetime] = None
+    last_login_ip: Optional[str] = None
+    login_fail_count: int = 0
+    is_deleted: bool = False
     
-    # 识别统计（新增）
+    # 增强统计
+    total_recognition_count: int = 0
+    total_order_amount: float = 0.0
+    order_count: int = 0
+    last_recognition_at: Optional[datetime] = None
+    
+    # 识别记录预览
     recent_records: List[RecentRecognitionRecord] = []
     recognition_stats: Optional[RecognitionStats] = None
     

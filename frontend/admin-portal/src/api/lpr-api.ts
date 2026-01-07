@@ -16,7 +16,7 @@ import type {
   ApiResponse
 } from '@/types/lpr'
 
-const LPR_BASE_URL = '/api/v1/admin'
+const LPR_BASE_URL = '/api/admin'
 
 /**
  * LPR Admin API
@@ -32,6 +32,28 @@ const LprAPI = {
       url: `${LPR_BASE_URL}/users`,
       method: 'get',
       params
+    })
+  },
+
+  /**
+   * Create user (Admin)
+   */
+  createUser(data: any) {
+    return request({
+      url: `${LPR_BASE_URL}/users`,
+      method: 'post',
+      data
+    })
+  },
+
+  /**
+   * Update user info (Admin)
+   */
+  updateUser(userId: number, data: any) {
+    return request({
+      url: `${LPR_BASE_URL}/users/${userId}`,
+      method: 'put',
+      data
     })
   },
 

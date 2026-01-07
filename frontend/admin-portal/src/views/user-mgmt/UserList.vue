@@ -396,8 +396,14 @@ async function handleSaveUser() {
     return
   }
   try {
-    // 模拟保存逻辑
-    ElMessage.success(userForm.id ? '修改成功' : '新增成功')
+    const data = { ...userForm }
+    if (userForm.id) {
+      await LprAPI.updateUser(userForm.id, data)
+      ElMessage.success('修改成功')
+    } else {
+      await LprAPI.createUser(data)
+      ElMessage.success('新增成功')
+    }
     userFormVisible.value = false
     fetchUserList()
   } catch (error) {
@@ -463,13 +469,13 @@ function getUserTypeLabel(type: string) {
   return map[type] || type
 }
 
-function getUserTypeColor(type: string) {
-  const map: Record<string, string> = {
-    free: '',
+function getUserTypeColor(type: string): "warning" | "success" | "info" | undefined {
+  const map: Record<string, "warning" | "success" | "info" | undefined> = {
+    free: undefined,
     vip: 'warning',
     enterprise: 'success'
   }
-  return map[type] || ''
+  return map[type]
 }
 
 function getStatusLabel(status: string) {
@@ -481,8 +487,8 @@ function getStatusLabel(status: string) {
   return map[status] || status
 }
 
-function getStatusColor(status: string) {
-  const map: Record<string, string> = {
+function getStatusColor(status: string): "success" | "info" | "danger" | undefined {
+  const map: Record<string, "success" | "info" | "danger" | undefined> = {
     active: 'success',
     inactive: 'info',
     banned: 'danger'
