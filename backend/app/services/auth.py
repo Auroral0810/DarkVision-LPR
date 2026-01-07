@@ -691,7 +691,7 @@ def get_user_by_id(db: Session, user_id: int) -> User:
 
 def logout_user(user_id: int) -> bool:
     """
-    用户登出
+    用户登出 - 清除所有 Redis 缓存数据
     
     Args:
         user_id: 用户ID
@@ -700,22 +700,38 @@ def logout_user(user_id: int) -> bool:
         bool: 是否成功
     """
     redis_client = get_redis()
-    if redis_client:
-        # 删除 token
+    if not redis_client:
+        logger.warning(f"Redis not available, cannot clear cache for user {user_id}")
+        return False
+    
+    try:
+        # 1. 删除 token
         token_key = f"user_token:{user_id}"
-        redis_client.delete(token_key)
+        deleted_token = redis_client.delete(token_key)
+        logger.debug(f"Deleted token key {token_key}: {deleted_token > 0}")
         
-        # 删除用户详情缓存
+        # 2. 删除用户详情缓存
         detail_key = f"user_detail:{user_id}"
-        redis_client.delete(detail_key)
+        deleted_detail = redis_client.delete(detail_key)
+        logger.debug(f"Deleted user detail key {detail_key}: {deleted_detail > 0}")
         
-        logger.info(f"User logged out: {user_id}")
-    
-    # 设置用户离线状态
-    from app.services.online_user_service import set_user_offline
-    set_user_offline(user_id)
-    
-    return True
+        # 3. 删除在线状态
+        online_key = f"online_users:{user_id}"
+        deleted_online = redis_client.delete(online_key)
+        logger.debug(f"Deleted online user key {online_key}: {deleted_online > 0}")
+        
+        # 4. 尝试删除可能的其他缓存 key（如果有的话）
+        # 例如：用户会话、权限缓存等
+        session_key = f"user_session:{user_id}"
+        redis_client.delete(session_key)
+        
+        logger.info(f"User {user_id} logged out successfully. Cleared Redis keys: token={deleted_token > 0}, detail={deleted_detail > 0}, online={deleted_online > 0}")
+        
+        return True
+        
+    except Exception as e:
+        logger.error(f"Failed to clear Redis cache for user {user_id}: {e}")
+        return False
 
 
 def invalidate_user_cache(user_id: int):

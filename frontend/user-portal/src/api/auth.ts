@@ -88,3 +88,7 @@ export function submitVerification(data: VerificationSubmitRequest): Promise<Uni
 export function withdrawVerification(): Promise<UnifiedResponse> {
   return request.post('/users/verify/withdraw')
 }
+
+export function logout(): Promise<UnifiedResponse> {
+  return request.post('/auth/logout')
+}

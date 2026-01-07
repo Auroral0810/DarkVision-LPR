@@ -80,3 +80,29 @@ def track_page_view(
         # 静默失败，不影响用户体验
         return success(message="记录成功")  # 即使失败也返回成功，避免影响前端
 
+
+@router.get("/online-count", response_model=UnifiedResponse, summary="获取在线用户数", tags=["数据统计"])
+def get_online_user_count(
+    request: Request,
+):
+    """
+    获取当前在线用户数
+    """
+    from app.services.online_user import OnlineUserService
+    
+    # 获取在线用户数
+    count = OnlineUserService.get_online_count()
+    
+    # 如果当前用户有 token，也刷新一下自己的状态（心跳）
+    auth_header = request.headers.get("Authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        token = auth_header.replace("Bearer ", "")
+        try:
+           payload = decode_access_token(token)
+           if payload and payload.get("user_id"):
+               OnlineUserService.set_online(int(payload.get("user_id")))
+        except Exception:
+            pass
+            
+    return success(data={"count": count}, message="获取成功")
+

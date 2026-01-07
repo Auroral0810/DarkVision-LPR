@@ -367,7 +367,14 @@ export const useUserStore = defineStore('user', () => {
     storage.setItem('userInfo', JSON.stringify(userInfo.value))
   }
 
-  function logout() {
+  async function logout() {
+    try {
+      const { logout: apiLogout } = await import('@/api/auth')
+      await apiLogout()
+    } catch (e) {
+      console.error('Logout API failed:', e)
+    }
+    
     token.value = null
     localStorage.removeItem('token')
     sessionStorage.removeItem('token')

@@ -314,7 +314,7 @@ def logout(
     """
     用户登出接口
     
-    清除服务器端的token和用户信息缓存
+    清除服务器端的token、用户信息缓存和在线状态
     """
     logout_user(current_user.id)
     

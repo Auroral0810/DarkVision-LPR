@@ -46,54 +46,56 @@ def get_visit_stats(
     yesterday = today - timedelta(days=1)
     
     try:
-        # 查询今日统计数据（优先从 visit_statistics 表）
-        today_stats = db.query(VisitStatistics).filter(
-            VisitStatistics.stat_date == today,
-            VisitStatistics.page_type == PageType.USER
-        ).first()
+        # Helper function to get stats for a specific date
+        def get_date_stats(target_date):
+            return db.query(
+                func.sum(VisitStatistics.pv).label('pv'),
+                func.sum(VisitStatistics.uv).label('uv'),
+                func.sum(VisitStatistics.login_uv).label('login_uv')
+            ).filter(
+                VisitStatistics.stat_date == target_date
+            ).first()
+
+        # 查询今日统计数据
+        today_stats = get_date_stats(today)
+        
+        today_pv = int(today_stats.pv or 0) if today_stats else 0
+        today_uv = int(today_stats.uv or 0) if today_stats else 0
+        # today_login_uv = int(today_stats.login_uv or 0) if today_stats else 0
         
         # 查询昨日统计数据
-        yesterday_stats = db.query(VisitStatistics).filter(
-            VisitStatistics.stat_date == yesterday,
-            VisitStatistics.page_type == PageType.USER
-        ).first()
+        yesterday_stats = get_date_stats(yesterday)
         
-        # 如果今日统计数据不存在，从原始日志表实时计算
-        if not today_stats:
-            # 从 page_view_logs 实时计算今日数据
+        yesterday_pv = int(yesterday_stats.pv or 0) if yesterday_stats else 0
+        yesterday_uv = int(yesterday_stats.uv or 0) if yesterday_stats else 0
+        
+        # 如果今日数据库中无数据(可能是新的一天还没跑定时任务)，尝试从日志表实时计算
+        # 注意：这里仅作简单的兜底，如果数据量大可能会慢
+        if today_pv == 0:
             today_logs = db.query(PageViewLog).filter(
-                func.date(PageViewLog.created_at) == today,
-                PageViewLog.page_type == PageType.USER
+                func.date(PageViewLog.created_at) == today
             ).all()
             
-            today_pv = len(today_logs)
-            today_uv = len(set(log.ip_address for log in today_logs if log.ip_address))
-            today_login_uv = len(set(log.user_id for log in today_logs if log.user_id))
-        else:
-            today_pv = today_stats.pv
-            today_uv = today_stats.uv
-            today_login_uv = today_stats.login_uv
+            if today_logs:
+                today_pv = len(today_logs)
+                today_uv = len(set(log.ip_address for log in today_logs if log.ip_address))
         
         # 计算总 UV/PV
         total_stats = db.query(
             func.sum(VisitStatistics.pv).label('total_pv'),
             func.sum(VisitStatistics.uv).label('total_uv')
-        ).filter(
-            VisitStatistics.page_type == PageType.USER
         ).first()
         
         total_pv = int(total_stats.total_pv or 0) if total_stats else 0
         total_uv = int(total_stats.total_uv or 0) if total_stats else 0
         
-        # 如果今日数据是实时计算的，需要加上今日数据
-        if not today_stats:
-            total_pv += today_pv
-            total_uv += today_uv
+        # 如果今日数据在统计表中是0（未归档），则手动加上今日实时数据
+        # 只有当 total_stats 不包含今日数据时才加（粗略判断：如果 today_stats.pv 为0，说明没统计进去）
+        if today_stats and today_stats.pv is None: 
+             total_pv += today_pv
+             total_uv += today_uv
         
         # 计算增长率
-        yesterday_pv = yesterday_stats.pv if yesterday_stats else 0
-        yesterday_uv = yesterday_stats.uv if yesterday_stats else 0
-        
         pv_growth_rate = 0.0
         uv_growth_rate = 0.0
         
@@ -149,12 +151,17 @@ def get_visit_trend(
         start = date.fromisoformat(startDate)
         end = date.fromisoformat(endDate)
         
-        # 查询统计数据
-        stats_list = db.query(VisitStatistics).filter(
+        # 查询特定日期范围内的聚合数据
+        # 按日期分组，聚合所有页面类型的 PV/UV
+        stats_list = db.query(
+            VisitStatistics.stat_date,
+            func.sum(VisitStatistics.pv).label('pv'),
+            func.sum(VisitStatistics.uv).label('uv'),
+            func.sum(VisitStatistics.login_uv).label('login_uv')
+        ).filter(
             VisitStatistics.stat_date >= start,
-            VisitStatistics.stat_date <= end,
-            VisitStatistics.page_type == PageType.USER
-        ).order_by(VisitStatistics.stat_date).all()
+            VisitStatistics.stat_date <= end
+        ).group_by(VisitStatistics.stat_date).order_by(VisitStatistics.stat_date).all()
         
         # 构建日期范围
         dates = []
@@ -163,15 +170,16 @@ def get_visit_trend(
         ip_list = []
         
         current_date = start
+        # Convert list of rows to dict for easy lookup
         stats_dict = {stat.stat_date: stat for stat in stats_list}
         
         while current_date <= end:
             dates.append(current_date.strftime("%Y-%m-%d"))
             stat = stats_dict.get(current_date)
             if stat:
-                pv_list.append(stat.pv)
-                uv_list.append(stat.uv)
-                ip_list.append(stat.uv)  # 使用 UV 作为 IP 数（简化处理）
+                pv_list.append(int(stat.pv or 0))
+                uv_list.append(int(stat.uv or 0))
+                ip_list.append(int(stat.uv or 0))  # 使用 UV 作为 IP 数（简化处理）
             else:
                 # 如果某天没有统计数据，返回 0
                 pv_list.append(0)

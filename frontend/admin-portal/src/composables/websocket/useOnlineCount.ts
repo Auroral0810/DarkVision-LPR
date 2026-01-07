@@ -1,15 +1,5 @@
-import { ref, watch, onMounted, onUnmounted, getCurrentInstance } from "vue";
-import { useStomp } from "./useStomp";
-import { registerWebSocketInstance } from "@/plugins/websocket";
-import { AuthStorage } from "@/utils/auth";
-
-/**
- * 在线用户数量消息结构
- */
-interface OnlineCountMessage {
-  count?: number;
-  timestamp?: number;
-}
+import { ref, onMounted, onUnmounted, getCurrentInstance, readonly } from "vue";
+import StatsAPI from "@/api/stats-api";
 
 /**
  * 全局单例实例
@@ -23,139 +13,61 @@ function createOnlineCountComposable() {
   // ==================== 状态管理 ====================
   const onlineUserCount = ref(0);
   const lastUpdateTime = ref(0);
-
-  // ==================== WebSocket 客户端 ====================
-  const stomp = useStomp({
-    reconnectDelay: 15000,
-    maxReconnectAttempts: 3,
-    connectionTimeout: 10000,
-    useExponentialBackoff: true,
-    autoRestoreSubscriptions: true, // 自动恢复订阅
-    debug: false,
-  });
-
-  // 在线用户计数主题
-  const ONLINE_COUNT_TOPIC = "/topic/online-count";
-
-  // 订阅 ID
-  let subscriptionId: string | null = null;
-
-  // 注册到全局实例管理器
-  registerWebSocketInstance("onlineCount", stomp);
+  const isConnected = ref(false); // 模拟连接状态
+  let pollingTimer: NodeJS.Timeout | null = null;
 
   /**
-   * 处理在线用户数量消息
+   * 获取在线用户数量
    */
-  const handleOnlineCountMessage = (message: any) => {
+  const fetchOnlineCount = async () => {
     try {
-      const data = message.body;
-      const jsonData = JSON.parse(data) as OnlineCountMessage;
-
-      // 支持两种消息格式
-      // 1. 直接是数字: 42
-      // 2. 对象格式: { count: 42, timestamp: 1234567890 }
-      const count = typeof jsonData === "number" ? jsonData : jsonData.count;
-
-      if (count !== undefined && !isNaN(count)) {
-        onlineUserCount.value = count;
+      const res = await StatsAPI.getOnlineUserCount();
+      if (res && res.count !== undefined) {
+        onlineUserCount.value = res.count;
         lastUpdateTime.value = Date.now();
-        console.log(`[useOnlineCount] 在线用户数更新: ${count}`);
-      } else {
-        console.warn("[useOnlineCount] 收到无效的在线用户数:", data);
+        isConnected.value = true;
       }
     } catch (error) {
-      console.error("[useOnlineCount] 解析在线用户数失败:", error);
+      console.error("[useOnlineCount] 获取在线用户数失败:", error);
+      isConnected.value = false;
     }
   };
 
   /**
-   * 订阅在线用户计数主题
-   */
-  const subscribeToOnlineCount = () => {
-    if (subscriptionId) {
-      console.log("[useOnlineCount] 已存在订阅，跳过");
-      return;
-    }
-
-    // 订阅在线用户计数主题（useStomp 会处理重连后的订阅恢复）
-    subscriptionId = stomp.subscribe(ONLINE_COUNT_TOPIC, handleOnlineCountMessage);
-
-    if (subscriptionId) {
-      console.log(`[useOnlineCount] 已订阅主题: ${ONLINE_COUNT_TOPIC}`);
-    } else {
-      console.log(`[useOnlineCount] 暂存订阅配置，等待连接建立后自动订阅`);
-    }
-  };
-
-  /**
-   * 初始化 WebSocket 连接并订阅在线用户主题
+   * 初始化轮询
    */
   const initialize = () => {
-    // 检查 WebSocket 端点是否配置
-    const wsEndpoint = import.meta.env.VITE_APP_WS_ENDPOINT;
-    if (!wsEndpoint) {
-      console.log("[useOnlineCount] 未配置 WebSocket 端点，跳过初始化");
-      return;
-    }
+    if (pollingTimer) return;
 
-    // 检查令牌有效性
-    const accessToken = AuthStorage.getAccessToken();
-    if (!accessToken) {
-      console.log("[useOnlineCount] 未检测到有效令牌，跳过初始化");
-      return;
-    }
+    console.log("[useOnlineCount] 初始化在线用户计数服务 (轮询模式)...");
+    
+    // 立即执行一次
+    fetchOnlineCount();
 
-    console.log("[useOnlineCount] 初始化在线用户计数服务...");
-
-    // 建立 WebSocket 连接
-    stomp.connect();
-
-    // 订阅主题
-    subscribeToOnlineCount();
+    // 启动轮询 (每 30 秒)
+    pollingTimer = setInterval(fetchOnlineCount, 30000);
+    isConnected.value = true;
   };
 
   /**
-   * 关闭 WebSocket 连接并清理资源
+   * 清理资源
    */
   const cleanup = () => {
     console.log("[useOnlineCount] 清理在线用户计数服务...");
-
-    // 取消订阅
-    if (subscriptionId) {
-      stomp.unsubscribe(subscriptionId);
-      subscriptionId = null;
+    if (pollingTimer) {
+      clearInterval(pollingTimer);
+      pollingTimer = null;
     }
-
-    // 也可以通过主题地址取消订阅
-    stomp.unsubscribeDestination(ONLINE_COUNT_TOPIC);
-
-    // 断开连接
-    stomp.disconnect();
-
-    // 重置状态
+    isConnected.value = false;
     onlineUserCount.value = 0;
-    lastUpdateTime.value = 0;
   };
-
-  // 监听连接状态变化
-  watch(
-    stomp.isConnected,
-    (connected) => {
-      if (connected) {
-        console.log("[useOnlineCount] WebSocket 已连接");
-      } else {
-        console.log("[useOnlineCount] WebSocket 已断开");
-      }
-    },
-    { immediate: false }
-  );
 
   return {
     // 状态
     onlineUserCount: readonly(onlineUserCount),
     lastUpdateTime: readonly(lastUpdateTime),
-    isConnected: stomp.isConnected,
-    connectionState: stomp.connectionState,
+    isConnected: readonly(isConnected),
+    connectionState: ref("CONNECTED"), // 模拟 WebSocket 状态字符串
 
     // 方法
     initialize,
@@ -174,17 +86,6 @@ function createOnlineCountComposable() {
  *
  * @param options 配置选项
  * @param options.autoInit 是否在组件挂载时自动初始化（默认 true）
- *
- * @example
- * ```ts
- * // 在组件中使用
- * const { onlineUserCount, isConnected } = useOnlineCount();
- *
- * // 手动控制初始化
- * const { onlineUserCount, initialize, cleanup } = useOnlineCount({ autoInit: false });
- * onMounted(() => initialize());
- * onUnmounted(() => cleanup());
- * ```
  */
 export function useOnlineCount(options: { autoInit?: boolean } = {}) {
   const { autoInit = true } = options;
@@ -200,16 +101,12 @@ export function useOnlineCount(options: { autoInit?: boolean } = {}) {
     onMounted(() => {
       // 只有在未连接时才尝试初始化
       if (!globalInstance!.isConnected.value) {
-        console.log("[useOnlineCount] 组件挂载，初始化 WebSocket 连接");
         globalInstance!.initialize();
-      } else {
-        console.log("[useOnlineCount] WebSocket 已连接，跳过初始化");
       }
     });
 
-    // 注意：不在卸载时关闭连接，保持全局连接
     onUnmounted(() => {
-      console.log("[useOnlineCount] 组件卸载（保持 WebSocket 连接）");
+      // 保持全局轮询，不自动停止，除非显式调用 cleanup
     });
   }
 

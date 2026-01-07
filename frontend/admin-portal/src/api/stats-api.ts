@@ -61,6 +61,16 @@ const StatsAPI = {
       url: `${STATS_BASE_URL}/plate-distribution`,
       method: 'get'
     })
+  },
+
+  /**
+   * 获取在线用户数
+   */
+  getOnlineUserCount() {
+    return request<any, { count: number }>({
+      url: '/api/v1/tracking/online-count',
+      method: 'get'
+    })
   }
 }
 

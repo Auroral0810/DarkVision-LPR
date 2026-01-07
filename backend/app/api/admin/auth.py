@@ -87,6 +87,10 @@ def admin_login(
         # 8. 记录成功登录日志
         log_login_attempt(db, user_id, client_ip, user_agent, success=True, account=account)
         
+        # 9. 设置用户在线状态（已在 update_login_info 中处理，这里确保设置）
+        from app.services.online_user_service import set_user_online
+        set_user_online(user.id)
+        
         return success(
             data={
                 "access_token": access_token,
@@ -131,7 +135,7 @@ def admin_logout(
     """
     管理员登出接口
     
-    清除服务器端的token和用户信息缓存
+    清除服务器端的token、用户信息缓存和在线状态
     """
     logout_user(current_user.id)
     
