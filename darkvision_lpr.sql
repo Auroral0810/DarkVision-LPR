@@ -236,7 +236,7 @@ CREATE TABLE `login_logs` (
   PRIMARY KEY (`id`),
   KEY `idx_user_time` (`user_id`,`created_at`),
   CONSTRAINT `login_logs_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='登录日志';
+) ENGINE=InnoDB AUTO_INCREMENT=57 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='登录日志';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -267,17 +267,25 @@ DROP TABLE IF EXISTS `operation_logs`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `operation_logs` (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `admin_user_id` bigint NOT NULL,
+  `admin_id` bigint DEFAULT NULL COMMENT '操作人ID',
   `action` varchar(100) NOT NULL,
   `target_type` varchar(50) DEFAULT NULL,
   `target_id` bigint DEFAULT NULL,
   `description` text,
   `ip_address` varchar(45) DEFAULT NULL,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `module` varchar(50) NOT NULL DEFAULT 'system' COMMENT '功能模块',
+  `method` varchar(10) DEFAULT NULL COMMENT '请求方法',
+  `path` varchar(255) DEFAULT NULL COMMENT '请求路径',
+  `params` text COMMENT '请求参数',
+  `result` text COMMENT '响应结果',
+  `status` int DEFAULT '200' COMMENT '响应状态码',
+  `user_agent` varchar(255) DEFAULT NULL COMMENT 'User Agent',
+  `duration` int DEFAULT NULL COMMENT '耗时(ms)',
   PRIMARY KEY (`id`),
-  KEY `idx_admin_action` (`admin_user_id`,`action`),
-  CONSTRAINT `operation_logs_ibfk_1` FOREIGN KEY (`admin_user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='管理员操作日志';
+  KEY `idx_admin_action` (`admin_id`,`action`),
+  KEY `ix_operation_logs_admin_id` (`admin_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='管理员操作日志';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -365,7 +373,7 @@ CREATE TABLE `page_view_logs` (
   KEY `ix_page_view_logs_id` (`id`),
   KEY `ix_page_view_logs_user_id` (`user_id`),
   CONSTRAINT `page_view_logs_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=373 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -424,9 +432,17 @@ CREATE TABLE `permissions` (
   `name` varchar(100) NOT NULL,
   `category` varchar(50) DEFAULT NULL COMMENT '分类分组',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `description` varchar(255) DEFAULT NULL COMMENT '描述',
+  `type` varchar(20) DEFAULT 'menu' COMMENT '类型: menu/button/api',
+  `parent_id` bigint DEFAULT NULL COMMENT '父权限ID',
+  `path` varchar(255) DEFAULT NULL COMMENT '前端路由路径',
+  `component` varchar(255) DEFAULT NULL COMMENT '前端组件路径',
+  `icon` varchar(50) DEFAULT NULL COMMENT '图标',
+  `sort_order` int DEFAULT '0' COMMENT '排序',
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `code` (`code`)
-) ENGINE=InnoDB AUTO_INCREMENT=18 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='权限项';
+) ENGINE=InnoDB AUTO_INCREMENT=19 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='权限项';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -519,13 +535,14 @@ CREATE TABLE `recognition_results` (
   `processed_at` datetime NOT NULL,
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `is_deleted` tinyint(1) DEFAULT '0',
+  `processing_time` float DEFAULT NULL COMMENT '处理时长(ms)',
   PRIMARY KEY (`id`),
   KEY `task_id` (`task_id`),
   KEY `idx_user_plate` (`user_id`,`license_plate`),
   KEY `idx_processed_at` (`processed_at`),
   CONSTRAINT `recognition_results_ibfk_1` FOREIGN KEY (`task_id`) REFERENCES `recognition_tasks` (`id`) ON DELETE SET NULL,
   CONSTRAINT `recognition_results_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=36 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='识别结果';
+) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='识别结果';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -576,7 +593,7 @@ CREATE TABLE `recognition_tasks` (
   KEY `idx_user_status` (`user_id`,`status`),
   KEY `idx_task_uuid` (`task_uuid`),
   CONSTRAINT `recognition_tasks_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=24 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='识别任务主表';
+) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='识别任务主表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -752,7 +769,7 @@ CREATE TABLE `user_memberships` (
   PRIMARY KEY (`id`),
   UNIQUE KEY `uniq_user_active` (`user_id`,`is_active`),
   CONSTRAINT `user_memberships_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=7 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='会员状态';
+) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='会员状态';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -809,7 +826,7 @@ CREATE TABLE `users` (
   KEY `idx_parent` (`parent_id`),
   KEY `idx_status` (`status`),
   CONSTRAINT `users_ibfk_1` FOREIGN KEY (`parent_id`) REFERENCES `users` (`id`) ON DELETE SET NULL
-) ENGINE=InnoDB AUTO_INCREMENT=9 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='主用户表';
+) ENGINE=InnoDB AUTO_INCREMENT=10 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='主用户表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -862,4 +879,4 @@ CREATE TABLE `visit_statistics` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-01-07 21:00:19
+-- Dump completed on 2026-01-08  4:40:23

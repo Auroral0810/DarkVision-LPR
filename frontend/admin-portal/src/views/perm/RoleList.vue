@@ -71,7 +71,8 @@
                   show-checkbox
                   node-key="id"
                   :props="{ label: 'name', children: 'children' }"
-                  :filter-node-method="filterNode"
+                  :filte
+                  r-node-method="filterNode"
                   default-expand-all
                 />
              </el-scrollbar>
@@ -230,11 +231,17 @@ async function handleEdit(row: Role) {
       // 以前面的后端代码看，列表接口返回了 permission_ids
       const fullRow = res.list.find(r => r.id === row.id) || row
       
+      // Map permissions object array to IDs if permission_ids is empty but permissions is present
+      let permIds = fullRow.permission_ids || []
+      if (permIds.length === 0 && fullRow.permissions && fullRow.permissions.length > 0) {
+          permIds = fullRow.permissions.map((p: any) => p.id)
+      }
+
       Object.assign(form, {
           id: fullRow.id,
           name: fullRow.name,
           description: fullRow.description,
-          permission_ids: fullRow.permission_ids || []
+          permission_ids: permIds
       })
       
       dialog.visible = true

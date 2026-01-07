@@ -59,6 +59,7 @@ def update_role(db: Session, role_id: int, role_in: RoleUpdate) -> Optional[Role
         # Add new
         for pid in role_in.permission_ids:
             rp = RolePermission(role_id=role_id, permission_id=pid)
+            db.add(rp)
             
     db.commit()
     # db.refresh(db_role)
