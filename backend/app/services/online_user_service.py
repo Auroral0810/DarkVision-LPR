@@ -166,7 +166,9 @@ def get_online_user_ids() -> list[int]:
             cursor, keys = redis_client.scan(cursor, match=pattern, count=100)
             for key in keys:
                 # 从 key 中提取 user_id
-                user_id_str = key.decode('utf-8').replace(ONLINE_USER_KEY_PREFIX, '')
+                # Redis decode_responses=True 时，key 已经是字符串
+                key_str = key if isinstance(key, str) else key.decode('utf-8')
+                user_id_str = key_str.replace(ONLINE_USER_KEY_PREFIX, '')
                 try:
                     user_ids.append(int(user_id_str))
                 except ValueError:

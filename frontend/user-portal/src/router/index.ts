@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from 'vue-router'
 import DashboardLayout from '@/components/layout/DashboardLayout.vue'
 import { useUserStore } from '@/store/user'
+import TrackingAPI from '@/api/tracking'
 
 const routes: Array<RouteRecordRaw> = [
   {
@@ -81,6 +82,17 @@ router.beforeEach((to, _from, next) => {
   } else {
     next()
   }
+})
+
+// 路由后置守卫：页面访问埋点
+router.afterEach((to) => {
+  // 发送页面访问埋点（静默失败，不影响用户体验）
+  TrackingAPI.trackPageView({
+    page_path: to.fullPath,
+    page_type: 'user'
+  }).catch(() => {
+    // 静默失败
+  })
 })
 
 export default router

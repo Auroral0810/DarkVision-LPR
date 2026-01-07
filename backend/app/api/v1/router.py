@@ -1,5 +1,5 @@
 from fastapi import APIRouter
-from app.api.v1 import auth, captcha, contact, website, recognition, upload, users, websocket, history, analysis
+from app.api.v1 import auth, captcha, contact, website, recognition, upload, users, websocket, history, analysis, tracking, logs
 
 router = APIRouter()
 
@@ -13,3 +13,5 @@ router.include_router(upload.router, prefix="/upload", tags=["文件上传"])
 router.include_router(users.router, prefix="/users", tags=["用户"])
 router.include_router(history.router, prefix="/history", tags=["识别历史"])
 router.include_router(analysis.router, prefix="/analysis", tags=["数据分析"])
+router.include_router(tracking.router, prefix="/tracking", tags=["数据统计"])
+router.include_router(logs.router, prefix="/logs", tags=["数据统计"])

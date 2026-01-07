@@ -8,12 +8,16 @@ import app.models  # noqa
 from app.api.v1 import router as api_router
 from app.api.admin import admin_router
 from app.middleware.error_handler import register_exception_handlers
+from app.services.scheduler import start_scheduler
 
-# 创建数据库表
+# 创建数据库表（包括新添加的 page_view_logs 和 visit_statistics）
 Base.metadata.create_all(bind=engine)
 
 # 初始化Redis
 init_redis()
+
+# 启动定时任务调度器
+start_scheduler()
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
