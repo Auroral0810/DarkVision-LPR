@@ -84,13 +84,22 @@ def admin_login(
         # 7. 获取管理员详细信息 (使用新服务)
         user_detail = get_admin_detail_info(db, user.id)
         
-        # 8. 记录成功登录日志
-        log_login_attempt(db, user_id, client_ip, user_agent, success=True, account=account)
-        
-        # 9. 设置用户在线状态（已在 update_login_info 中处理，这里确保设置）
-        from app.services.online_user_service import set_user_online
-        set_user_online(user.id)
-        
+        # 9. 记录成功统计
+        try:
+            from app.services.visit_statistics_service import record_page_view_log
+            from app.models.statistics import PageType
+            record_page_view_log(
+                db=db,
+                page_type=PageType.ADMIN,
+                ip_address=client_ip,
+                user_id=user_id,
+                page_path="/api/admin/login",
+                user_agent=user_agent
+            )
+        except Exception as e:
+            from app.core.logger import logger
+            logger.error(f"Failed to record admin login stats: {e}")
+            
         return success(
             data={
                 "access_token": access_token,

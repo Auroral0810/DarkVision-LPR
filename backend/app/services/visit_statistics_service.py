@@ -104,39 +104,74 @@ def record_visit_realtime(db: Session, page_type: PageType, ip_address: str, use
                 login_uv=0
             )
             db.add(stats)
-            db.flush() # 获取对象，但不提交
+            db.flush()
             
         # 2. 累加 PV
         stats.pv += 1
         
-        # 3. 检查是否需要累加 UV (基于 IP，今天是否已经来过)
-        # 这里的判断基于 page_view_logs，寻找今天是否有相同 IP 的记录
-        # 注意：调用此方法时，当前这次 PageViewLog 可能已经存入 DB 了，所以 count 应该 > 1 才说明重复
-        # 或者在存入 PageViewLog 之前调用此方法
-        ip_exists = db.query(PageViewLog).filter(
-            func.date(PageViewLog.created_at) == today,
-            PageViewLog.page_type == page_type,
-            PageViewLog.ip_address == ip_address
-        ).count()
-        
-        if ip_exists <= 1: # 说明是第一个记录（包含当前这个）
-            stats.uv += 1
-            
-        # 4. 检查是否需要累加登录 UV (基于 user_id)
-        if user_id:
-            user_exists = db.query(PageViewLog).filter(
+        # 3. 检查是否需要累加 UV (官网使用 IP 统计访客，Portal 使用登录用户统计)
+        if page_type == PageType.WEBSITE:
+            # 基于 IP 判断访客
+            ip_exists = db.query(PageViewLog).filter(
                 func.date(PageViewLog.created_at) == today,
                 PageViewLog.page_type == page_type,
-                PageViewLog.user_id == user_id
+                PageViewLog.ip_address == ip_address
             ).count()
             
-            if user_exists <= 1:
-                stats.login_uv += 1
+            if ip_exists <= 1:
+                stats.uv += 1
+        else:
+            # USER/ADMIN 门户：UV 定义为“登录用户数”
+            if user_id:
+                user_exists = db.query(PageViewLog).filter(
+                    func.date(PageViewLog.created_at) == today,
+                    PageViewLog.page_type == page_type,
+                    PageViewLog.user_id == user_id
+                ).count()
+                
+                if user_exists <= 1:
+                    stats.uv += 1 # 门户的 UV 即是登录人数
+                    stats.login_uv += 1
         
         db.commit()
         return True
     except Exception as e:
         logger.error(f"Failed to record visit realtime: {e}")
+        db.rollback()
+        return False
+
+
+def record_page_view_log(
+    db: Session, 
+    page_type: PageType, 
+    ip_address: str, 
+    user_id: int = None,
+    page_path: str = None,
+    user_agent: str = None,
+    referrer: str = None
+) -> bool:
+    """
+    记录页面访问日志并更新统计数据
+    """
+    try:
+        # 1. 保存日志
+        log = PageViewLog(
+            page_type=page_type,
+            ip_address=ip_address,
+            user_id=user_id,
+            page_path=page_path or "/",
+            user_agent=user_agent,
+            referer=referrer
+        )
+        db.add(log)
+        db.flush() # 获取 ID 和日期信息
+        
+        # 2. 实时记录统计
+        record_visit_realtime(db, page_type, ip_address, user_id)
+        
+        return True
+    except Exception as e:
+        logger.error(f"Failed to record page view log: {e}")
         db.rollback()
         return False
 

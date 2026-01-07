@@ -56,22 +56,41 @@ def get_visit_stats(
             ).first()
 
         # 今日统计 (实时累加)
-        today_stats = get_global_stats(today)
-        today_pv = int(today_stats.pv or 0) if today_stats else 0
-        today_uv = int(today_stats.uv or 0) if today_stats else 0
+        # 访客数(UV): 官网访客(IP) + 用户中心登录数 + 管理中心登录数
+        def get_total_uv_for_date(target_date):
+            # 获取官网 UV
+            website_uv = db.query(VisitStatistics.uv).filter(
+                VisitStatistics.stat_date == target_date,
+                VisitStatistics.page_type == PageType.WEBSITE
+            ).scalar() or 0
+            
+            # 获取用户中心登录数
+            user_login_uv = db.query(VisitStatistics.login_uv).filter(
+                VisitStatistics.stat_date == target_date,
+                VisitStatistics.page_type == PageType.USER
+            ).scalar() or 0
+            
+            # 获取管理端登录数
+            admin_login_uv = db.query(VisitStatistics.login_uv).filter(
+                VisitStatistics.stat_date == target_date,
+                VisitStatistics.page_type == PageType.ADMIN
+            ).scalar() or 0
+            
+            return website_uv + user_login_uv + admin_login_uv
+
+        today_pv = int(db.query(func.sum(VisitStatistics.pv)).filter(VisitStatistics.stat_date == today).scalar() or 0)
+        today_uv = get_total_uv_for_date(today)
         
         # 昨日统计
-        yesterday_stats = get_global_stats(yesterday)
-        yesterday_pv = int(yesterday_stats.pv or 0) if yesterday_stats else 0
-        yesterday_uv = int(yesterday_stats.uv or 0) if yesterday_stats else 0
+        yesterday_pv = int(db.query(func.sum(VisitStatistics.pv)).filter(VisitStatistics.stat_date == yesterday).scalar() or 0)
+        yesterday_uv = get_total_uv_for_date(yesterday)
         
         # 总统计
-        total_stats = db.query(
-            func.sum(VisitStatistics.pv).label('total_pv'),
-            func.sum(VisitStatistics.uv).label('total_uv')
-        ).first()
-        total_pv = int(total_stats.total_pv or 0) if total_stats else 0
-        total_uv = int(total_stats.total_uv or 0) if total_stats else 0
+        total_pv = int(db.query(func.sum(VisitStatistics.pv)).scalar() or 0)
+        # 总 UV 同样是各端累加
+        total_uv = (db.query(func.sum(VisitStatistics.uv)).filter(VisitStatistics.page_type == PageType.WEBSITE).scalar() or 0) + \
+                   (db.query(func.sum(VisitStatistics.login_uv)).filter(VisitStatistics.page_type != PageType.WEBSITE).scalar() or 0)
+        total_uv = int(total_uv)
         
         # 计算增长率
         pv_growth_rate = 0.0

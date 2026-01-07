@@ -146,7 +146,22 @@ def login_by_phone(
         user_detail = get_user_detail_info(db, user.id)
         
         # 记录成功登录日志
-        log_login_attempt(db, user_id, client_ip, user_agent, success=True)
+        # 记录成功统计
+        try:
+            from app.services.visit_statistics_service import record_page_view_log
+            from app.models.statistics import PageType
+            record_page_view_log(
+                db=db,
+                page_type=PageType.USER,
+                ip_address=client_ip,
+                user_id=user_id,
+                page_path="/api/v1/auth/login",
+                user_agent=user_agent
+            )
+        except Exception as e:
+            from app.core.logger import logger
+            logger.error(f"Failed to record login stats: {e}")
+
         
         return success(
             data={
@@ -217,7 +232,22 @@ def login_by_email(
         user_detail = get_user_detail_info(db, user.id)
         
         # 记录成功登录日志
-        log_login_attempt(db, user_id, client_ip, user_agent, success=True)
+        # 记录成功统计
+        try:
+            from app.services.visit_statistics_service import record_page_view_log
+            from app.models.statistics import PageType
+            record_page_view_log(
+                db=db,
+                page_type=PageType.USER,
+                ip_address=client_ip,
+                user_id=user_id,
+                page_path="/api/v1/auth/login",
+                user_agent=user_agent
+            )
+        except Exception as e:
+            from app.core.logger import logger
+            logger.error(f"Failed to record login stats: {e}")
+
         
         return success(
             data={

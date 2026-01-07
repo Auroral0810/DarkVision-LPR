@@ -57,26 +57,20 @@ def track_page_view(
         user_agent = request.headers.get("user-agent", "")
         referer = request.headers.get("referer", "")
         
-        # 创建访问日志
-        page_view = PageViewLog(
-            user_id=current_user.id if current_user else None,
-            page_path=request_data.page_path,
-            page_type=request_data.page_type,
-            ip_address=client_ip,
-            user_agent=user_agent,
-            referer=referer if referer else None,
-            created_at=datetime.now()
-        )
-        
-        db.add(page_view)
-        db.commit()
-        
-        # 实时更新统计表
+        # 使用统一的服务方法进行记录
         try:
-            from app.services.visit_statistics_service import record_visit_realtime
-            record_visit_realtime(db, request_data.page_type, client_ip, current_user.id if current_user else None)
+            from app.services.visit_statistics_service import record_page_view_log
+            record_page_view_log(
+                db=db,
+                page_type=request_data.page_type,
+                ip_address=client_ip,
+                user_id=current_user.id if current_user else None,
+                page_path=request_data.page_path,
+                user_agent=user_agent,
+                referrer=referer
+            )
         except Exception as e:
-            logger.error(f"Failed to record visit realtime stats: {e}")
+            logger.error(f"Failed to record page view through service: {e}")
         
         logger.debug(f"Page view tracked: {request_data.page_path} by user {current_user.id if current_user else 'anonymous'}")
         

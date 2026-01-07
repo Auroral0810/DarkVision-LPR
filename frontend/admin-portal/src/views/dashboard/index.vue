@@ -400,11 +400,13 @@ const weatherInfo = ref("正在获取天气信息...");
 // 获取天气信息
 const fetchWeatherInfo = async () => {
   try {
-    // 使用高德地图天气API（免费，无需密钥）
-    const response = await fetch('https://restapi.amap.com/v3/weather/weatherInfo?city=110000&key=&extensions=base');
+    // 使用高德地图天气API（请替换为你的密钥）
+    const response = await fetch(
+      "https://restapi.amap.com/v3/weather/weatherInfo?city=110000&key=155b733787a02916c282e303e3338804&extensions=base"
+    );
     const data = await response.json();
-    
-    if (data.status === '1' && data.lives && data.lives[0]) {
+
+    if (data.status === "1" && data.lives && data.lives[0]) {
       const weather = data.lives[0];
       weatherInfo.value = `${weather.province}${weather.city}今日${weather.weather}，气温${weather.temperature}℃，${weather.winddirection}风${weather.windpower}级`;
     } else {
@@ -412,10 +414,11 @@ const fetchWeatherInfo = async () => {
       weatherInfo.value = "今日天气晴朗，适合工作学习";
     }
   } catch (error) {
-    console.error('获取天气失败:', error);
+    console.error("获取天气失败:", error);
     weatherInfo.value = "今日天气晴朗，适合工作学习";
   }
 };
+
 
 // 当前通知公告列表
 const vesionList = ref<VersionItem[]>([
