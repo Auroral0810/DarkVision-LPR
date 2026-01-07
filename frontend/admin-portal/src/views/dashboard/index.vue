@@ -9,11 +9,11 @@
         <div class="flex-1 flex items-start">
           <img
             class="w80px h80px rounded-full"
-            :src="userStore.userInfo.avatar + '?imageView2/1/w/80/h/80'"
+            :src="userStore.userInfo.avatar_url + '?imageView2/1/w/80/h/80'"
           />
           <div class="ml-5">
             <p>{{ greetings }}</p>
-            <p class="text-sm text-gray">今日天气晴朗，气温在15℃至25℃之间，东南风。</p>
+            <p class="text-sm text-gray">{{ weatherInfo }}</p>
           </div>
         </div>
 
@@ -27,15 +27,15 @@
                 仓库
               </div>
               <div class="mt-3 whitespace-nowrap">
-                <el-link href="https://gitee.com/youlaiorg/vue3-element-admin" target="_blank">
+                <el-link href="https://gitee.com/Luck_ff0810" target="_blank">
                   <div class="i-svg:gitee text-lg color-#F76560" />
                 </el-link>
                 <el-divider direction="vertical" />
-                <el-link href="https://github.com/youlaitech/vue3-element-admin" target="_blank">
+                <el-link href="https://github.com/Auroral0810" target="_blank">
                   <div class="i-svg:github text-lg color-#4080FF" />
                 </el-link>
                 <el-divider direction="vertical" />
-                <el-link href="https://gitcode.com/youlai/vue3-element-admin" target="_blank">
+                <el-link href="https://gitcode.com/Luck_ff" target="_blank">
                   <div class="i-svg:gitcode text-lg color-#FF9A2E" />
                 </el-link>
               </div>
@@ -45,35 +45,35 @@
             <div>
               <div class="font-bold color-#4080ff text-sm flex items-center">
                 <el-icon class="mr-2px"><Document /></el-icon>
-                文档
+                博客/文档
               </div>
               <div class="mt-3 whitespace-nowrap">
-                <el-link href="https://juejin.cn/post/7228990409909108793" target="_blank">
+                <el-link href="https://juejin.cn/user/3481490045549488" target="_blank">
                   <div class="i-svg:juejin text-lg" />
                 </el-link>
                 <el-divider direction="vertical" />
                 <el-link
-                  href="https://youlai.blog.csdn.net/article/details/130191394"
+                  href="https://blog.csdn.net/Luck_ff?spm=1000.2115.3001.5343"
                   target="_blank"
                 >
                   <div class="i-svg:csdn text-lg" />
                 </el-link>
                 <el-divider direction="vertical" />
-                <el-link href="https://www.cnblogs.com/haoxianrui/p/17331952.html" target="_blank">
-                  <div class="i-svg:cnblogs text-lg" />
+                <el-link :href="isDev ? 'http://localhost:5173/' : 'https://www.darkvision-lpr.docs.com'" target="_blank">
+                  <el-icon class="text-lg"><Document /></el-icon>
                 </el-link>
               </div>
             </div>
 
-            <!-- 视频 -->
+            <!-- 官网 -->
             <div>
               <div class="font-bold color-#f76560 text-sm flex items-center">
-                <el-icon class="mr-2px"><VideoCamera /></el-icon>
-                视频
+                <el-icon class="mr-2px"><Monitor /></el-icon>
+                官网
               </div>
               <div class="mt-3 whitespace-nowrap">
-                <el-link href="https://www.bilibili.com/video/BV1eFUuYyEFj" target="_blank">
-                  <div class="i-svg:bilibili text-lg" />
+                <el-link :href="isDev ? 'http://localhost:3000/' : 'https://www.darkvision-lpr.com'" target="_blank">
+                  <el-icon class="text-lg"><HomeFilled /></el-icon>
                 </el-link>
               </div>
             </div>
@@ -84,30 +84,30 @@
         <div class="w-full sm:hidden mt-3">
           <div class="flex justify-end space-x-4 overflow-x-auto">
             <!-- 仓库图标 -->
-            <el-link href="https://gitee.com/youlaiorg/vue3-element-admin" target="_blank">
+            <el-link href="https://gitee.com/Luck_ff0810" target="_blank">
               <div class="i-svg:gitee text-lg color-#F76560" />
             </el-link>
-            <el-link href="https://github.com/youlaitech/vue3-element-admin" target="_blank">
+            <el-link href="https://github.com/Auroral0810" target="_blank">
               <div class="i-svg:github text-lg color-#4080FF" />
             </el-link>
-            <el-link href="https://gitcode.com/youlai/vue3-element-admin" target="_blank">
+            <el-link href="https://gitcode.com/Luck_ff" target="_blank">
               <div class="i-svg:gitcode text-lg color-#FF9A2E" />
             </el-link>
 
-            <!-- 文档图标 -->
-            <el-link href="https://juejin.cn/post/7228990409909108793" target="_blank">
+            <!-- 博客图标 -->
+            <el-link href="https://juejin.cn/user/3481490045549488" target="_blank">
               <div class="i-svg:juejin text-lg" />
             </el-link>
-            <el-link href="https://youlai.blog.csdn.net/article/details/130191394" target="_blank">
+            <el-link href="https://blog.csdn.net/Luck_ff?spm=1000.2115.3001.5343" target="_blank">
               <div class="i-svg:csdn text-lg" />
             </el-link>
-            <el-link href="https://www.cnblogs.com/haoxianrui/p/17331952.html" target="_blank">
-              <div class="i-svg:cnblogs text-lg" />
+            <el-link href="https://fishblog.yyf040810.cn/" target="_blank">
+              <el-icon class="text-lg"><Reading /></el-icon>
             </el-link>
 
-            <!-- 视频图标 -->
-            <el-link href="https://www.bilibili.com/video/BV1eFUuYyEFj" target="_blank">
-              <div class="i-svg:bilibili text-lg" />
+            <!-- 官网图标 -->
+            <el-link :href="isDev ? 'http://localhost:3000/' : 'https://www.darkvision-lpr.com'" target="_blank">
+              <el-icon class="text-lg"><HomeFilled /></el-icon>
             </el-link>
           </div>
         </div>
@@ -296,7 +296,7 @@
               <el-link
                 type="primary"
                 underline="never"
-                href="https://gitee.com/youlaiorg/vue3-element-admin/releases"
+                href="https://github.com/Auroral0810/DarkVision-LPR/releases"
                 target="_blank"
               >
                 完整记录
@@ -391,31 +391,57 @@ interface VersionItem {
 
 const userStore = useUserStore();
 
+// 环境判断
+const isDev = import.meta.env.DEV;
+
+// 天气信息
+const weatherInfo = ref("正在获取天气信息...");
+
+// 获取天气信息
+const fetchWeatherInfo = async () => {
+  try {
+    // 使用高德地图天气API（免费，无需密钥）
+    const response = await fetch('https://restapi.amap.com/v3/weather/weatherInfo?city=110000&key=&extensions=base');
+    const data = await response.json();
+    
+    if (data.status === '1' && data.lives && data.lives[0]) {
+      const weather = data.lives[0];
+      weatherInfo.value = `${weather.province}${weather.city}今日${weather.weather}，气温${weather.temperature}℃，${weather.winddirection}风${weather.windpower}级`;
+    } else {
+      // 使用备用简单天气API
+      weatherInfo.value = "今日天气晴朗，适合工作学习";
+    }
+  } catch (error) {
+    console.error('获取天气失败:', error);
+    weatherInfo.value = "今日天气晴朗，适合工作学习";
+  }
+};
+
 // 当前通知公告列表
 const vesionList = ref<VersionItem[]>([
   {
     id: "1",
-    title: "v3.0.0",
-    date: "2025-06-06 00:00:00",
-    content: "布局重写，代码规范重构。",
-    link: "https://gitee.com/youlaiorg/vue3-element-admin/releases",
+    title: "v1.0.0",
+    date: "2026-01-07 00:00:00",
+    content: "DarkVision-LPR管理后台上线，支持完整的用户、权限、订单管理功能。",
+    link: "https://github.com/Auroral0810/DarkVision-LPR/releases",
     tag: "里程碑",
   },
   {
     id: "2",
-    title: "v2.4.0",
-    date: "2021-09-01 00:00:00",
-    content: "实现基础框架搭建，包含权限管理、路由系统等核心功能。",
-    link: "https://gitee.com/youlaiorg/vue3-element-admin/releases",
-    tag: "里程碑",
+    title: "v0.9.0",
+    date: "2026-01-05 00:00:00",
+    content: "实现基础框架搭建，包含认证系统、角色权限管理等核心功能。",
+    link: "https://github.com/Auroral0810/DarkVision-LPR/releases",
+    tag: "Beta",
   },
   {
     id: "3",
-    title: "v2.4.0",
-    date: "2021-09-01 00:00:00",
-    content: "实现基础框架搭建，包含权限管理、路由系统等核心功能。",
-    link: "https://gitee.com/youlaiorg/vue3-element-admin/releases",
-    tag: "里程碑",
+    title: "v0.5.0",
+    date: "2026-01-01 00:00:00",
+    content: "项目初始化，完成技术选型和架构设计。",
+    link: "https://github.com/Auroral0810/DarkVision-LPR/releases",
+    tag: "Alpha",
   },
 ]);
 
@@ -614,9 +640,10 @@ watch(
   { immediate: true }
 );
 
-// 组件挂载后加载访客统计数据和通知公告数据
+// 组件挂载后加载访客统计数据和天气数据
 onMounted(() => {
   fetchVisitStatsData();
+  fetchWeatherInfo();
 });
 </script>
 

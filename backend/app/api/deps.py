@@ -27,6 +27,15 @@ def get_current_user(
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise UnauthorizedException()
+    
+    # 刷新用户在线状态（心跳机制）
+    try:
+        from app.services.online_user_service import refresh_user_online
+        refresh_user_online(user_id)
+    except Exception as e:
+        # 静默失败，不影响主流程
+        from app.core.logger import logger
+        logger.warning(f"Failed to refresh user online status: {e}")
         
     return user
 

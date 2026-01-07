@@ -267,7 +267,7 @@ export const lprRoutes: RouteRecordRaw[] = [
         path: 'security',
         component: () => import('@/views/security/SecurityMgmt.vue'),
         name: 'SecurityMgmt',
-        meta: { title: '安全配置', icon: 'lock' }
+        meta: { title: '安全配置', icon: 'el-icon-Lock' }
       }
     ]
   },
@@ -279,7 +279,7 @@ export const lprRoutes: RouteRecordRaw[] = [
     redirect: '/setting/base',
     meta: { 
       title: '系统配置', 
-      icon: 'setting', 
+      icon: 'el-icon-Setting', 
       alwaysShow: true,
       roles: ['super_admin']
     },
@@ -318,7 +318,7 @@ export const lprRoutes: RouteRecordRaw[] = [
     redirect: '/external/storage',
     meta: { 
       title: '第三方服务', 
-      icon: 'connection', 
+      icon: 'el-icon-Connection', 
       alwaysShow: true,
       roles: ['super_admin']
     },
@@ -351,7 +351,7 @@ export const lprRoutes: RouteRecordRaw[] = [
     redirect: '/maintenance/cache',
     meta: { 
       title: '系统维护', 
-      icon: 'cpu', 
+      icon: 'el-icon-Cpu', 
       alwaysShow: true,
       roles: ['super_admin']
     },

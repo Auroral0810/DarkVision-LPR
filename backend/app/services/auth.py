@@ -199,6 +199,10 @@ def update_login_info(db: Session, user: User, ip_address: Optional[str] = None)
     if ip_address:
         user.last_login_ip = ip_address
     db.commit()
+    
+    # 设置用户在线状态
+    from app.services.online_user_service import set_user_online
+    set_user_online(user.id)
 
 
 from app.schemas.password import ResetPasswordRequest
@@ -706,6 +710,10 @@ def logout_user(user_id: int) -> bool:
         redis_client.delete(detail_key)
         
         logger.info(f"User logged out: {user_id}")
+    
+    # 设置用户离线状态
+    from app.services.online_user_service import set_user_offline
+    set_user_offline(user_id)
     
     return True
 

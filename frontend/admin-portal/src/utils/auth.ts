@@ -32,6 +32,30 @@ export const AuthStorage = {
   getRememberMe(): boolean {
     return Storage.get<boolean>(AUTH_KEYS.REMEMBER_ME, false);
   },
+
+  getUserInfo<T>(): T | null {
+    const isRememberMe = this.getRememberMe();
+    if (isRememberMe) {
+      return Storage.get<T>(AUTH_KEYS.USER_INFO, null);
+    }
+    return Storage.sessionGet<T>(AUTH_KEYS.USER_INFO, null);
+  },
+
+  setUserInfo<T>(userInfo: T): void {
+    const isRememberMe = this.getRememberMe();
+    if (isRememberMe) {
+      Storage.set(AUTH_KEYS.USER_INFO, userInfo);
+      Storage.sessionRemove(AUTH_KEYS.USER_INFO);
+    } else {
+      Storage.sessionSet(AUTH_KEYS.USER_INFO, userInfo);
+      Storage.remove(AUTH_KEYS.USER_INFO);
+    }
+  },
+
+  clearUserInfo(): void {
+    Storage.remove(AUTH_KEYS.USER_INFO);
+    Storage.sessionRemove(AUTH_KEYS.USER_INFO);
+  },
 };
 
 /**

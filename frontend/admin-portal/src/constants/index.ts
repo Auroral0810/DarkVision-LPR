@@ -10,6 +10,7 @@ export const STORAGE_KEYS = {
   ACCESS_TOKEN: `${APP_PREFIX}:auth:access_token`, // JWT访问令牌
   REFRESH_TOKEN: `${APP_PREFIX}:auth:refresh_token`, // JWT刷新令牌
   REMEMBER_ME: `${APP_PREFIX}:auth:remember_me`, // 记住登录状态
+  USER_INFO: `${APP_PREFIX}:auth:user_info`, // 用户信息
 
   // 系统核心相关
   DICT_CACHE: `${APP_PREFIX}:system:dict_cache`, // 字典数据缓存
@@ -39,6 +40,7 @@ export const AUTH_KEYS = {
   ACCESS_TOKEN: STORAGE_KEYS.ACCESS_TOKEN,
   REFRESH_TOKEN: STORAGE_KEYS.REFRESH_TOKEN,
   REMEMBER_ME: STORAGE_KEYS.REMEMBER_ME,
+  USER_INFO: STORAGE_KEYS.USER_INFO,
 } as const;
 
 export const SYSTEM_KEYS = {

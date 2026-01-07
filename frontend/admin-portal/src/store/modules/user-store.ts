@@ -9,8 +9,8 @@ import { useTagsViewStore } from "@/store";
 import { cleanupWebSocket } from "@/plugins/websocket";
 
 export const useUserStore = defineStore("user", () => {
-  // 用户信息
-  const userInfo = ref<UserInfo>({} as UserInfo);
+  // 用户信息 - 从本地存储恢复（如果存在）
+  const userInfo = ref<UserInfo>(AuthStorage.getUserInfo<UserInfo>() || {} as UserInfo);
 
   /**
    * 管理员登录
@@ -25,8 +25,9 @@ export const useUserStore = defineStore("user", () => {
           const { access_token, user_info } = data;
           // 保存token，支持记住我
           AuthStorage.setAccessToken(access_token, loginData.rememberMe || false);
-          // 保存用户信息
+          // 保存用户信息到内存和本地存储
           Object.assign(userInfo.value, user_info);
+          AuthStorage.setUserInfo(user_info);
           resolve();
         })
         .catch((error) => {
@@ -82,6 +83,8 @@ export const useUserStore = defineStore("user", () => {
   function resetUserState() {
     // 清除用户凭证
     AuthStorage.clearAuth();
+    // 清除持久化的用户信息
+    AuthStorage.clearUserInfo();
     // 重置用户信息
     userInfo.value = {} as UserInfo;
   }
