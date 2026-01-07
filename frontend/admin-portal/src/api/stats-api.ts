@@ -69,7 +69,20 @@ const StatsAPI = {
   getOnlineUserCount() {
     return request<any, { count: number }>({
       url: '/api/v1/tracking/online-count',
-      method: 'get'
+    })
+  },
+
+  /**
+   * 页面访问埋点
+   */
+  trackPageView(data: { page_path: string; page_type?: 'admin' | 'user' | 'website' }) {
+    return request({
+      url: '/api/v1/tracking/page-view',
+      method: 'post',
+      data: {
+        page_path: data.page_path,
+        page_type: data.page_type || 'admin'
+      }
     })
   }
 }

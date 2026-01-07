@@ -67,10 +67,30 @@ const router = createRouter({
 })
 
 // 路由守卫
+
+
+// 全局后置钩子：上报访问统计
+import { trackPageView } from '@/api/tracking'
+
+router.afterEach((to) => {
+  // 延迟执行，确保 document.title 已更新（虽然上面 beforeEach 更新了，但为了稳健）
+  setTimeout(() => {
+    trackPageView(
+      to.path,
+      to.fullPath,
+      (to.meta.title as string) || document.title
+    ).catch(err => {
+      console.error('Failed to track page view:', err)
+    })
+  }, 0)
+})
+
+
 router.beforeEach((to, _from, next) => {
   // 设置页面标题
   document.title = `${to.meta.title} - 暗视车牌识别系统` || '暗视车牌识别系统'
   next()
 })
+
 
 export default router

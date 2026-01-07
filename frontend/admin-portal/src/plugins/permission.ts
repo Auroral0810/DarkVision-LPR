@@ -69,7 +69,17 @@ export function setupPermission() {
     }
   });
 
-  router.afterEach(() => {
+  router.afterEach((to) => {
     NProgress.done();
+
+    // 页面访问埋点
+    import("@/api/stats-api").then(({ default: StatsAPI }) => {
+      StatsAPI.trackPageView({
+        page_path: to.fullPath,
+        page_type: "admin",
+      }).catch((err) => {
+        console.error("Failed to track admin page view:", err);
+      });
+    });
   });
 }
