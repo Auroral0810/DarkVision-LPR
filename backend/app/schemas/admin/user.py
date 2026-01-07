@@ -151,6 +151,7 @@ class AdminUserCreate(BaseModel):
     password: str = Field(..., min_length=6)
     email: Optional[str] = None
     user_type: str = "free"
+    role_ids: Optional[List[int]] = []
 
 
 class AdminUserUpdate(BaseModel):
@@ -160,6 +161,7 @@ class AdminUserUpdate(BaseModel):
     email: Optional[str] = None
     user_type: Optional[str] = None
     status: Optional[str] = None
+    role_ids: Optional[List[int]] = None
 
 
 class AdminUpdateUserType(BaseModel):

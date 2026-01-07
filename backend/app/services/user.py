@@ -202,8 +202,12 @@ def list_users_for_admin(
         outerjoin(ParentUser, User.parent_id == ParentUser.id).\
         options(joinedload(User.admin_roles).joinedload(AdminRole.role))
     
-    # 默认排除管理员账号
-    query = query.filter(User.user_type != 'admin')
+    # 默认排除管理员账号，除非明确查询管理员
+    if params.user_type == 'admin':
+        # 如果指定查询管理员，则不排除，且下面会加上 == 'admin' 的过滤
+        pass 
+    else:
+        query = query.filter(User.user_type != 'admin')
     
     if params.keyword:
         keyword = f"%{params.keyword}%"
@@ -298,11 +302,18 @@ def admin_create_user(db: Session, user_in: AdminUserCreate) -> User:
         phone=user_in.phone,
         nickname=user_in.nickname,
         email=user_in.email,
-        hashed_password=get_password_hash(user_in.password),
+        password_hash=get_password_hash(user_in.password),
         user_type=user_in.user_type,
         status="active"
     )
     db.add(db_user)
+    db.flush() # 获取ID
+    
+    if user_in.role_ids:
+        for rid in user_in.role_ids:
+            ar = AdminRole(admin_user_id=db_user.id, role_id=rid)
+            db.add(ar)
+            
     db.commit()
     db.refresh(db_user)
     return db_user
@@ -312,8 +323,21 @@ def admin_update_user(db: Session, user_db: User, user_in: AdminUserUpdate) -> U
     管理员更新用户信息
     """
     update_data = user_in.model_dump(exclude_unset=True)
+    
+    # 处理角色分配
+    if 'role_ids' in update_data:
+        role_ids = update_data.pop('role_ids')
+        if role_ids is not None:
+            # 删除旧角色
+            db.query(AdminRole).filter(AdminRole.admin_user_id == user_db.id).delete()
+            # 添加新角色
+            for rid in role_ids:
+                ar = AdminRole(admin_user_id=user_db.id, role_id=rid)
+                db.add(ar)
+                
     for field, value in update_data.items():
-        setattr(user_db, field, value)
+        if hasattr(user_db, field):
+            setattr(user_db, field, value)
     
     db.add(user_db)
     db.commit()

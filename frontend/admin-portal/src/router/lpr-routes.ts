@@ -88,7 +88,7 @@ export const lprRoutes: RouteRecordRaw[] = [
       },
       {
         path: 'management',
-        component: Placeholder,
+        component: () => import('@/views/perm/PermissionList.vue'),
         name: 'PermissionMgmt',
         meta: { title: '权限管理', icon: 'el-icon-Key' }
       },

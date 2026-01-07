@@ -127,7 +127,7 @@ data/raw/
 *.sqlite3
 db.sqlite3
 db.sqlite3-journal
-*.sql
+# *.sql
 
 # ==================== Uploads & Media ====================
 uploads/

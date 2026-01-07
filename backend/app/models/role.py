@@ -18,6 +18,8 @@ class Role(Base):
     # 关系
     # permissions = relationship("RolePermission", back_populates="role")
     admins = relationship("AdminRole", back_populates="role")
+    role_permissions = relationship("RolePermission", back_populates="role", cascade="all, delete-orphan")
+    permissions = relationship("Permission", secondary="role_permissions", viewonly=True, overlaps="role_permissions,roles")
 
 class AdminRole(Base):
     """管理员-角色关联表"""

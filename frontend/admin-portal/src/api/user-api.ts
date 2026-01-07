@@ -3,10 +3,12 @@ import type {
   User,
   UserListParams,
   BanUserParams,
-  PageResult
+  PageResult,
+  AdminUserCreate,
+  AdminUserUpdate
 } from '@/types/lpr'
 
-const USER_BASE_URL = '/api/v1/admin/users'
+const USER_BASE_URL = '/api/admin/users'
 
 /**
  * 用户管理 API
@@ -16,21 +18,21 @@ const UserAPI = {
    * 获取用户列表（支持分页、搜索、筛选）
    */
   getUserList(params: UserListParams) {
-    return request<any, PageResult<User>>({
+    return request({
       url: USER_BASE_URL,
       method: 'get',
       params
-    })
+    }) as Promise<PageResult<User>>
   },
 
   /**
    * 获取用户详情
    */
   getUserDetail(userId: number) {
-    return request<any, User>({
+    return request({
       url: `${USER_BASE_URL}/${userId}`,
       method: 'get'
-    })
+    }) as Promise<User>
   },
 
   /**
@@ -58,10 +60,10 @@ const UserAPI = {
    * 重置用户密码
    */
   resetUserPassword(userId: number) {
-    return request<any, { new_password: string }>({
+    return request({
       url: `${USER_BASE_URL}/${userId}/reset-password`,
       method: 'post'
-    })
+    }) as Promise<{ new_password: string }>
   },
 
   /**
@@ -106,6 +108,35 @@ const UserAPI = {
       params,
       responseType: 'blob'
     })
+  },
+
+  /**
+   * 创建用户
+   */
+  createUser(data: AdminUserCreate) {
+    return request({
+      url: USER_BASE_URL,
+      method: 'post',
+      data
+    }) as Promise<User>
+  },
+
+  /**
+   * 更新用户
+   */
+  updateUser(userId: number, data: AdminUserUpdate) {
+    return request({
+      url: `${USER_BASE_URL}/${userId}`,
+      method: 'put',
+      data
+    }) as Promise<User>
+  },
+
+  /**
+   * 删除用户
+   */
+  deleteUser(userId: number) {
+     return this.batchDeleteUsers([userId])
   }
 }
 

@@ -255,3 +255,22 @@ export interface VerificationReviewParams {
   status: 'approved' | 'rejected'
   reject_reason?: string
 }
+// User Create/Update Params
+export interface AdminUserCreate {
+  phone: string
+  nickname: string
+  email?: string
+  password: string
+  user_type: UserType
+  role_ids?: number[]
+}
+
+export interface AdminUserUpdate {
+  phone?: string
+  nickname?: string
+  email?: string
+  user_type?: string
+  status?: string
+  role_ids?: number[]
+  password?: string // Although usually handled separately, sometimes convenient
+}
