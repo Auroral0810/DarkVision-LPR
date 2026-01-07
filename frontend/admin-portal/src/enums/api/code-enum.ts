@@ -5,7 +5,7 @@ export const enum ApiCodeEnum {
   /**
    * 成功
    */
-  SUCCESS = "00000",
+  SUCCESS = 20000,
   /**
    * 错误
    */

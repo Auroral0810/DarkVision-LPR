@@ -44,8 +44,8 @@ const AuthAPI = {
   getCaptcha(captchaId?: string) {
     return request<any, CaptchaResult>({
       url: "/api/v1/captcha/generate",
-      method: "post",
-      data: {
+      method: "get",
+      params: {
         captcha_id: captchaId,
       },
     });
