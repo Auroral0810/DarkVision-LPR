@@ -8,6 +8,8 @@ class ConnectionManager:
     def __init__(self):
         # Store active connections: task_id -> List[WebSocket]
         self.active_connections: Dict[str, List[WebSocket]] = {}
+        # Store active user connections: user_id -> List[WebSocket]
+        self.active_user_connections: Dict[int, List[WebSocket]] = {}
 
     async def connect(self, task_uuid: str, websocket: WebSocket):
         await websocket.accept()
@@ -24,6 +26,21 @@ class ConnectionManager:
                 del self.active_connections[task_uuid]
         logger.info(f"WebSocket disconnected for task {task_uuid}")
 
+    async def connect_user(self, user_id: int, websocket: WebSocket):
+        await websocket.accept()
+        if user_id not in self.active_user_connections:
+            self.active_user_connections[user_id] = []
+        self.active_user_connections[user_id].append(websocket)
+        logger.info(f"User {user_id} connected to WebSocket. Total connections: {len(self.active_user_connections[user_id])}")
+
+    def disconnect_user(self, user_id: int, websocket: WebSocket):
+        if user_id in self.active_user_connections:
+            if websocket in self.active_user_connections[user_id]:
+                self.active_user_connections[user_id].remove(websocket)
+            if not self.active_user_connections[user_id]:
+                del self.active_user_connections[user_id]
+        logger.info(f"User {user_id} disconnected from WebSocket")
+
     async def send_personal_message(self, message: str, websocket: WebSocket):
         await websocket.send_text(message)
 
@@ -35,8 +52,22 @@ class ConnectionManager:
                     await connection.send_json(message)
                 except Exception as e:
                     logger.error(f"Error sending message to websocket: {e}")
-                    # Could choose to disconnect here if broken
         else:
             logger.warning(f"No active WebSocket connections for task {task_uuid}")
+
+    async def broadcast_to_user(self, user_id: int, message: dict):
+        """
+        向指定用户发送消息（支持多端登录）
+        """
+        logger.info(f"Broadcasting to user {user_id}: {message}")
+        if user_id in self.active_user_connections:
+            for connection in self.active_user_connections[user_id]:
+                try:
+                    await connection.send_json(message)
+                except Exception as e:
+                    logger.error(f"Error sending message to user {user_id}: {e}")
+                    # Remove broken connection?
+        else:
+            logger.debug(f"User {user_id} is not connected via WebSocket")
 
 manager = ConnectionManager()

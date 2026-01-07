@@ -357,7 +357,7 @@ const startBatch = async () => {
 }
 
 const connectWs = (taskUuid: string) => {
-  const wsUrl = `ws://localhost:8000/api/v1/recognition/ws/${taskUuid}`
+  const wsUrl = `ws://localhost:8000/api/v1/ws/${taskUuid}`
   ws = new WebSocket(wsUrl)
   
   ws.onmessage = (event) => {

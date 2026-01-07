@@ -234,7 +234,7 @@ const connectWebSocket = (taskUuid: string) => {
   connectionStatus.value = 'connecting'
   
   // Connect directly to backend WebSocket (bypass Vite proxy)
-  const wsUrl = `ws://localhost:8000/api/v1/recognition/ws/${taskUuid}`
+  const wsUrl = `ws://localhost:8000/api/v1/ws/${taskUuid}`
   
   console.log('Connecting to WebSocket:', wsUrl)
   ws = new WebSocket(wsUrl)

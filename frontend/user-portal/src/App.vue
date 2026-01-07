@@ -1,6 +1,10 @@
 <script setup lang="ts">
 import { useUserStore } from '@/store/user'
+import { useUserWebSocket } from '@/composables/useUserWebSocket'
+
 const userStore = useUserStore()
+// 启用 WebSocket 监听用户状态（强制下线等）
+useUserWebSocket()
 </script>
 
 <template>

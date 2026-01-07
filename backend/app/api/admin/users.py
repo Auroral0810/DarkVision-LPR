@@ -125,13 +125,24 @@ def reset_password(
     return success_response(data={"new_password": new_pwd}, message="密码已重置")
 
 @router.post("/{user_id}/force-logout", summary="强制下线", response_model=UnifiedResponse)
-def force_logout(
+async def force_logout(
     user_id: int,
     db: Session = Depends(get_db),
     current_admin = Depends(get_current_active_admin)
 ):
     from app.services.auth import logout_user
     logout_user(user_id)
+    
+    # 实时推送下线通知
+    try:
+        from app.services.websocket_manager import manager
+        await manager.broadcast_to_user(user_id, {
+            "type": "force_logout",
+            "message": "您已被管理员强制下线"
+        })
+    except Exception as e:
+        logger.warning(f"Failed to send websocket notification: {e}")
+        
     return success_response(message="已强制用户下线")
 
 @router.post("/batch-delete", summary="批量删除用户", response_model=UnifiedResponse)

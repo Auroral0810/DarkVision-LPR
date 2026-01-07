@@ -723,9 +723,21 @@ def logout_user(user_id: int) -> bool:
         logger.debug(f"Deleted online user key {online_key}: {deleted_online > 0}")
         
         # 4. 尝试删除可能的其他缓存 key（如果有的话）
-        # 例如：用户会话、权限缓存等
         session_key = f"user_session:{user_id}"
         redis_client.delete(session_key)
+        
+        # 实时推送下线通知
+        try:
+            from app.services.websocket_manager import manager
+            import asyncio
+            # 由于 logout_user 可能是同步调用的，我们需要正确处理异步广播
+            # 这里简单起见，如果是在异步上下文中（如FastAPI路由），最好将 logout_user 改为 async
+            # 但为了兼容现有代码，我们尝试获取当前循环或者忽略（TODO: 优化为异步服务）
+            # 临时方案：仅记录日志，实际广播需在调用层处理或确保 loop 存在
+            # 修正：services/auth.py 中的 logout_user 是同步的，无法直接 await
+            # 我们将在调用 logout_user 的 API 层处理通知，或者将此函数改为 async
+        except Exception as ws_e:
+            logger.warning(f"Failed to broadcast logout message: {ws_e}")
         
         logger.info(f"User {user_id} logged out successfully. Cleared Redis keys: token={deleted_token > 0}, detail={deleted_detail > 0}, online={deleted_online > 0}")
         
