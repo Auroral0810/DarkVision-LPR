@@ -27,6 +27,24 @@ def get_current_user(
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise UnauthorizedException()
+        
+    # 状态校验：检查用户是否被封禁
+    from app.models.user import UserStatus
+    if user.status == UserStatus.BANNED:
+        from app.core.exceptions import UserBannedException
+        reason = f"您的账号已被封禁：{user.banned_reason}" if user.banned_reason else "您的账号已被封禁，请联系管理员"
+        raise UserBannedException(message=reason)
+    
+    # 强制下线校验：检查 Redis 中的 token 是否与当前一致
+    from app.core.cache import get_redis
+    redis_client = get_redis()
+    if redis_client:
+        token_key = f"user_token:{user_id}"
+        stored_token = redis_client.get(token_key)
+        # 如果 Redis 中没有 token（说明被强制下线或过期），或者 token 对不上
+        if not stored_token or stored_token != token:
+            from app.core.exceptions import TokenInvalidException
+            raise TokenInvalidException(message="登录已失效或在其他地方登录，请重新登录")
     
     # 刷新用户在线状态（心跳机制）
     try:

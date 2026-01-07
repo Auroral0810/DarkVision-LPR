@@ -15,6 +15,7 @@ export interface User {
   avatar_url: string | null
   user_type: UserType
   status: UserStatus
+  is_online?: boolean
   banned_reason: string | null
   banned_until: string | null
   last_login_at: string | null

@@ -1,3 +1,4 @@
+import { defineStore } from "pinia";
 import { store } from "@/store";
 
 import AuthAPI, { type AdminLoginData, type UserInfo } from "@/api/auth-api";

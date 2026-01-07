@@ -24,6 +24,7 @@ class AdminUserListItem(BaseModel):
     last_login_at: Optional[datetime] = None
     last_login_ip: Optional[str] = None
     created_at: datetime
+    is_online: bool = False
     
     # 封禁信息
     banned_reason: Optional[str] = None

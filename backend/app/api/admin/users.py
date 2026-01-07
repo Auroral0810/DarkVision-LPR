@@ -124,6 +124,16 @@ def reset_password(
     new_pwd = user_service.reset_user_password(db, db_user)
     return success_response(data={"new_password": new_pwd}, message="密码已重置")
 
+@router.post("/{user_id}/force-logout", summary="强制下线", response_model=UnifiedResponse)
+def force_logout(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_admin = Depends(get_current_active_admin)
+):
+    from app.services.auth import logout_user
+    logout_user(user_id)
+    return success_response(message="已强制用户下线")
+
 @router.post("/batch-delete", summary="批量删除用户", response_model=UnifiedResponse)
 def batch_delete(
     req: BatchDeleteRequest,

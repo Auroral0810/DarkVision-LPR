@@ -258,9 +258,14 @@ def list_users_for_admin(
             "is_admin": user.user_type == 'admin',
             "parent_id": user.parent_id,
             "parent_nickname": parent_nickname,
+            "is_online": False, # 默认False，下面补全
             "total_recognition_count": 0, # TODO: 后续关联统计表
             "total_order_amount": 0.0     # TODO: 后续关联订单表
         }
+        
+        # 补全在线状态
+        from app.services.online_user_service import is_user_online
+        user_data["is_online"] = is_user_online(user.id)
         enriched_users.append(user_data)
                  
     return enriched_users, total

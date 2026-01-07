@@ -180,14 +180,12 @@ def get_http_status(code: ResponseCode) -> int:
     """将业务状态码映射到 HTTP 状态码"""
     if 20000 <= code < 21000:
         return 200  # 成功
-    elif 40000 <= code < 41000:
-        return 400  # 客户端错误
     elif 40100 <= code < 40200:
         return 401  # 未授权
     elif code == ResponseCode.FORBIDDEN or code == ResponseCode.PERMISSION_DENIED:
         return 403  # 禁止访问
-    elif 40200 <= code < 50000:
-        return 400  # 其他客户端错误
+    elif 40000 <= code < 50000:
+        return 400  # 客户端错误
     elif 50000 <= code < 60000:
         return 500  # 服务器错误
     else:

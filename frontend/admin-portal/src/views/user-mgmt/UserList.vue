@@ -14,7 +14,7 @@
         </el-form-item>
 
         <el-form-item label="用户类型">
-          <el-select v-model="queryParams.user_type" placeholder="全部" clearable>
+          <el-select v-model="queryParams.user_type" placeholder="全部" clearable style="width: 150px">
             <el-option label="普通用户" value="free" />
             <el-option label="VIP" value="vip" />
             <el-option label="企业" value="enterprise" />
@@ -22,7 +22,7 @@
         </el-form-item>
 
         <el-form-item label="状态">
-          <el-select v-model="queryParams.status" placeholder="全部" clearable>
+          <el-select v-model="queryParams.status" placeholder="全部" clearable style="width: 150px">
             <el-option label="正常" value="active" />
             <el-option label="禁用" value="inactive" />
             <el-option label="封禁" value="banned" />
@@ -72,7 +72,14 @@
             <el-avatar :src="scope.row.avatar_url || '/default-avatar.png'" :size="40" />
           </template>
         </el-table-column>
-        <el-table-column label="昵称" prop="nickname" min-width="120" />
+        <el-table-column label="昵称" prop="nickname" min-width="120">
+          <template #default="scope">
+            <div class="nickname-cell" style="display: flex; align-items: center; gap: 8px;">
+              <span>{{ scope.row.nickname }}</span>
+              <el-tag v-if="scope.row.is_online" size="small" type="success" effect="light">在线</el-tag>
+            </div>
+          </template>
+        </el-table-column>
         <el-table-column label="手机号" prop="phone" width="130" />
         <el-table-column label="邮箱" prop="email" min-width="180" show-overflow-tooltip />
         <el-table-column label="用户类型" width="100">
@@ -119,6 +126,15 @@
             </el-button>
             <el-button type="info" link size="small" @click="handleResetPassword(scope.row)">
               重置密码
+            </el-button>
+            <el-button 
+              v-if="scope.row.is_online" 
+              type="danger" 
+              link 
+              size="small" 
+              @click="handleForceLogout(scope.row)"
+            >
+              强制下线
             </el-button>
           </template>
         </el-table-column>
@@ -436,6 +452,20 @@ async function handleResetPassword(row: User) {
   }).catch(() => {})
 }
 
+async function handleForceLogout(row: User) {
+  ElMessageBox.confirm(`确认强制用户【${row.nickname}】下线吗？其当前 Token 将失效。`, '强制下线', {
+    type: 'warning'
+  }).then(async () => {
+    try {
+      await LprAPI.forceLogout(row.id)
+      ElMessage.success('已强制下线')
+      fetchUserList()
+    } catch (error) {
+      ElMessage.error('强制下线失败')
+    }
+  }).catch(() => {})
+}
+
 async function handleBatchDelete() {
   ElMessageBox.confirm(`确认删除选中的 ${selectedIds.value.length} 个用户吗？`, '批量删除', {
     type: 'warning'
@@ -500,3 +530,13 @@ onMounted(() => {
   fetchUserList()
 })
 </script>
+
+<style scoped>
+.nickname-cell {
+  display: flex;
+  align-items: center;
+}
+.ml-2 {
+  margin-left: 8px;
+}
+</style>

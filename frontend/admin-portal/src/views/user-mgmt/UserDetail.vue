@@ -10,7 +10,10 @@
             </div>
             <div class="card-content">
               <span class="label">账户状态</span>
-              <span class="value">{{ getStatusLabel(userInfo?.status) }}</span>
+              <span class="value">
+                {{ getStatusLabel(userInfo?.status) }}
+                <el-tag v-if="userInfo?.is_online" size="small" type="success" effect="dark" class="ml-1">在线</el-tag>
+              </span>
             </div>
           </div>
           <div class="summary-card type-card">
@@ -290,7 +293,18 @@ function getQuotaPercentage() {
 }
 
 const handleForceLogout = () => {
-  ElMessage.info('功能开发中...')
+  ElMessageBox.confirm('确定要强制该用户下线吗？其当前 Token 将立即失效。', '操作提示', {
+    type: 'warning'
+  }).then(async () => {
+    if (!userInfo.value) return
+    try {
+      await LprAPI.forceLogout(userInfo.value.id)
+      ElMessage.success('已强制下线')
+      fetchUserDetail() // 刷新状态
+    } catch (err) {
+       // 错误由拦截器处理
+    }
+  }).catch(() => {})
 }
 
 const handleDeleteUser = () => {

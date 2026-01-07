@@ -185,6 +185,7 @@ class UserDetailInfo(UserBasicInfo):
     last_login_ip: Optional[str] = None
     login_fail_count: int = 0
     is_deleted: bool = False
+    is_online: bool = False
     
     # 增强统计
     total_recognition_count: int = 0

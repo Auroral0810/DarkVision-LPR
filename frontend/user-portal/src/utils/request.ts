@@ -38,7 +38,26 @@ request.interceptors.response.use(
     const { data } = response
     // 兼容后端统一返回 { code, message, data }
     if (typeof data?.code !== 'undefined') {
-      if (data.code < 20000 || data.code >= 30000) {
+      // 业务状态码处理
+      const code = data.code
+      if (code < 20000 || code >= 30000) {
+        // 特定错误码处理：Token失效、过期、被封禁
+        if (
+          code === 40100 || // UNAUTHORIZED
+          code === 40101 || // TOKEN_EXPIRED
+          code === 40102 || // TOKEN_INVALID (强制下线)
+          code === 40206    // USER_BANNED
+        ) {
+           ElMessage.error(data.message || '登录已失效，请重新登录')
+           sessionStorage.removeItem('token')
+           localStorage.removeItem('token')
+           // 延迟跳转，确保用户看清提示
+           setTimeout(() => {
+             window.location.href = '/login'
+           }, 1500)
+           return Promise.reject(new Error(data.message || 'Auth Error'))
+        }
+
         ElMessage.error(data.message || '请求失败')
         return Promise.reject(new Error(data.message || '请求失败'))
       }

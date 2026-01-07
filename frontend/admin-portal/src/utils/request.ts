@@ -82,20 +82,28 @@ httpRequest.interceptors.response.use(
 
     switch (code) {
       case ApiCodeEnum.ACCESS_TOKEN_INVALID:
+      case ApiCodeEnum.TOKEN_EXPIRED:
         // Access Token 过期
         if (authConfig.enableTokenRefresh) {
           // 启用了token刷新，尝试刷新
           return refreshTokenAndRetry(config, httpRequest);
         } else {
           // 未启用token刷新，直接跳转登录页
-          await redirectToLogin("登录已过期，请重新登录");
+          await redirectToLogin(message || "登录已过期，请重新登录");
           return Promise.reject(new Error(message || "Access Token Invalid"));
         }
 
       case ApiCodeEnum.REFRESH_TOKEN_INVALID:
-        // Refresh Token 过期，跳转登录页
-        await redirectToLogin("登录已过期，请重新登录");
-        return Promise.reject(new Error(message || "Refresh Token Invalid"));
+      case ApiCodeEnum.UNAUTHORIZED:
+      case ApiCodeEnum.TOKEN_INVALID:
+        // 登录失效或强制下线
+        await redirectToLogin(message || "登录已失效，请重新登录");
+        return Promise.reject(new Error(message || "Login Invalid"));
+
+      case ApiCodeEnum.USER_BANNED:
+        // 账号被封禁
+        await redirectToLogin(message || "您的账号已被封禁");
+        return Promise.reject(new Error(message || "User Banned"));
 
       default:
         ElMessage.error(message || "请求失败");

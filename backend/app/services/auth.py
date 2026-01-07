@@ -201,7 +201,7 @@ def update_login_info(db: Session, user: User, ip_address: Optional[str] = None)
     db.commit()
     
     # 设置用户在线状态
-    from app.services.online_user_service import set_user_online
+    from app.services.online_user_service import set_user_online, is_user_online
     set_user_online(user.id)
 
 
@@ -449,6 +449,7 @@ def get_user_detail_info(db: Session, user_id: int) -> UserDetailInfo:
                 logger.warning(f"Failed to load user detail from cache: {e}")
     
     # 缓存未命中，从数据库查询
+    from app.services.online_user_service import is_user_online
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise UserNotFoundException()
@@ -571,7 +572,8 @@ def get_user_detail_info(db: Session, user_id: int) -> UserDetailInfo:
         created_at=user.created_at,
         last_login_at=user.last_login_at,
         recent_records=recent_records,
-        recognition_stats=recognition_stats
+        recognition_stats=recognition_stats,
+        is_online=is_user_online(user_id)
     )
     
     # 缓存到 Redis（5分钟）
