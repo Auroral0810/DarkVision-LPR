@@ -1,7 +1,6 @@
 import { store } from "@/store";
 
-import AuthAPI, { type LoginFormData } from "@/api/auth-api";
-import UserAPI, { type UserInfo } from "@/api/system/user-api";
+import AuthAPI, { type AdminLoginData, type UserInfo } from "@/api/auth-api";
 
 import { AuthStorage } from "@/utils/auth";
 import { usePermissionStoreHook } from "@/store/modules/permission-store";
@@ -12,46 +11,23 @@ import { cleanupWebSocket } from "@/plugins/websocket";
 export const useUserStore = defineStore("user", () => {
   // 用户信息
   const userInfo = ref<UserInfo>({} as UserInfo);
-  // 记住我状态
-  const rememberMe = ref(AuthStorage.getRememberMe());
 
   /**
-   * 登录
+   * 管理员登录
    *
-   * @param {LoginFormData}
+   * @param {AdminLoginData} loginData - 登录表单数据
    * @returns
    */
-  function login(LoginFormData: LoginFormData) {
+  function login(loginData: AdminLoginData) {
     return new Promise<void>((resolve, reject) => {
-      AuthAPI.login(LoginFormData)
+      AuthAPI.login(loginData)
         .then((data) => {
-          const { accessToken, refreshToken } = data;
-          // 保存记住我状态和token
-          rememberMe.value = LoginFormData.rememberMe;
-          AuthStorage.setTokens(accessToken, refreshToken, rememberMe.value);
+          const { access_token, user_info } = data;
+          // 保存token，支持记住我
+          AuthStorage.setAccessToken(access_token, loginData.rememberMe || false);
+          // 保存用户信息
+          Object.assign(userInfo.value, user_info);
           resolve();
-        })
-        .catch((error) => {
-          reject(error);
-        });
-    });
-  }
-
-  /**
-   * 获取用户信息
-   *
-   * @returns {UserInfo} 用户信息
-   */
-  function getUserInfo() {
-    return new Promise<UserInfo>((resolve, reject) => {
-      UserAPI.getInfo()
-        .then((data) => {
-          if (!data) {
-            reject("Verification failed, please Login again.");
-            return;
-          }
-          Object.assign(userInfo.value, { ...data });
-          resolve(data);
         })
         .catch((error) => {
           reject(error);
@@ -110,41 +86,13 @@ export const useUserStore = defineStore("user", () => {
     userInfo.value = {} as UserInfo;
   }
 
-  /**
-   * 刷新 token
-   */
-  function refreshToken() {
-    const refreshToken = AuthStorage.getRefreshToken();
-
-    if (!refreshToken) {
-      return Promise.reject(new Error("没有有效的刷新令牌"));
-    }
-
-    return new Promise<void>((resolve, reject) => {
-      AuthAPI.refreshToken(refreshToken)
-        .then((data) => {
-          const { accessToken, refreshToken: newRefreshToken } = data;
-          // 更新令牌，保持当前记住我状态
-          AuthStorage.setTokens(accessToken, newRefreshToken, AuthStorage.getRememberMe());
-          resolve();
-        })
-        .catch((error) => {
-          console.log(" refreshToken  刷新失败", error);
-          reject(error);
-        });
-    });
-  }
-
   return {
     userInfo,
-    rememberMe,
     isLoggedIn: () => !!AuthStorage.getAccessToken(),
-    getUserInfo,
     login,
     logout,
     resetAllState,
     resetUserState,
-    refreshToken,
   };
 });
 

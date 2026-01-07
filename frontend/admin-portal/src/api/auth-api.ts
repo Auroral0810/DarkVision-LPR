@@ -3,31 +3,22 @@ import request from "@/utils/request";
 const AUTH_BASE_URL = "/api/v1/auth";
 
 const AuthAPI = {
-  /** 登录接口*/
-  login(data: LoginFormData) {
-    const formData = new FormData();
-    formData.append("username", data.username);
-    formData.append("password", data.password);
-    formData.append("captchaKey", data.captchaKey);
-    formData.append("captchaCode", data.captchaCode);
-    return request<any, LoginResult>({
-      url: `${AUTH_BASE_URL}/login`,
+  /** 管理员登录接口（支持邮箱或手机号）*/
+  login(data: AdminLoginData) {
+    // 构建通用请求体
+    const requestBody: any = {
+      account: data.account,
+      password: data.password,
+      captcha_code: data.captchaCode,
+      captcha_key: data.captchaKey
+    };
+    
+    return request<any, AdminLoginResult>({
+      url: "/api/admin/login",
       method: "post",
-      data: formData,
+      data: requestBody,
       headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-  },
-
-  /** 刷新 token 接口*/
-  refreshToken(refreshToken: string) {
-    return request<any, LoginResult>({
-      url: `${AUTH_BASE_URL}/refresh-token`,
-      method: "post",
-      params: { refreshToken },
-      headers: {
-        Authorization: "no-auth",
+        "Content-Type": "application/json",
       },
     });
   },
@@ -35,8 +26,8 @@ const AuthAPI = {
   /** 退出登录接口 */
   logout() {
     return request({
-      url: `${AUTH_BASE_URL}/logout`,
-      method: "delete",
+      url: "/api/admin/logout",
+      method: "post",
     });
   },
 
@@ -54,30 +45,38 @@ const AuthAPI = {
 
 export default AuthAPI;
 
-/** 登录表单数据 */
-export interface LoginFormData {
-  /** 用户名 */
-  username: string;
+/** 管理员登录表单数据 */
+export interface AdminLoginData {
+  /** 账号（邮箱或手机号） */
+  account: string;
   /** 密码 */
   password: string;
   /** 验证码缓存key */
-  captchaKey: string;
+  captchaKey?: string;
   /** 验证码 */
-  captchaCode: string;
+  captchaCode?: string;
   /** 记住我 */
-  rememberMe: boolean;
+  rememberMe?: boolean;
 }
 
-/** 登录响应 */
-export interface LoginResult {
+/** 管理员登录响应 */
+export interface AdminLoginResult {
   /** 访问令牌 */
-  accessToken: string;
-  /** 刷新令牌 */
-  refreshToken: string;
+  access_token: string;
   /** 令牌类型 */
-  tokenType: string;
-  /** 过期时间(秒) */
-  expiresIn: number;
+  token_type: string;
+  /** 用户信息 */
+  user_info: UserInfo;
+}
+
+/** 用户信息 */
+export interface UserInfo {
+  id: number;
+  phone?: string;
+  nickname: string;
+  email?: string;
+  avatar_url?: string;
+  // 其他用户字段根据需要添加
 }
 
 /** 验证码信息 */

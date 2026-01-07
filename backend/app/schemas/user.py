@@ -42,6 +42,13 @@ class UserRegister(BaseModel):
 
 
 # ===== 登录相关 =====
+class UserLoginGeneric(BaseModel):
+    """通用登录（支持手机或邮箱 + 密码 + 图形验证码）"""
+    account: str = Field(..., description="手机号或邮箱")
+    password: str = Field(..., min_length=6)
+    captcha_code: Optional[str] = Field(None, description="图形验证码")
+    captcha_key: Optional[str] = Field(None, description="图形验证码Key")
+
 class UserLoginByPhone(BaseModel):
     """手机号登录"""
     phone: str = Field(..., min_length=11, max_length=11)

@@ -8,9 +8,9 @@
       size="large"
       :validate-on-rule-change="false"
     >
-      <!-- 用户名 -->
-      <el-form-item prop="username">
-        <el-input v-model.trim="loginFormData.username" :placeholder="t('login.username')">
+      <!-- 账号（邮箱或手机号） -->
+      <el-form-item prop="account">
+        <el-input v-model.trim="loginFormData.account" :placeholder="t('login.account')">
           <template #prefix>
             <el-icon><User /></el-icon>
           </template>
@@ -53,6 +53,7 @@
             <el-icon v-if="codeLoading" class="is-loading" size="20"><Loading /></el-icon>
             <img
               v-else-if="captchaBase64"
+              class="w-full h-full"
               border-rd-4px
               object-cover
               shadow="[0_0_0_1px_var(--el-border-color)_inset]"
@@ -112,7 +113,7 @@
 </template>
 <script setup lang="ts">
 import type { FormInstance } from "element-plus";
-import AuthAPI, { type LoginFormData } from "@/api/auth-api";
+import AuthAPI, { type AdminLoginData } from "@/api/auth-api";
 import router from "@/router";
 import { useUserStore } from "@/store";
 import CommonWrapper from "@/components/CommonWrapper/index.vue";
@@ -130,24 +131,32 @@ const loading = ref(false);
 const isCapsLock = ref(false);
 // 验证码图片Base64字符串
 const captchaBase64 = ref();
-// 记住我
-const rememberMe = AuthStorage.getRememberMe();
 
-const loginFormData = ref<LoginFormData>({
-  username: "admin",
+const loginFormData = ref<AdminLoginData>({
+  account: "13800138999",  // 或 "admin@darkvision.com"
   password: "123456",
   captchaKey: "",
   captchaCode: "",
-  rememberMe,
+  rememberMe: AuthStorage.getRememberMe(),
 });
 
 const loginRules = computed(() => {
   return {
-    username: [
+    account: [
       {
         required: true,
+        validator: (_: any, value: string, callback: any) => {
+          const emailReg = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+          const phoneReg = /^1[3-9]\d{9}$/;
+          if (!value) {
+            callback(new Error(t("login.message.account.required")));
+          } else if (!emailReg.test(value) && !phoneReg.test(value)) {
+            callback(new Error(t("login.message.account.invalid")));
+          } else {
+            callback();
+          }
+        },
         trigger: "blur",
-        message: t("login.message.username.required"),
       },
     ],
     password: [

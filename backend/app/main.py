@@ -4,6 +4,7 @@ from app.config import settings
 from app.core.cache import init_redis
 from app.core.database import engine, Base
 from app.api.v1 import router as api_router
+from app.api.admin import admin_router
 from app.middleware.error_handler import register_exception_handlers
 
 # 创建数据库表
@@ -33,6 +34,7 @@ app.add_middleware(
 
 # 注册路由
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
+app.include_router(admin_router, prefix="/api/admin")
 
 @app.get("/")
 def root():
