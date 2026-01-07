@@ -28,7 +28,7 @@
                 <!-- Fallback description if not in DB (DB only has title) -->
                 <p class="hero-description">
                   {{ $t('home.description') }}<br>
-                  基于 YOLOv12 与 Retinex 图像增强技术，支持极端低光照场景。
+                  基于 YOLOv11 与 Retinex 图像增强技术，支持极端低光照场景。
                 </p>
                 <div class="hero-actions">
                   <a v-if="item.link_url" :href="item.link_url" class="btn btn-primary">

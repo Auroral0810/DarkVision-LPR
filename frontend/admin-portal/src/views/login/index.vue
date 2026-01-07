@@ -45,10 +45,12 @@
 </template>
 
 <script setup lang="ts">
-import logo from "@/assets/logo.png";
 import { defaultSettings } from "@/settings";
 import CommonWrapper from "@/components/CommonWrapper/index.vue";
 import DarkModeSwitch from "@/components/DarkModeSwitch/index.vue";
+
+// 使用 public 目录下的 logo.ico
+const logo = "/logo.ico";
 
 type LayoutMap = "login" | "register" | "resetPwd";
 
@@ -61,17 +63,27 @@ const formComponents = {
   resetPwd: defineAsyncComponent(() => import("./components/ResetPwd.vue")),
 };
 
-// 投票通知
-const voteUrl = "https://gitee.com/activity/2025opensource?ident=I6VXEH";
+// 系统介绍通知
+const githubUrl = "https://github.com/Auroral0810/DarkVision-LPR";
 // 保存通知实例，用于在组件卸载时关闭
 let notificationInstance: ReturnType<typeof ElNotification> | null = null;
 
-// 显示投票通知
-const showVoteNotification = () => {
+// 显示系统介绍通知
+const showSystemNotification = () => {
   notificationInstance = ElNotification({
-    title: "⭐ Gitee 2025 开源评选 · 诚邀您的支持！ 🙏",
-    message: `我正在参加 Gitee 2025 最受欢迎的开源软件投票活动，快来给我投票吧！<br/><a href="${voteUrl}" target="_blank" style="color: var(--el-color-primary); text-decoration: none; font-weight: 500;">点击投票 →</a>`,
-    type: "success",
+    title: "🌙 DarkVision-LPR · 低光照车牌识别系统",
+    message: `
+      <div style="line-height: 1.6;">
+        <p style="margin: 0 0 8px 0;">基于 YOLOv11m 的高精度车牌识别系统，专为低光照环境设计</p>
+        <p style="margin: 0 0 8px 0; color: var(--el-text-color-secondary); font-size: 13px;">
+          ✨ 核心特性：夜视增强 | 毫秒级识别 | 99.9% 准确率 | 实时数据分析
+        </p>
+        <a href="${githubUrl}" target="_blank" style="color: var(--el-color-primary); text-decoration: none; font-weight: 500; display: inline-block; margin-top: 4px;">
+          🌟 访问 GitHub →
+        </a>
+      </div>
+    `,
+    type: "info",
     position: "bottom-right",
     duration: 0,
     dangerouslyUseHTMLString: true,
@@ -81,7 +93,7 @@ const showVoteNotification = () => {
 // 延迟显示
 onMounted(() => {
   setTimeout(() => {
-    showVoteNotification();
+    showSystemNotification();
   }, 500);
 });
 

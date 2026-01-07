@@ -1,20 +1,27 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" href="/favicon.ico" />
+    <link rel="icon" href="/logo.ico" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Vue3 + Vite + TypeScript + Element-Plus 的后台管理模板 " />
+    <meta 
+      name="description" 
+      content="DarkVision-LPR 管理后台——低光照车牌识别系统，基于 YOLOv11m、Retinex 图像增强及 Vue3 + Element Plus 构建的智能管理平台。支持实时数据监控、多端适配、会员管理和安全审计，为智能交通与安防提供高效、可靠的后台管理体验。"
+    />
     <meta
       name="keywords"
-      content="vue,element-plus,typescript,vue-element-admin,vue3-element-admin"
+      content="DarkVision-LPR, 车牌识别, 夜视增强, YOLOv11m, Vue3, 管理后台, Element Plus, 实时监控, 数据分析, 低光照, 智能交通, 安防, 会员管理"
     />
-    <title>%VITE_APP_TITLE%</title>
+    <title>%VITE_APP_TITLE% - DarkVision-LPR 管理后台</title>
   </head>
-
   <body>
     <div id="app">
       <div class="loading-container">
+        <div class="system-branding">
+          <img src="/logo.ico" alt="DarkVision-LPR" class="system-logo" />
+          <p class="system-title">DarkVision-LPR 智能车牌识别 · 后台管理</p>
+          <p class="system-desc">专为低光照场景设计的AI车牌识别，全方位赋能智能交通与安防</p>
+        </div>
         <div class="loading-spinner">
           <div class="loading-bar"></div>
           <div class="loading-bar"></div>
@@ -35,14 +42,46 @@
       justify-content: center;
       width: 100%;
       height: 100%;
+      background: #f6f8fa;
     }
 
     .loading-container {
       display: flex;
       flex-direction: column;
-      gap: 24px;
+      gap: 32px;
       align-items: center;
       justify-content: center;
+    }
+
+    .system-branding {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      color: #223150;
+      user-select: none;
+    }
+    .system-logo {
+      width: 44px;
+      height: 44px;
+      margin-bottom: 2px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px #0001;
+    }
+    .system-title {
+      font-size: 1.32rem;
+      font-weight: bold;
+      letter-spacing: 0.03em;
+      margin: 0;
+      color: #196afe;
+      text-shadow: 0 1px 4px #aac7ff33;
+    }
+    .system-desc {
+      font-size: 0.97rem;
+      color: #44506b;
+      opacity: 0.88;
+      margin: 0;
     }
 
     .loading-spinner {
@@ -51,12 +90,13 @@
       align-items: center;
       justify-content: center;
       height: 40px;
+      margin-top: 6px;
     }
 
     .loading-bar {
       width: 4px;
       height: 24px;
-      background-color: #498cff;
+      background-color: #196afe;
       border-radius: 2px;
       animation: loading-animation 1.2s ease-in-out infinite;
     }
@@ -78,12 +118,10 @@
         opacity: 0.3;
         transform: scaleY(0.5);
       }
-
       50% {
         opacity: 1;
         transform: scaleY(1.2);
       }
-
       100% {
         opacity: 0.3;
         transform: scaleY(0.5);

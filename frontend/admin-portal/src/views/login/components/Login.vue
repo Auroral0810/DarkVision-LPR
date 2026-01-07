@@ -176,10 +176,11 @@ const loginRules = computed(() => {
 const codeLoading = ref(false);
 function getCaptcha() {
   codeLoading.value = true;
-  AuthAPI.getCaptcha()
+  // Pass current captcha_id to refresh if executing again
+  AuthAPI.getCaptcha(loginFormData.value.captchaKey)
     .then((data) => {
-      loginFormData.value.captchaKey = data.captchaKey;
-      captchaBase64.value = data.captchaBase64;
+      loginFormData.value.captchaKey = data.captcha_id;
+      captchaBase64.value = data.image_base64;
     })
     .finally(() => (codeLoading.value = false));
 }
