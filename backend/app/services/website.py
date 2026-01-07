@@ -98,6 +98,18 @@ class WebsiteService:
         return db.query(SystemConfig).filter(SystemConfig.is_public == True).all()
 
     @staticmethod
+    def get_latest_news(db: Session, limit: int = 5) -> List[Announcement]:
+        """
+        获取最新的公告/动态
+        """
+        now = datetime.now()
+        return db.query(Announcement).filter(
+            Announcement.is_enabled == True,
+            (Announcement.start_time <= now) | (Announcement.start_time == None),
+            (Announcement.end_time >= now) | (Announcement.end_time == None)
+        ).order_by(Announcement.created_at.desc()).limit(limit).all()
+
+    @staticmethod
     def clear_cache():
         redis_client = get_redis()
         if redis_client:

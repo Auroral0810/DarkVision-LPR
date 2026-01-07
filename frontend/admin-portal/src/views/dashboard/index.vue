@@ -293,10 +293,10 @@
           <template #header>
             <div class="flex-x-between">
               <span class="header-title">最新动态</span>
-              <el-link
+                <el-link
                 type="primary"
                 underline="never"
-                href="https://github.com/Auroral0810/DarkVision-LPR/releases"
+                :href="completeRecordsLink"
                 target="_blank"
               >
                 完整记录
@@ -310,7 +310,7 @@
               <el-timeline-item
                 v-for="(item, index) in vesionList"
                 :key="index"
-                :timestamp="item.date"
+                :timestamp="item.created_at"
                 placement="top"
                 :color="index === 0 ? '#67C23A' : '#909399'"
                 :hollow="index !== 0"
@@ -319,24 +319,12 @@
                 <div class="version-item" :class="{ 'latest-item': index === 0 }">
                   <div>
                     <el-text tag="strong">{{ item.title }}</el-text>
-                    <el-tag v-if="item.tag" :type="index === 0 ? 'success' : 'info'" size="small">
-                      {{ item.tag }}
+                    <el-tag v-if="item.display_position" :type="index === 0 ? 'success' : 'info'" size="small">
+                      {{ item.display_position }}
                     </el-tag>
                   </div>
 
                   <el-text class="version-content">{{ item.content }}</el-text>
-
-                  <div v-if="item.link">
-                    <el-link
-                      :type="index === 0 ? 'primary' : 'info'"
-                      :href="item.link"
-                      target="_blank"
-                      underline="never"
-                    >
-                      详情
-                      <el-icon class="link-icon"><TopRight /></el-icon>
-                    </el-link>
-                  </div>
                 </div>
               </el-timeline-item>
             </el-timeline>
@@ -420,33 +408,32 @@ const fetchWeatherInfo = async () => {
 };
 
 
+import WebsiteAPI, { type AnnouncementItem } from "@/api/website-api";
+
 // 当前通知公告列表
-const vesionList = ref<VersionItem[]>([
-  {
-    id: "1",
-    title: "v1.0.0",
-    date: "2026-01-07 00:00:00",
-    content: "DarkVision-LPR管理后台上线，支持完整的用户、权限、订单管理功能。",
-    link: "https://github.com/Auroral0810/DarkVision-LPR/releases",
-    tag: "里程碑",
-  },
-  {
-    id: "2",
-    title: "v0.9.0",
-    date: "2026-01-05 00:00:00",
-    content: "实现基础框架搭建，包含认证系统、角色权限管理等核心功能。",
-    link: "https://github.com/Auroral0810/DarkVision-LPR/releases",
-    tag: "Beta",
-  },
-  {
-    id: "3",
-    title: "v0.5.0",
-    date: "2026-01-01 00:00:00",
-    content: "项目初始化，完成技术选型和架构设计。",
-    link: "https://github.com/Auroral0810/DarkVision-LPR/releases",
-    tag: "Alpha",
-  },
-]);
+const vesionList = ref<AnnouncementItem[]>([]);
+
+// 获取最新动态
+const fetchLatestNews = async () => {
+  try {
+    const data = await WebsiteAPI.getLatestNews();
+    vesionList.value = data;
+  } catch (error) {
+    console.error("获取动态失败:", error);
+    // 降级处理: 如果接口失败，可以保留空或显示友好提示
+  }
+};
+
+onMounted(() => {
+  fetchWeatherInfo();
+  fetchLatestNews();
+});
+
+// 计算完整记录链接
+const completeRecordsLink = computed(() => {
+  const isDev = import.meta.env.DEV;
+  return isDev ? "http://localhost:5173/" : "https://docs.darkvision.auroral.work/"; // 生产环境地址示例
+});
 
 // 当前时间（用于计算问候语）
 const currentDate = new Date();
