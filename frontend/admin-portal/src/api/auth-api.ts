@@ -85,6 +85,7 @@ export interface UserInfo {
   email?: string;
   avatar_url?: string;
   roles: string[];
+  perms?: string[]; // 权限标识列表
   user_type: string;
   status: string;
   // 会员相关

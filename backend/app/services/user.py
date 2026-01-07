@@ -110,40 +110,12 @@ from app.schemas.admin.user import AdminSelfInfo
 
 def get_admin_detail_info(db: Session, user_id: int) -> Optional[AdminSelfInfo]:
     """
-    获取管理员详细信息（仅包含角色等管理必要信息）
+    获取管理员详细信息（包含个人资料、认证状态及管理角色信息）
     """
-    # Eagerly load admin_roles and associated role
-    from sqlalchemy.orm import joinedload
-    user = db.query(User).options(
-        joinedload(User.admin_roles).joinedload(AdminRole.role)
-    ).filter(User.id == user_id).first()
-
-    if not user:
+    # 复用 get_user_detail_info 获取完整数据
+    detail = get_user_detail_info(db, user_id)
+    if not detail:
         return None
         
-    roles = []
-    if user.user_type == 'admin':
-        if user.admin_roles:
-            for ar in user.admin_roles:
-                if ar.role:
-                    roles.append(ar.role.name)
-        
-        # 容错：如果admin类型但无角色，给空列表或默认值，这里给空列表让前端处理权限拒绝，或者给ROOT方便调试
-        # 根据用户需求，数据库已有角色，所以这里应该能查到
-        if not roles:
-            # 只有当确实没查到角色时，才（可选地）给一个默认值
-            # roles = ["ROOT"] 
-            pass
-            
-    return AdminSelfInfo(
-        id=user.id,
-        phone=user.phone,
-        nickname=user.nickname,
-        email=user.email,
-        avatar_url=user.avatar_url,
-        user_type=user.user_type,
-        status=user.status,
-        roles=roles,
-        created_at=user.created_at,
-        last_login_at=user.last_login_at
-    )
+    # 将 UserDetailInfo 映射到 AdminSelfInfo (会自动忽略不匹配的字段如配额、会员详情等)
+    return AdminSelfInfo(**detail.model_dump())

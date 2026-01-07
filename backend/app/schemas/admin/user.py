@@ -74,6 +74,19 @@ class AdminSelfInfo(BaseModel):
     user_type: str
     status: str
     roles: List[str] = []
+    perms: List[str] = []
+    
+    # 个人信息
+    gender: Optional[str] = None
+    birthday: Optional[str] = None  # YYYY-MM-DD
+    address: Optional[str] = None
+    real_name: Optional[str] = None
+    
+    # 实名认证状态
+    is_verified: bool = False
+    verification_status: Optional[str] = None
+    
+    # 时间信息
     created_at: datetime
     last_login_at: Optional[datetime] = None
     

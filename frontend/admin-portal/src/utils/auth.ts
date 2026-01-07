@@ -33,12 +33,12 @@ export const AuthStorage = {
     return Storage.get<boolean>(AUTH_KEYS.REMEMBER_ME, false);
   },
 
-  getUserInfo<T>(): T | null {
+  getUserInfo<T>(): T | undefined {
     const isRememberMe = this.getRememberMe();
     if (isRememberMe) {
-      return Storage.get<T>(AUTH_KEYS.USER_INFO, null);
+      return Storage.get<T>(AUTH_KEYS.USER_INFO);
     }
-    return Storage.sessionGet<T>(AUTH_KEYS.USER_INFO, null);
+    return Storage.sessionGet<T>(AUTH_KEYS.USER_INFO);
   },
 
   setUserInfo<T>(userInfo: T): void {
@@ -64,7 +64,7 @@ export const AuthStorage = {
 export function hasPerm(value: string | string[], type: "button" | "role" = "button"): boolean {
   const { roles, perms } = useUserStoreHook().userInfo;
 
-  if (!roles || !perms) {
+  if (!roles) {
     return false;
   }
 
@@ -73,7 +73,7 @@ export function hasPerm(value: string | string[], type: "button" | "role" = "but
     return true;
   }
 
-  const auths = type === "button" ? perms : roles;
+  const auths = (type === "button" ? perms : roles) || [];
   return typeof value === "string"
     ? auths.includes(value)
     : value.some((perm) => auths.includes(perm));
