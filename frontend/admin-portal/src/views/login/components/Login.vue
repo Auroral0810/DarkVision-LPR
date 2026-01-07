@@ -208,9 +208,11 @@ async function handleLoginSubmit() {
     // 2. 执行登录
     await userStore.login(loginFormData.value);
 
-    const redirectPath = (route.query.redirect as string) || "/";
+    const queryRedirect = route.query.redirect as string;
+    // 修复可能出现的双斜杠问题，例如 //dashboard/overview
+    const redirectPath = queryRedirect ? decodeURIComponent(queryRedirect).replace(/^\/+/, "/") : "/";
 
-    await router.push(decodeURIComponent(redirectPath));
+    await router.push(redirectPath);
   } catch (error) {
     // 4. 统一错误处理
     getCaptcha(); // 刷新验证码

@@ -3,6 +3,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.core.cache import init_redis
 from app.core.database import engine, Base
+# 导入模型以确保注册到Base
+import app.models  # noqa
 from app.api.v1 import router as api_router
 from app.api.admin import admin_router
 from app.middleware.error_handler import register_exception_handlers

@@ -139,6 +139,9 @@ class RecognitionStats(BaseModel):
 
 class UserDetailInfo(UserBasicInfo):
     """用户详细信息（包含会员和统计）"""
+    # 角色列表
+    roles: List[str] = []
+    
     # 会员信息
     membership_type: Optional[str] = None
     membership_expire_date: Optional[datetime] = None

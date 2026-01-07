@@ -3,6 +3,8 @@ from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from app.core.database import Base
 import enum
+# Note: AdminRole relationship usage relies on string reference or subsequent imports.
+
 
 class UserType(str, enum.Enum):
     """用户类型枚举（值必须与数据库一致）"""
@@ -41,6 +43,7 @@ class User(Base):
     profile = relationship("UserProfile", back_populates="user", uselist=False)
     membership = relationship("UserMembership", back_populates="user", uselist=False)
     real_name_verification = relationship("RealNameVerification", back_populates="user", uselist=False, foreign_keys="[RealNameVerification.user_id]")
+    admin_roles = relationship("AdminRole", back_populates="user")
     
     @property
     def is_verified(self) -> bool:

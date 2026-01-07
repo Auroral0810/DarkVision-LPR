@@ -527,6 +527,15 @@ def get_user_detail_info(db: Session, user_id: int) -> UserDetailInfo:
     # 获取识别成功率统计（实时数据，不缓存）
     recognition_stats = get_recognition_stats(db, user_id)
     
+    # 获取用户角色（临时逻辑：根据 user_type 映射，后期改为查询 admin_roles 表）
+    roles = []
+    if user.user_type == UserType.ADMIN:
+        roles = ["ROOT"]
+    elif user.user_type == UserType.ENTERPRISE:
+        roles = ["ENTERPRISE"]
+    else:
+        roles = ["USER"]
+    
     # 构建详细信息
     user_detail = UserDetailInfo(
         id=user.id,
@@ -536,6 +545,7 @@ def get_user_detail_info(db: Session, user_id: int) -> UserDetailInfo:
         avatar_url=avatar_display_url,
         user_type=user.user_type,
         status=user.status,
+        roles=roles,
         membership_type=membership.membership_type if membership else "free",
         membership_expire_date=membership.expire_date if membership else None,
         is_membership_active=membership.is_active if membership else False,

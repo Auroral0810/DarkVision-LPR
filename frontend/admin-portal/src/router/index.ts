@@ -41,7 +41,7 @@ export const constantRoutes: RouteRecordRaw[] = [
     component: () => import("@/views/error/404.vue"),
     meta: { hidden: true },
   },
-  ...lprRoutes, // LPR Admin Routes
+  // ...lprRoutes, // LPR Admin Routes 移除，交由 permission store 动态加载
 ];
 
 /**

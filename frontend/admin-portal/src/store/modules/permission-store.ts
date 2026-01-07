@@ -1,9 +1,11 @@
 import type { RouteRecordRaw } from "vue-router";
 import { constantRoutes } from "@/router";
+import { lprRoutes } from "@/router/lpr-routes";
 import { store } from "@/store";
 import router from "@/router";
 
 import MenuAPI, { type RouteVO } from "@/api/system/menu-api";
+import { useUserStoreHook } from "@/store/modules/user-store";
 const modules = import.meta.glob("../../views/**/**.vue");
 const Layout = () => import("../../layouts/index.vue");
 
@@ -17,19 +19,22 @@ export const usePermissionStore = defineStore("permission", () => {
 
   /** 生成动态路由 */
   async function generateRoutes(): Promise<RouteRecordRaw[]> {
-    try {
-      const data = await MenuAPI.getRoutes(); // 获取当前登录人的菜单路由
-      const dynamicRoutes = transformRoutes(data);
-
-      routes.value = [...constantRoutes, ...dynamicRoutes];
-      isRouteGenerated.value = true;
-
-      return dynamicRoutes;
-    } catch (error) {
-      // 路由生成失败，重置状态
-      isRouteGenerated.value = false;
-      throw error;
+    // 根据用户角色过滤 lprRoutes
+    const { roles } = useUserStoreHook().userInfo;
+    let dynamicRoutes: RouteRecordRaw[];
+    
+    if (roles && (roles.includes("super_admin") || roles.includes("ROOT"))) {
+      // 超级管理员拥有所有权限
+      dynamicRoutes = [...lprRoutes];
+    } else {
+      // 其他角色根据 meta.roles 过滤
+      dynamicRoutes = filterAsyncRoutes(lprRoutes, roles);
     }
+
+    routes.value = [...constantRoutes, ...dynamicRoutes];
+    isRouteGenerated.value = true;
+
+    return dynamicRoutes;
   }
 
   /** 设置混合布局左侧菜单 */
@@ -101,4 +106,39 @@ const transformRoutes = (routes: RouteVO[], isTopLevel: boolean = true): RouteRe
 /** 非组件环境使用权限store */
 export function usePermissionStoreHook() {
   return usePermissionStore(store);
+}
+
+/**
+ * Filter asynchronous routing tables by recursion
+ * @param routes asyncRoutes
+ * @param roles
+ */
+ export function filterAsyncRoutes(routes: RouteRecordRaw[], roles: string[]) {
+  const res: RouteRecordRaw[] = [];
+
+  routes.forEach((route) => {
+    const tmp = { ...route };
+    if (hasPermission(roles, tmp)) {
+      if (tmp.children) {
+        tmp.children = filterAsyncRoutes(tmp.children, roles);
+      }
+      res.push(tmp);
+    }
+  });
+
+  return res;
+}
+
+/**
+ * Use meta.role to determine if the current user has permission
+ * @param roles
+ * @param route
+ */
+export function hasPermission(roles: string[], route: RouteRecordRaw) {
+  if (route.meta && route.meta.roles) {
+    // @ts-ignore
+    return roles.some((role) => route.meta.roles.includes(role));
+  } else {
+    return true; // 没有配置 roles 默认可见
+  }
 }

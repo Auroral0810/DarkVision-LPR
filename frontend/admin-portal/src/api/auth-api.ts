@@ -76,7 +76,32 @@ export interface UserInfo {
   nickname: string;
   email?: string;
   avatar_url?: string;
-  // 其他用户字段根据需要添加
+  roles: string[];
+  user_type: string;
+  status: string;
+  // 会员相关
+  membership_type?: string;
+  membership_expire_date?: string | null;
+  is_membership_active?: boolean;
+  // 个人信息
+  gender?: string | null;
+  birthday?: string | null;
+  address?: string | null;
+  real_name?: string | null;
+  // 配额信息
+  daily_quota?: number;
+  used_quota_today?: number;
+  remaining_quota_today?: number;
+  // 认证状态
+  is_verified?: boolean;
+  verification_status?: string | null;
+  reject_reason?: string | null;
+  // 企业信息
+  is_enterprise_main?: boolean;
+  sub_account_count?: number;
+  // 系统信息
+  created_at?: string;
+  last_login_at?: string;
 }
 
 /** 验证码信息 */

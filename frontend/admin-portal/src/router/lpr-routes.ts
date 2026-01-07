@@ -1,63 +1,84 @@
 import { RouteRecordRaw } from 'vue-router'
 
 const Layout = () => import("@/layouts/index.vue");
-
 const Placeholder = () => import('@/views/error/Placeholder.vue')
 
 /**
- * DarkVision-LPR Admin Routes - 10 Core Modules
+ * DarkVision-LPR Admin Routes - 基于角色权限动态配置的路由
+ * 
+ * 角色映射:
+ * - super_admin: 超级管理员 (所有权限)
+ * - user_manager: 用户管理管理员 (用户+认证)
+ * - finance_manager: 财务管理员 (订单+套餐+报表)
+ * - ops_manager: 运营管理员 (内容+公告+活动+用户统计)
+ * - ai_manager: 算法/识别管理员 (监控+记录+模型+识别统计)
+ * - security_admin: 安全/运维管理员 (日志+安全+备份+监控)
  */
 export const lprRoutes: RouteRecordRaw[] = [
-  // 1. 仪表盘 (Dashboard)
+  // 1. Dashboard
   {
     path: '/dashboard',
     component: Layout,
     redirect: '/dashboard/overview',
-    meta: { title: '仪表盘', icon: 'homepage', alwaysShow: true },
+    meta: { 
+      title: 'Dashboard', 
+      icon: 'homepage', 
+      alwaysShow: true 
+    },
     children: [
       {
         path: 'overview',
         component: () => import('@/views/dashboard/index.vue'),
         name: 'Overview',
-        meta: { title: '概览', icon: 'el-icon-House', affix: true }
+        meta: { title: '控制台首页', icon: 'el-icon-House', affix: true }
       }
     ]
   },
 
-  // 2. 用户管理 (User Management)
+  // 2. 用户管理
   {
     path: '/user',
     component: Layout,
     redirect: '/user/list',
-    meta: { title: '用户管理', icon: 'user', alwaysShow: true },
+    meta: { 
+      title: '用户管理', 
+      icon: 'user', 
+      alwaysShow: true,
+      roles: ['super_admin', 'user_manager']
+    },
     children: [
       {
         path: 'list',
         component: () => import('@/views/user-mgmt/UserList.vue'),
         name: 'UserList',
-        meta: { title: '用户列表', icon: 'el-icon-User' }
-      },
-      {
-        path: 'status',
-        component: Placeholder,
-        name: 'UserStatus',
-        meta: { title: '账户状态', icon: 'el-icon-Warning' }
+        meta: { title: '用户列表', icon: 'el-icon-User', roles: ['super_admin', 'user_manager'] }
       },
       {
         path: 'verification',
         component: () => import('@/views/user-mgmt/VerificationReview.vue'),
         name: 'Verification',
-        meta: { title: '实名认证审核', icon: 'el-icon-Checked' }
+        meta: { title: '实名认证审核', icon: 'el-icon-Checked', roles: ['super_admin', 'user_manager'] }
+      },
+      {
+        path: 'tags',
+        component: Placeholder,
+        name: 'UserTags',
+        meta: { title: '用户标签管理', icon: 'el-icon-CollectionTag', roles: ['super_admin', 'user_manager'] }
       }
     ]
   },
 
-  // 3. 权限管理 (Permission)
+  // 3. 权限与管理员
   {
     path: '/permission',
     component: Layout,
     redirect: '/permission/role',
-    meta: { title: '权限管理', icon: 'el-icon-Lock', alwaysShow: true },
+    meta: { 
+      title: '权限与管理员', 
+      icon: 'el-icon-Lock', 
+      alwaysShow: true,
+      roles: ['super_admin']
+    },
     children: [
       {
         path: 'role',
@@ -80,12 +101,17 @@ export const lprRoutes: RouteRecordRaw[] = [
     ]
   },
 
-  // 4. 识别服务 (Recognition Service)
+  // 4. 识别服务
   {
     path: '/recognition',
     component: Layout,
     redirect: '/recognition/tasks',
-    meta: { title: '识别服务', icon: 'monitor', alwaysShow: true },
+    meta: { 
+      title: '识别服务', 
+      icon: 'monitor', 
+      alwaysShow: true,
+      roles: ['super_admin', 'ai_manager']
+    },
     children: [
       {
         path: 'tasks',
@@ -108,12 +134,17 @@ export const lprRoutes: RouteRecordRaw[] = [
     ]
   },
 
-  // 5. 内容管理 (Content)
+  // 5. 内容运营
   {
     path: '/content',
     component: Layout,
     redirect: '/content/site',
-    meta: { title: '内容管理', icon: 'document', alwaysShow: true },
+    meta: { 
+      title: '内容运营', 
+      icon: 'document', 
+      alwaysShow: true,
+      roles: ['super_admin', 'ops_manager']
+    },
     children: [
       {
         path: 'site',
@@ -137,17 +168,22 @@ export const lprRoutes: RouteRecordRaw[] = [
         path: 'faq',
         component: Placeholder,
         name: 'FaqMgmt',
-        meta: { title: 'FAQ管理', icon: 'el-icon-QuestionFilled' }
+        meta: { title: 'FAQ 管理', icon: 'el-icon-QuestionFilled' }
       }
     ]
   },
 
-  // 6. 订单财务 (Finance)
+  // 6. 订单与财务
   {
     path: '/finance',
     component: Layout,
     redirect: '/finance/orders',
-    meta: { title: '订单财务', icon: 'el-icon-Money', alwaysShow: true },
+    meta: { 
+      title: '订单与财务', 
+      icon: 'el-icon-Money', 
+      alwaysShow: true,
+      roles: ['super_admin', 'finance_manager']
+    },
     children: [
       {
         path: 'orders',
@@ -170,46 +206,50 @@ export const lprRoutes: RouteRecordRaw[] = [
     ]
   },
 
-  // 7. 数据统计 (Statistics)
+  // 7. 统计分析
   {
     path: '/statistics',
     component: Layout,
     redirect: '/statistics/user',
-    meta: { title: '数据统计', icon: 'el-icon-DataAnalysis', alwaysShow: true },
+    meta: { 
+      title: '统计分析', 
+      icon: 'el-icon-DataAnalysis', 
+      alwaysShow: true,
+      roles: ['super_admin', 'ops_manager', 'ai_manager', 'finance_manager']
+    },
     children: [
       {
         path: 'user',
         component: () => import('@/views/analytics/UserStats.vue'),
         name: 'UserStats',
-        meta: { title: '用户统计', icon: 'user' }
+        meta: { title: '用户统计', icon: 'user', roles: ['super_admin', 'ops_manager'] }
       },
       {
         path: 'recognition',
         component: () => import('@/views/analytics/RecognitionStats.vue'),
         name: 'RecogStats',
-        meta: { title: '识别统计', icon: 'el-icon-Search' }
-      },
-      {
-        path: 'system',
-        component: () => import('@/views/analytics/SystemMonitor.vue'),
-        name: 'SystemMonitor',
-        meta: { title: '系统性能', icon: 'el-icon-Odometer' }
+        meta: { title: '识别统计', icon: 'el-icon-Search', roles: ['super_admin', 'ai_manager'] }
       },
       {
         path: 'board',
         component: () => import('@/views/analytics/Overview.vue'),
         name: 'BusinessBoard',
-        meta: { title: '业务看板', icon: 'homepage' }
+        meta: { title: '业务看板', icon: 'homepage', roles: ['super_admin', 'finance_manager'] }
       }
     ]
   },
 
-  // 8. 日志安全 (Log & Security)
+  // 8. 日志与安全
   {
     path: '/log',
     component: Layout,
     redirect: '/log/operation',
-    meta: { title: '日志安全', icon: 'el-icon-Warning', alwaysShow: true },
+    meta: { 
+      title: '日志与安全', 
+      icon: 'el-icon-Warning', 
+      alwaysShow: true,
+      roles: ['super_admin', 'security_admin']
+    },
     children: [
       {
         path: 'operation',
@@ -227,39 +267,22 @@ export const lprRoutes: RouteRecordRaw[] = [
         path: 'security',
         component: () => import('@/views/security/SecurityMgmt.vue'),
         name: 'SecurityMgmt',
-        meta: { title: '安全管理', icon: 'lock' }
+        meta: { title: '安全配置', icon: 'lock' }
       }
     ]
   },
 
-  // 9. 消息通知 (Messaging)
-  {
-    path: '/message',
-    component: Layout,
-    redirect: '/message/push',
-    meta: { title: '消息通知', icon: 'message', alwaysShow: true },
-    children: [
-      {
-        path: 'push',
-        component: () => import('@/views/messaging/Messaging.vue'),
-        name: 'MsgPush',
-        meta: { title: '消息推送', icon: 'el-icon-ChatDotRound' }
-      },
-      {
-        path: 'service',
-        component: Placeholder,
-        name: 'ServiceMgmt',
-        meta: { title: '客服管理', icon: 'el-icon-Service' }
-      }
-    ]
-  },
-
-  // 10. 系统设置 (Settings)
+  // 9. 系统配置
   {
     path: '/setting',
     component: Layout,
     redirect: '/setting/base',
-    meta: { title: '系统设置', icon: 'setting', alwaysShow: true },
+    meta: { 
+      title: '系统配置', 
+      icon: 'setting', 
+      alwaysShow: true,
+      roles: ['super_admin']
+    },
     children: [
       {
         path: 'base',
@@ -277,31 +300,106 @@ export const lprRoutes: RouteRecordRaw[] = [
         path: 'quotas',
         component: Placeholder,
         name: 'UserQuotas',
-        meta: { title: '用户限额', icon: 'el-icon-Histogram' }
+        meta: { title: '限额配置', icon: 'el-icon-Histogram' }
       },
       {
         path: 'email-sms',
         component: Placeholder,
         name: 'EmailSms',
-        meta: { title: '邮件短信', icon: 'el-icon-Postcard' }
-      },
+        meta: { title: '邮件 & 短信', icon: 'el-icon-Postcard' }
+      }
+    ]
+  },
+
+  // 10. 第三方服务
+  {
+    path: '/external',
+    component: Layout,
+    redirect: '/external/storage',
+    meta: { 
+      title: '第三方服务', 
+      icon: 'connection', 
+      alwaysShow: true,
+      roles: ['super_admin']
+    },
+    children: [
       {
-        path: 'external',
+        path: 'storage',
         component: () => import('@/views/external/ExternalService.vue'),
-        name: 'ExternalService',
-        meta: { title: '第三方服务', icon: 'connection' }
+        name: 'StorageConfig',
+        meta: { title: '存储配置', icon: 'el-icon-Files' }
       },
       {
-        path: 'backup',
-        component: () => import('@/views/maintenance/Maintenance.vue'),
-        name: 'BackupRecover',
-        meta: { title: '备份恢复', icon: 'el-icon-Collection' }
-      },
-      {
-        path: 'maintenance',
+        path: 'payment',
         component: Placeholder,
-        name: 'SysMaintenance',
-        meta: { title: '系统维护', icon: 'cpu' }
+        name: 'PaymentConfig',
+        meta: { title: '支付配置', icon: 'el-icon-CreditCard' }
+      },
+      {
+        path: 'login',
+        component: Placeholder,
+        name: 'ThirdLoginConfig',
+        meta: { title: '第三方登录', icon: 'el-icon-UserFilled' }
+      }
+    ]
+  },
+
+  // 11. 系统维护
+  {
+    path: '/maintenance',
+    component: Layout,
+    redirect: '/maintenance/cache',
+    meta: { 
+      title: '系统维护', 
+      icon: 'cpu', 
+      alwaysShow: true,
+      roles: ['super_admin']
+    },
+    children: [
+      {
+        path: 'cache',
+        component: Placeholder,
+        name: 'CacheMgmt',
+        meta: { title: '缓存管理', icon: 'el-icon-Refresh' }
+      },
+      {
+        path: 'tasks',
+        component: Placeholder,
+        name: 'TaskScheduler',
+        meta: { title: '任务调度', icon: 'el-icon-Timer' }
+      },
+      {
+        path: 'version',
+        component: Placeholder,
+        name: 'VersionMgmt',
+        meta: { title: '版本更新', icon: 'el-icon-Upload' }
+      }
+    ]
+  },
+
+  // 12. 备份与恢复
+  {
+    path: '/backup',
+    component: Layout,
+    redirect: '/backup/data',
+    meta: { 
+      title: '备份与恢复', 
+      icon: 'el-icon-Collection', 
+      alwaysShow: true,
+      roles: ['super_admin', 'security_admin']
+    },
+    children: [
+      {
+        path: 'data',
+        component: () => import('@/views/maintenance/Maintenance.vue'),
+        name: 'DataBackup',
+        meta: { title: '数据备份', icon: 'el-icon-DocumentCopy' }
+      },
+      {
+        path: 'recover',
+        component: Placeholder, // 如果复用组件，需注意区分路由参数
+        name: 'DataRecover',
+        meta: { title: '数据恢复', icon: 'el-icon-RefreshLeft' }
       }
     ]
   }

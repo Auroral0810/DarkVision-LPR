@@ -63,3 +63,19 @@ class AdminUserDetail(BaseModel):
     
     class Config:
         from_attributes = True
+
+class AdminSelfInfo(BaseModel):
+    """管理员自己的信息（登录返回用）"""
+    id: int
+    phone: Optional[str] = None
+    nickname: str
+    email: Optional[str] = None
+    avatar_url: Optional[str] = None
+    user_type: str
+    status: str
+    roles: List[str] = []
+    created_at: datetime
+    last_login_at: Optional[datetime] = None
+    
+    class Config:
+        from_attributes = True
