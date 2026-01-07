@@ -5,6 +5,7 @@ import cv2
 import json
 import asyncio
 from datetime import datetime, date
+import time
 from typing import Optional, List
 from fastapi import UploadFile, BackgroundTasks
 from sqlalchemy.orm import Session
@@ -74,6 +75,13 @@ class RecognitionService:
             
         db.commit()
 
+        # Invalidate Redis cache to update quota info on frontend
+        try:
+            from app.services.auth import invalidate_user_cache
+            invalidate_user_cache(user_id)
+        except Exception as e:
+            logger.warning(f"Failed to invalidate user cache after deducting quota: {e}")
+
     def create_task(self, user_id: int, task_type: str, db: Session) -> RecognitionTask:
         """创建识别任务"""
         task_uuid = str(uuid.uuid4())
@@ -123,6 +131,9 @@ class RecognitionService:
             db.commit()
             
             await self.update_task_progress(task_uuid, 25, "downloading", db, "图片上传成功，正在下载...")
+            
+            # Record start time
+            start_time = time.time()
             
             # 1. Download
             # Run blocking model init in executor
@@ -210,6 +221,7 @@ class RecognitionService:
                 confidence=float(detection['conf']),
                 bbox=detection['bbox'], # SQLAlchemy JSON type handles list/dict
                 plate_type="blue", # Placeholder
+                processing_time=(time.time() - start_time) * 1000, # ms
                 processed_at=datetime.now()
             )
             db.add(record)
@@ -232,7 +244,8 @@ class RecognitionService:
                     "plate": plate_number,
                     "type": "blue", # TODO: Determine type
                     "confidence": f"{float(detection['conf'])*100:.1f}",
-                    "image_url": image_url
+                    "image_url": image_url,
+                    "processing_time": f"{record.processing_time:.0f}ms"
                 }
             }
             
@@ -289,6 +302,11 @@ class RecognitionService:
                 async with semaphore:
                     result_data = None
                     try:
+                        start_time = time.time()
+                        # Pass start_time naturally or let helper handle it?
+                        # Helper `_process_single_image_internal` calculates its own generic processing time?
+                        # Or we calculate total time wrapper? 
+                        # Let's push timing into `_process_single_image_internal` for consistency.
                         record = await self._process_single_image_internal(url, task.id, user_id, db)
                         if record:
                             success_count += 1
@@ -297,7 +315,8 @@ class RecognitionService:
                                 "plate": record.license_plate, 
                                 "confidence": record.confidence,
                                 "type": record.plate_type,
-                                "url": url
+                                "url": url,
+                                "processing_time": f"{record.processing_time:.0f}ms" if record.processing_time else "0ms"
                             }
                         else:
                             failed_count += 1
@@ -363,6 +382,8 @@ class RecognitionService:
 
     async def _process_single_image_internal(self, image_url: str, task_id: int, user_id: int, db: Session) -> Optional[RecognitionRecord]:
         """Internal helper for single image processing without task overhead"""
+        start_time = time.time()
+        
         # 1. Download
         await run_cpu_bound(self._init_models)
         
@@ -421,6 +442,7 @@ class RecognitionService:
                 confidence=float(detection['conf']),
                 bbox=detection['bbox'],
                 plate_type="blue", # Placeholder
+                processing_time=(time.time() - start_time) * 1000,
                 processed_at=datetime.now()
             )
             db.add(record)
@@ -440,6 +462,7 @@ class RecognitionService:
         return await self._process_image_legacy(file, user_id, db)
 
     async def _process_image_legacy(self, file: UploadFile, user_id: int, db: Session) -> Optional[RecognitionRecord]:
+        start_time = time.time()
         self._init_models()
         
         # Read file content
@@ -508,6 +531,7 @@ class RecognitionService:
             confidence=detection['conf'],
             bbox=list(detection['bbox']),
             plate_type="blue",
+            processing_time=(time.time() - start_time) * 1000,
             processed_at=datetime.now()
         )
         db.add(record)

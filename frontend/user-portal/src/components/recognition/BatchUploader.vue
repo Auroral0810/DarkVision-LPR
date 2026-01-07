@@ -160,6 +160,11 @@
             <span v-else>-</span>
           </template>
         </el-table-column>
+        <el-table-column label="耗时" width="100">
+           <template #default="scope">
+             <span>{{ scope.row.result?.processing_time || '-' }}</span>
+           </template>
+        </el-table-column>
         <el-table-column label="状态" width="100">
            <template #default="scope">
              <el-tag :type="getStatusType(scope.row.status)">{{ getStatusText(scope.row.status) }}</el-tag>
@@ -198,6 +203,7 @@ interface BatchFile {
     plate: string
     type?: string
     confidence: string
+    processing_time?: string
   }
   error?: string
 }
@@ -387,7 +393,8 @@ const handleWsMessage = (msg: any) => {
              fileItem.result = {
                  plate: item.plate,
                  confidence: (item.confidence * 100).toFixed(1),
-                 type: item.type
+                 type: item.type,
+                 processing_time: item.processing_time
              }
           } else {
              fileItem.status = 'error'

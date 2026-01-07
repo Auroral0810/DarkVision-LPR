@@ -40,6 +40,7 @@ class RecognitionRecord(Base):
     bbox = Column(JSON, nullable=True, comment="车牌坐标 JSON [x,y,w,h]")
     enhance_algorithm = Column(String(50), nullable=True, comment="增强算法")
     model_version = Column(String(20), nullable=True, comment="模型版本")
+    processing_time = Column(Float, nullable=True, comment="处理时长(ms)")
     processed_at = Column(DateTime, nullable=False, comment="处理时间")
     created_at = Column(DateTime, server_default=func.now(), index=True, comment="创建时间")
     is_deleted = Column(Boolean, default=False, nullable=False, comment="是否软删除")

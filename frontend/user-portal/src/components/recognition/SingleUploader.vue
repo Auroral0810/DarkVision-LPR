@@ -106,6 +106,10 @@
                   <label>置信度</label>
                   <span class="confidence">{{ result.confidence }}%</span>
                 </div>
+                <div class="grid-item">
+                  <label>耗时</label>
+                  <span>{{ result.processing_time || '-' }}</span>
+                </div>
               </div>
 
               <el-divider />

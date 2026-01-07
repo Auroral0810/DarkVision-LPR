@@ -66,12 +66,9 @@ class AnalysisService:
             # Let's count low confidence (<0.8) as "anomaly" for now.
             error_cnt = query.filter(RecognitionRecord.confidence < 0.8).count()
             
-            # Avg time is hard without `processing_time` column. Let's mock or use a constant/random for now if DB doesn't have it.
-            # DB schema inspection: RecognitionRecord has `processed_at` and `created_at`. Diff could be time.
-            # But usually `created_at` is when record inserted. 
-            # Let's assume a static 45ms for MVP or try to calculate if possible. 
-            # Given schema, we can't accurately get inference time per item unless stored.
-            avg_time = 45 
+            # Calculate real average processing time using the new column
+            avg_time = query.with_entities(func.avg(RecognitionRecord.processing_time)).scalar() or 0
+            avg_time = int(avg_time) # Convert to int ms
             
             return total, avg_conf, error_cnt, avg_time
 
