@@ -133,8 +133,8 @@ const isCapsLock = ref(false);
 const captchaBase64 = ref();
 
 const loginFormData = ref<AdminLoginData>({
-  account: "13800138999",  // 或 "admin@darkvision.com"
-  password: "123456",
+  account: "",  // 或 "admin@darkvision.com"
+  password: "",
   captchaKey: "",
   captchaCode: "",
   rememberMe: AuthStorage.getRememberMe(),

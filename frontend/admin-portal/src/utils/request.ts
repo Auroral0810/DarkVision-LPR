@@ -4,6 +4,7 @@ import { ApiCodeEnum } from "@/enums/api/code-enum";
 import { AuthStorage, redirectToLogin } from "@/utils/auth";
 import { useTokenRefresh } from "@/composables/auth/useTokenRefresh";
 import { authConfig } from "@/settings";
+import { ElMessage } from "element-plus";
 
 // 初始化token刷新组合式函数
 const { refreshTokenAndRetry } = useTokenRefresh();
@@ -50,16 +51,19 @@ httpRequest.interceptors.response.use(
       return response;
     }
 
-    const { code, data, msg } = response.data;
+    // 兼容后端统一返回 { code, message, data }
+    const code = response.data?.code;
+    const data = response.data?.data;
+    const message = response.data?.message;
 
     // 请求成功
     if (code === ApiCodeEnum.SUCCESS) {
       return data;
     }
 
-    // 业务错误
-    ElMessage.error(msg || "系统出错");
-    return Promise.reject(new Error(msg || "Business Error"));
+    // 业务错误，显示后端 message 字段
+    ElMessage.error(message || "请求失败");
+    return Promise.reject(new Error(message || "请求失败"));
   },
   async (error) => {
     console.error("Response interceptor error:", error);
@@ -72,7 +76,9 @@ httpRequest.interceptors.response.use(
       return Promise.reject(error);
     }
 
-    const { code, msg } = response.data as ApiResponse;
+    // 兼容后端统一返回 { code, message, data }
+    const code = response.data?.code;
+    const message = response.data?.message;
 
     switch (code) {
       case ApiCodeEnum.ACCESS_TOKEN_INVALID:
@@ -83,17 +89,17 @@ httpRequest.interceptors.response.use(
         } else {
           // 未启用token刷新，直接跳转登录页
           await redirectToLogin("登录已过期，请重新登录");
-          return Promise.reject(new Error(msg || "Access Token Invalid"));
+          return Promise.reject(new Error(message || "Access Token Invalid"));
         }
 
       case ApiCodeEnum.REFRESH_TOKEN_INVALID:
         // Refresh Token 过期，跳转登录页
         await redirectToLogin("登录已过期，请重新登录");
-        return Promise.reject(new Error(msg || "Refresh Token Invalid"));
+        return Promise.reject(new Error(message || "Refresh Token Invalid"));
 
       default:
-        ElMessage.error(msg || "请求失败");
-        return Promise.reject(new Error(msg || "Request Error"));
+        ElMessage.error(message || "请求失败");
+        return Promise.reject(new Error(message || "请求失败"));
     }
   }
 );

@@ -15,7 +15,7 @@ from app.services.auth import (
     log_login_attempt
 )
 from app.services.captcha import captcha_service
-from app.core.exceptions import ParameterException, AuthException, NotFoundException
+from app.core.exceptions import ParameterException, UnauthorizedException, ResourceNotFoundException
 from app.api.deps import get_current_user
 from app.models.user import User
 import re
@@ -76,7 +76,7 @@ def admin_login(
             raise ParameterException("账号格式错误，请输入有效的手机号或邮箱")
             
         if not user:
-            raise AuthException("账号或密码错误")
+            raise UnauthorizedException("账号或密码错误")
             
         user_id = user.id
         
@@ -89,7 +89,7 @@ def admin_login(
         if user.user_type != 'admin':
              # 也可以允许 enterprise 用户登录，视具体需求
              # if user.user_type not in ['admin', 'enterprise']:
-            raise AuthException("无权访问管理后台")
+            raise UnauthorizedException("无权访问管理后台")
         
         # 5. 更新登录信息
         update_login_info(db, user, client_ip)
@@ -112,15 +112,18 @@ def admin_login(
             message="登录成功"
         )
         
-    except (AuthException, NotFoundException, ParameterException) as e:
+    except (UnauthorizedException, ResourceNotFoundException, ParameterException) as e:
         # 业务异常直接抛出，但在抛出前记录失败日志
-        failure_reason = str(e.message if hasattr(e, 'message') else str(e))
-        log_login_attempt(db, user_id, client_ip, user_agent, success=False, failure_reason=failure_reason, account=account)
+        failure_reason = str(e.detail if hasattr(e, 'detail') else e.message if hasattr(e, 'message') else str(e))
+        # user_id might not be defined if user lookup failed, use None
+        uid = locals().get('user_id', None)
+        log_login_attempt(db, uid, client_ip, user_agent, success=False, failure_reason=failure_reason, account=account)
         raise e
     except Exception as e:
         # 系统未知异常
         failure_reason = f"System Error: {str(e)}"
-        log_login_attempt(db, user_id, client_ip, user_agent, success=False, failure_reason=failure_reason, account=account)
+        uid = locals().get('user_id', None)
+        log_login_attempt(db, uid, client_ip, user_agent, success=False, failure_reason=failure_reason, account=account)
         raise e
 
 
