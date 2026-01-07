@@ -12,12 +12,6 @@ export const useUserStore = defineStore("user", () => {
   // 用户信息 - 从本地存储恢复（如果存在）
   const userInfo = ref<UserInfo>(AuthStorage.getUserInfo<UserInfo>() || {} as UserInfo);
 
-  /**
-   * 管理员登录
-   *
-   * @param {AdminLoginData} loginData - 登录表单数据
-   * @returns
-   */
   function login(loginData: AdminLoginData) {
     return new Promise<void>((resolve, reject) => {
       AuthAPI.login(loginData)
@@ -29,6 +23,23 @@ export const useUserStore = defineStore("user", () => {
           Object.assign(userInfo.value, user_info);
           AuthStorage.setUserInfo(user_info);
           resolve();
+        })
+        .catch((error) => {
+          reject(error);
+        });
+    });
+  }
+
+  /**
+   * 获取管理员信息
+   */
+  function getUserInfo() {
+    return new Promise<UserInfo>((resolve, reject) => {
+      AuthAPI.getUserInfo()
+        .then((data) => {
+          Object.assign(userInfo.value, data);
+          AuthStorage.setUserInfo(data);
+          resolve(data);
         })
         .catch((error) => {
           reject(error);
@@ -94,6 +105,7 @@ export const useUserStore = defineStore("user", () => {
     isLoggedIn: () => !!AuthStorage.getAccessToken(),
     login,
     logout,
+    getUserInfo,
     resetAllState,
     resetUserState,
   };

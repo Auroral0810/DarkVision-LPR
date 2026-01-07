@@ -41,6 +41,14 @@ const AuthAPI = {
       },
     });
   },
+
+  /** 获取管理员信息接口 */
+  getUserInfo() {
+    return request<any, UserInfo>({
+      url: "/api/admin/me",
+      method: "get",
+    });
+  },
 };
 
 export default AuthAPI;

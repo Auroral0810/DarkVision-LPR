@@ -46,54 +46,32 @@ def get_visit_stats(
     yesterday = today - timedelta(days=1)
     
     try:
-        # Helper function to get stats for a specific date
-        def get_date_stats(target_date):
+        # Helper to get global stats (sum of all page types) for a range or specific date
+        def get_global_stats(target_date):
             return db.query(
                 func.sum(VisitStatistics.pv).label('pv'),
-                func.sum(VisitStatistics.uv).label('uv'),
-                func.sum(VisitStatistics.login_uv).label('login_uv')
+                func.sum(VisitStatistics.uv).label('uv')
             ).filter(
                 VisitStatistics.stat_date == target_date
             ).first()
 
-        # 查询今日统计数据
-        today_stats = get_date_stats(today)
-        
+        # 今日统计 (实时累加)
+        today_stats = get_global_stats(today)
         today_pv = int(today_stats.pv or 0) if today_stats else 0
         today_uv = int(today_stats.uv or 0) if today_stats else 0
-        # today_login_uv = int(today_stats.login_uv or 0) if today_stats else 0
         
-        # 查询昨日统计数据
-        yesterday_stats = get_date_stats(yesterday)
-        
+        # 昨日统计
+        yesterday_stats = get_global_stats(yesterday)
         yesterday_pv = int(yesterday_stats.pv or 0) if yesterday_stats else 0
         yesterday_uv = int(yesterday_stats.uv or 0) if yesterday_stats else 0
         
-        # 如果今日数据库中无数据(可能是新的一天还没跑定时任务)，尝试从日志表实时计算
-        # 注意：这里仅作简单的兜底，如果数据量大可能会慢
-        if today_pv == 0:
-            today_logs = db.query(PageViewLog).filter(
-                func.date(PageViewLog.created_at) == today
-            ).all()
-            
-            if today_logs:
-                today_pv = len(today_logs)
-                today_uv = len(set(log.ip_address for log in today_logs if log.ip_address))
-        
-        # 计算总 UV/PV
+        # 总统计
         total_stats = db.query(
             func.sum(VisitStatistics.pv).label('total_pv'),
             func.sum(VisitStatistics.uv).label('total_uv')
         ).first()
-        
         total_pv = int(total_stats.total_pv or 0) if total_stats else 0
         total_uv = int(total_stats.total_uv or 0) if total_stats else 0
-        
-        # 如果今日数据在统计表中是0（未归档），则手动加上今日实时数据
-        # 只有当 total_stats 不包含今日数据时才加（粗略判断：如果 today_stats.pv 为0，说明没统计进去）
-        if today_stats and today_stats.pv is None: 
-             total_pv += today_pv
-             total_uv += today_uv
         
         # 计算增长率
         pv_growth_rate = 0.0

@@ -71,6 +71,13 @@ def track_page_view(
         db.add(page_view)
         db.commit()
         
+        # 实时更新统计表
+        try:
+            from app.services.visit_statistics_service import record_visit_realtime
+            record_visit_realtime(db, request_data.page_type, client_ip, current_user.id if current_user else None)
+        except Exception as e:
+            logger.error(f"Failed to record visit realtime stats: {e}")
+        
         logger.debug(f"Page view tracked: {request_data.page_path} by user {current_user.id if current_user else 'anonymous'}")
         
         return success(message="记录成功")

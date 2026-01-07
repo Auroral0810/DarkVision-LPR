@@ -16,9 +16,14 @@ def aggregate_daily_statistics_job():
     """每日凌晨 1 点聚合昨日访问统计数据"""
     db = SessionLocal()
     try:
+        from app.models.statistics import PageType
         yesterday = date.today() - timedelta(days=1)
         logger.info(f"Starting daily statistics aggregation for {yesterday}")
-        aggregate_daily_statistics(db, yesterday)
+        
+        # 聚合所有类型的统计数据
+        for p_type in PageType:
+             aggregate_daily_statistics(db, yesterday, p_type)
+             
         logger.info(f"Daily statistics aggregation completed for {yesterday}")
     except Exception as e:
         logger.error(f"Error in daily statistics aggregation job: {e}")

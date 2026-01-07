@@ -1,4 +1,4 @@
-import request from '@/utils/request'
+import request from '../utils/request'
 
 /**
  * 上报页面访问数据
