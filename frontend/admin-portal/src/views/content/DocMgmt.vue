@@ -1,36 +1,35 @@
 <template>
   <div class="app-container">
     <div class="search-container">
-      <el-button type="primary" icon="Plus" @click="handleAdd">新增轮播图</el-button>
+       <el-select v-model="currDocType" placeholder="文档类型" @change="handleTypeChange" style="width: 200px; margin-right: 10px;">
+          <el-option label="全部" value="" />
+          <el-option label="技术文档" value="tech" />
+          <el-option label="服务协议" value="service_agreement" />
+          <el-option label="隐私政策" value="privacy_policy" />
+       </el-select>
+       <el-button type="primary" icon="Plus" @click="handleAdd">新增文档</el-button>
     </div>
 
     <el-card shadow="never" class="mt-20">
       <el-table v-loading="loading" :data="list" border highlight-current-row>
         <el-table-column label="ID" prop="id" width="80" align="center" />
         <el-table-column label="标题" prop="title" />
-        <el-table-column label="图片预览" width="200" align="center">
-          <template #default="{ row }">
-            <el-image 
-              style="width: 100px; height: 50px" 
-              :src="row.image_url" 
-              fit="cover" 
-              :preview-src-list="[row.image_url]"
-              preview-teleported
-            />
-          </template>
+        <el-table-column label="类型" width="120" align="center">
+           <template #default="{ row }">
+              <el-tag>{{ formatType(row.doc_type) }}</el-tag>
+           </template>
         </el-table-column>
-        <el-table-column label="跳转链接" prop="link_url" show-overflow-tooltip />
-        <el-table-column label="排序" prop="sort_order" width="80" align="center" />
-        <el-table-column label="状态" width="100" align="center">
+        <el-table-column label="版本" prop="version" width="100" align="center" />
+        <el-table-column label="当前版本" width="100" align="center">
           <template #default="{ row }">
-            <el-tag :type="row.is_enabled ? 'success' : 'info'">
-              {{ row.is_enabled ? '启用' : '禁用' }}
+            <el-tag :type="row.is_current ? 'success' : 'info'">
+              {{ row.is_current ? '是' : '否' }}
             </el-tag>
           </template>
         </el-table-column>
         <el-table-column label="创建时间" prop="created_at" width="180">
           <template #default="{ row }">
-             {{ formatDate(row.created_at) }}
+            {{ formatDate(row.created_at) }}
           </template>
         </el-table-column>
         <el-table-column label="操作" width="200" align="center">
@@ -42,30 +41,36 @@
       </el-table>
     </el-card>
 
-    <!-- Dialog -->
     <el-dialog 
       v-model="dialog.visible" 
       :title="dialog.title" 
-      width="500px"
+      width="800px"
       :close-on-click-modal="false"
     >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="标题" prop="title">
           <el-input v-model="form.title" placeholder="请输入标题" />
         </el-form-item>
-        <el-form-item label="图片地址" prop="image_url">
-          <el-input v-model="form.image_url" placeholder="请输入图片URL">
-             <!-- Future: Add upload component -->
-          </el-input>
+        <el-form-item label="类型" prop="doc_type">
+           <el-select v-model="form.doc_type">
+              <el-option label="技术文档" value="tech" />
+              <el-option label="服务协议" value="service_agreement" />
+              <el-option label="隐私政策" value="privacy_policy" />
+           </el-select>
         </el-form-item>
-        <el-form-item label="跳转链接" prop="link_url">
-          <el-input v-model="form.link_url" placeholder="请输入跳转链接" />
+        <el-form-item label="版本号" prop="version">
+          <el-input v-model="form.version" placeholder="v1.0" />
         </el-form-item>
-        <el-form-item label="排序" prop="sort_order">
-          <el-input-number v-model="form.sort_order" :min="0" />
+         <el-form-item label="当前版本" prop="is_current">
+          <el-switch v-model="form.is_current" active-text="设为当前生效版本" />
         </el-form-item>
-        <el-form-item label="状态" prop="is_enabled">
-          <el-switch v-model="form.is_enabled" active-text="启用" inactive-text="禁用" />
+        <el-form-item label="内容" prop="content">
+          <el-input 
+            v-model="form.content" 
+            type="textarea" 
+            :rows="15" 
+            placeholder="支持 Markdown 格式" 
+          />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -79,11 +84,12 @@
 <script setup lang="ts">
 import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import ContentAPI, { type Carousel } from '@/api/content-api'
+import ContentAPI, { type Document } from '@/api/content-api'
 import dayjs from 'dayjs'
 
 const loading = ref(false)
-const list = ref<Carousel[]>([])
+const list = ref<Document[]>([])
+const currDocType = ref('')
 
 const dialog = reactive({
   visible: false,
@@ -95,63 +101,77 @@ const formRef = ref()
 const form = reactive({
   id: undefined as number | undefined,
   title: '',
-  image_url: '',
-  link_url: '',
-  sort_order: 0,
-  is_enabled: true
+  doc_type: 'tech',
+  content: '',
+  version: '',
+  is_current: false
 })
 
 const rules = {
   title: [{ required: true, message: '请输入标题', trigger: 'blur' }],
-  image_url: [{ required: true, message: '请输入图片地址', trigger: 'blur' }]
+  doc_type: [{ required: true, message: '请选择类型', trigger: 'change' }],
+  version: [{ required: true, message: '请输入版本', trigger: 'blur' }],
+  content: [{ required: true, message: '请输入内容', trigger: 'blur' }]
 }
 
 function formatDate(date: string) {
   return dayjs(date).format('YYYY-MM-DD HH:mm')
 }
 
+function formatType(type: string) {
+  const map: any = {
+    'tech': '技术文档',
+    'service_agreement': '服务协议',
+    'privacy_policy': '隐私政策'
+  }
+  return map[type] || type
+}
+
 async function fetchList() {
   loading.value = true
   try {
-    const res = await ContentAPI.getCarousels()
+    const params = currDocType.value ? { doc_type: currDocType.value } : {}
+    const res = await ContentAPI.getDocuments(params)
     list.value = res as any
-  } catch (error) {
-    console.error(error)
   } finally {
     loading.value = false
   }
 }
 
+function handleTypeChange() {
+  fetchList()
+}
+
 function resetForm() {
   form.id = undefined
   form.title = ''
-  form.image_url = ''
-  form.link_url = ''
-  form.sort_order = 0
-  form.is_enabled = true
+  form.doc_type = 'tech'
+  form.content = ''
+  form.version = ''
+  form.is_current = false
 }
 
 function handleAdd() {
   resetForm()
-  dialog.title = '新增轮播图'
+  dialog.title = '新增文档'
   dialog.isEdit = false
   dialog.visible = true
 }
 
-function handleEdit(row: Carousel) {
+function handleEdit(row: Document) {
   resetForm()
   Object.assign(form, row)
-  dialog.title = '编辑轮播图'
+  dialog.title = '编辑文档'
   dialog.isEdit = true
   dialog.visible = true
 }
 
-async function handleDelete(row: Carousel) {
-  await ElMessageBox.confirm(`确认删除轮播图 "${row.title}" 吗?`, '警告', {
+async function handleDelete(row: Document) {
+  await ElMessageBox.confirm(`确认删除文档 "${row.title}" 吗?`, '警告', {
     type: 'warning'
   })
   try {
-    await ContentAPI.deleteCarousel(row.id)
+    await ContentAPI.deleteDocument(row.id)
     ElMessage.success('删除成功')
     fetchList()
   } catch (error) {
@@ -165,10 +185,10 @@ async function handleSubmit() {
   
   try {
     if (dialog.isEdit && form.id) {
-      await ContentAPI.updateCarousel(form.id, form)
+      await ContentAPI.updateDocument(form.id, form)
       ElMessage.success('更新成功')
     } else {
-      await ContentAPI.createCarousel(form)
+      await ContentAPI.createDocument(form)
       ElMessage.success('创建成功')
     }
     dialog.visible = false

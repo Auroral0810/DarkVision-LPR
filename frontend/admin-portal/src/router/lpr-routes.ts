@@ -154,19 +154,19 @@ export const lprRoutes: RouteRecordRaw[] = [
       },
       {
         path: 'docs',
-        component: Placeholder,
+        component: () => import('@/views/content/DocMgmt.vue'),
         name: 'DocMgmt',
         meta: { title: '文档管理', icon: 'el-icon-Notebook' }
       },
       {
         path: 'announcement',
-        component: Placeholder,
+        component: () => import('@/views/content/AnnounceMgmt.vue'),
         name: 'AnnounceMgmt',
         meta: { title: '公告管理', icon: 'el-icon-Bell' }
       },
       {
         path: 'faq',
-        component: Placeholder,
+        component: () => import('@/views/content/FaqMgmt.vue'),
         name: 'FaqMgmt',
         meta: { title: 'FAQ 管理', icon: 'el-icon-QuestionFilled' }
       }

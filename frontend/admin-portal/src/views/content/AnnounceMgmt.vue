@@ -1,26 +1,24 @@
 <template>
   <div class="app-container">
     <div class="search-container">
-      <el-button type="primary" icon="Plus" @click="handleAdd">新增轮播图</el-button>
+      <el-button type="primary" icon="Plus" @click="handleAdd">发布公告</el-button>
     </div>
 
     <el-card shadow="never" class="mt-20">
       <el-table v-loading="loading" :data="list" border highlight-current-row>
         <el-table-column label="ID" prop="id" width="80" align="center" />
         <el-table-column label="标题" prop="title" />
-        <el-table-column label="图片预览" width="200" align="center">
+        <el-table-column label="位置" prop="display_position" width="100" align="center" />
+        <el-table-column label="有效时间" width="300" align="center">
           <template #default="{ row }">
-            <el-image 
-              style="width: 100px; height: 50px" 
-              :src="row.image_url" 
-              fit="cover" 
-              :preview-src-list="[row.image_url]"
-              preview-teleported
-            />
+            <div v-if="row.start_time || row.end_time">
+               {{ row.start_time ? formatDate(row.start_time) : '不限' }} 
+               至 
+               {{ row.end_time ? formatDate(row.end_time) : '不限' }}
+            </div>
+            <div v-else>永久有效</div>
           </template>
         </el-table-column>
-        <el-table-column label="跳转链接" prop="link_url" show-overflow-tooltip />
-        <el-table-column label="排序" prop="sort_order" width="80" align="center" />
         <el-table-column label="状态" width="100" align="center">
           <template #default="{ row }">
             <el-tag :type="row.is_enabled ? 'success' : 'info'">
@@ -30,7 +28,7 @@
         </el-table-column>
         <el-table-column label="创建时间" prop="created_at" width="180">
           <template #default="{ row }">
-             {{ formatDate(row.created_at) }}
+            {{ formatDate(row.created_at) }}
           </template>
         </el-table-column>
         <el-table-column label="操作" width="200" align="center">
@@ -42,30 +40,43 @@
       </el-table>
     </el-card>
 
-    <!-- Dialog -->
     <el-dialog 
       v-model="dialog.visible" 
       :title="dialog.title" 
-      width="500px"
+      width="600px"
       :close-on-click-modal="false"
     >
       <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
         <el-form-item label="标题" prop="title">
           <el-input v-model="form.title" placeholder="请输入标题" />
         </el-form-item>
-        <el-form-item label="图片地址" prop="image_url">
-          <el-input v-model="form.image_url" placeholder="请输入图片URL">
-             <!-- Future: Add upload component -->
-          </el-input>
+        <el-form-item label="显示位置" prop="display_position">
+           <el-select v-model="form.display_position">
+              <el-option label="顶部通告栏" value="top" />
+              <el-option label="首页弹窗" value="modal" />
+              <el-option label="滚动消息" value="scroll" />
+           </el-select>
         </el-form-item>
-        <el-form-item label="跳转链接" prop="link_url">
-          <el-input v-model="form.link_url" placeholder="请输入跳转链接" />
-        </el-form-item>
-        <el-form-item label="排序" prop="sort_order">
-          <el-input-number v-model="form.sort_order" :min="0" />
+        <el-form-item label="有效时间">
+           <el-date-picker
+              v-model="dateRange"
+              type="datetimerange"
+              range-separator="至"
+              start-placeholder="开始时间"
+              end-placeholder="结束时间"
+              value-format="YYYY-MM-DD HH:mm:ss"
+           />
         </el-form-item>
         <el-form-item label="状态" prop="is_enabled">
           <el-switch v-model="form.is_enabled" active-text="启用" inactive-text="禁用" />
+        </el-form-item>
+        <el-form-item label="内容" prop="content">
+          <el-input 
+            v-model="form.content" 
+            type="textarea" 
+            :rows="6" 
+            placeholder="请输入公告内容" 
+          />
         </el-form-item>
       </el-form>
       <template #footer>
@@ -77,13 +88,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, watch } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import ContentAPI, { type Carousel } from '@/api/content-api'
+import ContentAPI, { type Announcement } from '@/api/content-api'
 import dayjs from 'dayjs'
 
 const loading = ref(false)
-const list = ref<Carousel[]>([])
+const list = ref<Announcement[]>([])
+const dateRange = ref([])
 
 const dialog = reactive({
   visible: false,
@@ -95,15 +107,17 @@ const formRef = ref()
 const form = reactive({
   id: undefined as number | undefined,
   title: '',
-  image_url: '',
-  link_url: '',
-  sort_order: 0,
+  content: '',
+  display_position: 'top',
+  start_time: '',
+  end_time: '',
   is_enabled: true
 })
 
 const rules = {
   title: [{ required: true, message: '请输入标题', trigger: 'blur' }],
-  image_url: [{ required: true, message: '请输入图片地址', trigger: 'blur' }]
+  content: [{ required: true, message: '请输入内容', trigger: 'blur' }],
+  display_position: [{ required: true, message: '请选择位置', trigger: 'change' }]
 }
 
 function formatDate(date: string) {
@@ -113,10 +127,8 @@ function formatDate(date: string) {
 async function fetchList() {
   loading.value = true
   try {
-    const res = await ContentAPI.getCarousels()
+    const res = await ContentAPI.getAnnouncements()
     list.value = res as any
-  } catch (error) {
-    console.error(error)
   } finally {
     loading.value = false
   }
@@ -125,33 +137,38 @@ async function fetchList() {
 function resetForm() {
   form.id = undefined
   form.title = ''
-  form.image_url = ''
-  form.link_url = ''
-  form.sort_order = 0
+  form.content = ''
+  form.display_position = 'top'
+  form.start_time = ''
+  form.end_time = ''
   form.is_enabled = true
+  dateRange.value = []
 }
 
 function handleAdd() {
   resetForm()
-  dialog.title = '新增轮播图'
+  dialog.title = '发布公告'
   dialog.isEdit = false
   dialog.visible = true
 }
 
-function handleEdit(row: Carousel) {
+function handleEdit(row: Announcement) {
   resetForm()
   Object.assign(form, row)
-  dialog.title = '编辑轮播图'
+  if (row.start_time && row.end_time) {
+      dateRange.value = [row.start_time, row.end_time] as any
+  }
+  dialog.title = '编辑公告'
   dialog.isEdit = true
   dialog.visible = true
 }
 
-async function handleDelete(row: Carousel) {
-  await ElMessageBox.confirm(`确认删除轮播图 "${row.title}" 吗?`, '警告', {
+async function handleDelete(row: Announcement) {
+  await ElMessageBox.confirm(`确认删除公告 "${row.title}" 吗?`, '警告', {
     type: 'warning'
   })
   try {
-    await ContentAPI.deleteCarousel(row.id)
+    await ContentAPI.deleteAnnouncement(row.id)
     ElMessage.success('删除成功')
     fetchList()
   } catch (error) {
@@ -163,13 +180,21 @@ async function handleSubmit() {
   if (!formRef.value) return
   await formRef.value.validate()
   
+  if (dateRange.value && dateRange.value.length === 2) {
+      form.start_time = dateRange.value[0]
+      form.end_time = dateRange.value[1]
+  } else {
+      form.start_time = ''
+      form.end_time = ''
+  }
+
   try {
     if (dialog.isEdit && form.id) {
-      await ContentAPI.updateCarousel(form.id, form)
+      await ContentAPI.updateAnnouncement(form.id, form)
       ElMessage.success('更新成功')
     } else {
-      await ContentAPI.createCarousel(form)
-      ElMessage.success('创建成功')
+      await ContentAPI.createAnnouncement(form)
+      ElMessage.success('发布成功')
     }
     dialog.visible = false
     fetchList()
