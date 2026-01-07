@@ -12,6 +12,7 @@ from app.schemas.user import (
 )
 from app.core.cache import get_redis
 from app.core.logger import logger
+from app.utils.image import get_image_url
 from app.core.exceptions import (
     PhoneExistedException,
     EmailExistedException,
@@ -443,6 +444,15 @@ def get_user_detail_info(db: Session, user_id: int) -> UserDetailInfo:
         if cached_data:
             try:
                 data = json.loads(cached_data)
+                # 重新处理图片 URL，确保签名 URL 未过期
+                if data.get('avatar_url'):
+                    data['avatar_url'] = get_image_url(data['avatar_url'])
+                if data.get('id_card_front'):
+                    data['id_card_front'] = get_image_url(data['id_card_front'])
+                if data.get('id_card_back'):
+                    data['id_card_back'] = get_image_url(data['id_card_back'])
+                if data.get('face_photo'):
+                    data['face_photo'] = get_image_url(data['face_photo'])
                 # logger.info(f"User detail loaded from cache: {user_id}")
                 return UserDetailInfo(**data)
             except Exception as e:
@@ -507,24 +517,10 @@ def get_user_detail_info(db: Session, user_id: int) -> UserDetailInfo:
             SubAccount.enterprise_user_id == user_id
         ).scalar() or 0
     
-    # 处理OSS URL：生成带签名的临时访问URL
-    def get_signed_url(url: Optional[str]) -> Optional[str]:
-        if not url or 'oss-accesspoint.aliyuncs.com' not in url:
-            return url
-        try:
-            from app.utils.oss import oss_uploader
-            match = re.search(r'oss-accesspoint\.aliyuncs\.com/(.+)', url)
-            if match:
-                object_key = match.group(1)
-                return oss_uploader.generate_presigned_url(object_key, expires=86400)
-        except Exception as e:
-            logger.warning(f"Failed to generate presigned URL: {e}")
-        return url
-
-    avatar_display_url = get_signed_url(user.avatar_url)
-    id_card_front_url = get_signed_url(id_card_front)
-    id_card_back_url = get_signed_url(id_card_back)
-    face_photo_url = get_signed_url(face_photo)
+    avatar_display_url = get_image_url(user.avatar_url)
+    id_card_front_url = get_image_url(id_card_front)
+    id_card_back_url = get_image_url(id_card_back)
+    face_photo_url = get_image_url(face_photo)
     
     # 获取最近识别记录（实时数据，不缓存）
     recent_records = get_recent_recognition_records(db, user_id, limit=5)

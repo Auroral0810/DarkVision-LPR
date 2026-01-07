@@ -14,18 +14,7 @@ from app.core.logger import logger
 
 router = APIRouter()
 
-def get_signed_url(url: Optional[str]) -> Optional[str]:
-    """生成OSS签名URL"""
-    if not url or 'oss-accesspoint.aliyuncs.com' not in url:
-        return url
-    try:
-        match = re.search(r'oss-accesspoint\.aliyuncs\.com/(.+)', url)
-        if match:
-            object_key = match.group(1)
-            return oss_uploader.generate_presigned_url(object_key, expires=86400)
-    except Exception as e:
-        logger.warning(f"Failed to generate presigned URL for image: {e}")
-    return url
+from app.utils.image import get_image_url
 
 @router.get("", response_model=UnifiedResponse[RecognitionHistoryList], summary="查询识别历史记录")
 async def get_recognition_history(
@@ -59,9 +48,9 @@ async def get_recognition_history(
     # 为每个item的图片URL生成签名
     for item in history_items:
         if hasattr(item, 'original_image_url') and item.original_image_url:
-            item.original_image_url = get_signed_url(item.original_image_url)
+            item.original_image_url = get_image_url(item.original_image_url)
         if hasattr(item, 'enhanced_image_url') and item.enhanced_image_url:
-            item.enhanced_image_url = get_signed_url(item.enhanced_image_url)
+            item.enhanced_image_url = get_image_url(item.enhanced_image_url)
     
     total_pages = (total + page_size - 1) // page_size
     

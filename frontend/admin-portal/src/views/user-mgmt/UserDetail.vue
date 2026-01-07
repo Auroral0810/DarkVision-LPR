@@ -163,18 +163,32 @@
                 <div class="verify-images" v-if="userInfo?.id_card_front || userInfo?.id_card_back">
                    <div class="image-box" v-if="userInfo?.id_card_front">
                       <el-image 
-                        :src="userInfo.id_card_front" 
-                        :preview-src-list="[userInfo.id_card_front]" 
+                        :src="userInfo.id_card_front || ''" 
+                        :preview-src-list="userInfo.id_card_front ? [userInfo.id_card_front] : []" 
                         fit="cover" 
-                      />
+                      >
+                        <template #error>
+                          <div class="image-error-slot">
+                            <el-icon><Picture /></el-icon>
+                            <span class="error-text">加载失败</span>
+                          </div>
+                        </template>
+                      </el-image>
                       <div class="img-label">身份证正面</div>
                    </div>
                    <div class="image-box" v-if="userInfo?.id_card_back">
                       <el-image 
-                        :src="userInfo.id_card_back" 
-                        :preview-src-list="[userInfo.id_card_back]" 
+                        :src="userInfo.id_card_back || ''" 
+                        :preview-src-list="userInfo.id_card_back ? [userInfo.id_card_back] : []" 
                         fit="cover" 
-                      />
+                      >
+                        <template #error>
+                          <div class="image-error-slot">
+                            <el-icon><Picture /></el-icon>
+                            <span class="error-text">加载失败</span>
+                          </div>
+                        </template>
+                      </el-image>
                       <div class="img-label">身份证反面</div>
                    </div>
                 </div>
@@ -212,7 +226,7 @@ import { ref, onMounted } from 'vue'
 import LprAPI from '@/api/lpr-api'
 import type { User } from '@/types/lpr'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { User as UserIcon, Management, PieChart, Download, Remove, Delete } from '@element-plus/icons-vue'
+import { User as UserIcon, Management, PieChart, Download, Remove, Delete, Picture } from '@element-plus/icons-vue'
 
 const props = defineProps<{ userId: number }>()
 const userInfo = ref<User | null>(null)

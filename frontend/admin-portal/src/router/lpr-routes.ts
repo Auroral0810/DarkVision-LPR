@@ -55,7 +55,7 @@ export const lprRoutes: RouteRecordRaw[] = [
       },
       {
         path: 'verification',
-        component: () => import('@/views/user-mgmt/VerificationReview.vue'),
+        component: () => import('@/views/verification/VerificationList.vue'),
         name: 'Verification',
         meta: { title: '实名认证审核', icon: 'el-icon-Checked', roles: ['super_admin', 'user_manager'] }
       },

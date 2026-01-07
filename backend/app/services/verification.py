@@ -1,241 +1,85 @@
-"""
-验证码服务（短信和邮箱）
-"""
-import random
-import string
-from typing import Optional
-from app.core.cache import get_redis
-from app.core.logger import logger
-from app.core.exceptions import ParameterException
+from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import desc
+from typing import Tuple, List, Optional
+from datetime import datetime
 
+from app.models.user import RealNameVerification, User, UserProfile
+from app.schemas.admin.verification import VerificationListParams, VerificationListItem
 
-class VerificationCodeService:
-    """验证码服务"""
-    
-    # 验证码有效期（秒）
-    CODE_EXPIRE_TIME = 300  # 5分钟
-    
-    # 发送频率限制（秒）
-    SEND_INTERVAL = 60  # 1分钟内只能发送一次
-    
-    # 验证码长度
-    CODE_LENGTH = 6
-    
-    @staticmethod
-    def generate_code(length: int = CODE_LENGTH) -> str:
+class VerificationService:
+    def list_verifications(self, db: Session, params: VerificationListParams) -> Tuple[List[RealNameVerification], int]:
         """
-        生成随机验证码
+        管理员查询实名认证列表
+        """
+        query = db.query(RealNameVerification).join(RealNameVerification.user)
         
-        Args:
-            length: 验证码长度
+        # 预加载关联数据
+        query = query.options(
+            joinedload(RealNameVerification.user),
+            joinedload(RealNameVerification.user).joinedload(User.profile)
+        )
+        
+        # 筛选
+        if params.status:
+            query = query.filter(RealNameVerification.status == params.status)
             
-        Returns:
-            str: 数字验证码
-        """
-        return ''.join(random.choices(string.digits, k=length))
-    
-    @staticmethod
-    def get_redis_key(scene: str, target: str) -> str:
-        """
-        生成 Redis 键
+        if params.keyword:
+            keyword = f"%{params.keyword}%"
+            query = query.filter(
+                (User.nickname.ilike(keyword)) | 
+                (User.phone.ilike(keyword)) |
+                (User.email.ilike(keyword))
+            )
+
+        total = query.count()
         
-        Args:
-            scene: 场景 (login/register/reset_password)
-            target: 目标 (手机号或邮箱)
-            
-        Returns:
-            str: Redis键
-        """
-        return f"verification_code:{scene}:{target}"
-    
-    @staticmethod
-    def get_rate_limit_key(target: str) -> str:
-        """生成频率限制 Redis 键"""
-        return f"code_rate_limit:{target}"
-    
-    @classmethod
-    def check_send_frequency(cls, target: str) -> bool:
-        """
-        检查发送频率
-        
-        Args:
-            target: 手机号或邮箱
-            
-        Returns:
-            bool: 是否可以发送
-        """
-        redis_client = get_redis()
-        if not redis_client:
-            return True
-        
-        key = cls.get_rate_limit_key(target)
-        if redis_client.exists(key):
-            return False
-        
-        return True
-    
-    @classmethod
-    def set_send_frequency_limit(cls, target: str):
-        """设置发送频率限制"""
-        redis_client = get_redis()
-        if redis_client:
-            key = cls.get_rate_limit_key(target)
-            redis_client.setex(key, cls.SEND_INTERVAL, "1")
-    
-    @classmethod
-    def store_code(cls, scene: str, target: str, code: str) -> bool:
-        """
-        存储验证码到 Redis
-        
-        Args:
-            scene: 使用场景
-            target: 手机号或邮箱
-            code: 验证码
-            
-        Returns:
-            bool: 是否成功
-        """
-        redis_client = get_redis()
-        if not redis_client:
-            logger.error("Redis not available")
-            return False
-        
-        key = cls.get_redis_key(scene, target)
-        redis_client.setex(key, cls.CODE_EXPIRE_TIME, code)
-        logger.info(f"Stored verification code for {target}, scene: {scene}")
-        return True
-    
-    @classmethod
-    def verify_code(cls, scene: str, target: str, code: str) -> bool:
-        """
-        验证验证码
-        
-        Args:
-            scene: 使用场景
-            target: 手机号或邮箱
-            code: 用户输入的验证码
-            
-        Returns:
-            bool: 是否验证成功
-        """
-        redis_client = get_redis()
-        if not redis_client:
-            logger.error("Redis not available for code verification")
-            return False
-        
-        key = cls.get_redis_key(scene, target)
-        stored_code = redis_client.get(key)
-        
-        if not stored_code:
-            logger.warning(f"Verification code expired or not found for {target}")
-            return False
-        
-        # 处理 Redis 返回类型（bytes 或 str）
-        if isinstance(stored_code, bytes):
-            stored_code_str = stored_code.decode('utf-8')
+        # 排序：待处理优先，然后按时间倒序
+        if params.status == 'pending':
+            query = query.order_by(RealNameVerification.created_at.asc())
         else:
-            stored_code_str = str(stored_code)
-        
-        if stored_code_str == code:
-            # 验证成功后删除验证码
-            redis_client.delete(key)
-            logger.info(f"Verification code verified successfully for {target}")
-            return True
-        
-        logger.warning(f"Invalid verification code for {target}")
-        return False
-    
-    @classmethod
-    def send_sms_code(cls, phone: str, scene: str) -> str:
-        """
-        发送短信验证码
-        
-        Args:
-            phone: 手机号
-            scene: 使用场景
+            query = query.order_by(RealNameVerification.created_at.desc())
             
-        Returns:
-            str: 验证码（开发环境返回，生产环境不返回）
-            
-        Raises:
-            ParameterException: 发送频率过高
-        """
-        # 检查发送频率
-        if not cls.check_send_frequency(phone):
-            raise ParameterException(f"发送过于频繁，请{cls.SEND_INTERVAL}秒后再试")
+        items = query.offset((params.page - 1) * params.page_size)\
+                     .limit(params.page_size).all()
         
-        # 生成验证码
-        code = cls.generate_code()
-        
-        # 存储到 Redis
-        cls.store_code(scene, phone, code)
-        
-        # 设置频率限制
-        cls.set_send_frequency_limit(phone)
-        
-        # 实际发送短信（短信宝）
-        try:
-            from app.services.sms import sms_service
-            sms_service.send_verification_code(phone, code, scene)
-            logger.info(f"SMS code sent to {phone}: {code} (scene: {scene})")
-        except Exception as e:
-            logger.error(f"Failed to send SMS: {e}")
-            # 即使短信发送失败，验证码也已存储，开发环境可以使用返回的验证码
-            # 生产环境应该抛出异常
-            from app.config import settings
-            if not settings.RETURN_VERIFICATION_CODE:
-                raise
-        
-        # 开发环境返回验证码，生产环境不返回
-        from app.config import settings
-        if settings.RETURN_VERIFICATION_CODE:
-            return code
-        return ""
-    
-    @classmethod
-    def send_email_code(cls, email: str, scene: str) -> str:
-        """
-        发送邮箱验证码
-        
-        Args:
-            email: 邮箱
-            scene: 使用场景
-            
-        Returns:
-            str: 验证码（开发环境返回，生产环境不返回）
-            
-        Raises:
-            ParameterException: 发送频率过高
-        """
-        # 检查发送频率
-        if not cls.check_send_frequency(email):
-            raise ParameterException(f"发送过于频繁，请{cls.SEND_INTERVAL}秒后再试")
-        
-        # 生成验证码
-        code = cls.generate_code()
-        
-        # 存储到 Redis
-        cls.store_code(scene, email, code)
-        
-        # 设置频率限制
-        cls.set_send_frequency_limit(email)
-        
-        # 实际发送邮件
-        try:
-            from app.services.email import email_service
-            email_service.send_verification_code(email, code)
-            logger.info(f"Email code sent to {email}: {code} (scene: {scene})")
-        except Exception as e:
-            logger.error(f"Failed to send email: {e}")
-            # 即使邮件发送失败，验证码也已存储，开发环境可以使用返回的验证码
-        
-        # 开发环境返回验证码，生产环境不返回
-        from app.config import settings
-        if settings.RETURN_VERIFICATION_CODE:
-            return code
-        return ""
+        return items, total
 
+    def audit_verification(self, db: Session, verification_id: int, admin_id: int, action: str, reason: Optional[str] = None) -> Optional[RealNameVerification]:
+        """
+        审核实名认证
+        """
+        verification = db.query(RealNameVerification).filter(RealNameVerification.id == verification_id).first()
+        if not verification:
+            return None
+            
+        if action == 'approve':
+            verification.status = 'approved'
+            verification.reject_reason = None
+            # 同步更新 UserProfile 中的状态（如果有对应字段，这里假设 RealNameVerification 是主数据源）
+             # 也可以选择在这里同步写入 UserProfile 的 real_name 和 id_card_number，但逻辑上应该是在申请时就写入或者 approved 后写入
+            # 这里我们假设申请时数据在 Profile 或专门的申请表里。
+            # 根据模型，RealNameVerification 没有存 real_name, id_card_number, 这些在 UserProfile.
+            # 因此我们需要确保前端提交申请时更新了 UserProfile，或者我们从哪里获取这些信息？
+            # 仔细查看模型：User.real_name_verification 关联 RealNameVerification
+            # UserProfile 也有 real_name, id_card_number.
+            # 审核通过后，通常不需要额外操作，因为业务逻辑会检查 user.is_verified
+            pass
+            
+        elif action == 'reject':
+            verification.status = 'rejected'
+            verification.reject_reason = reason
+        
+        verification.reviewed_by = admin_id
+        verification.reviewed_at = datetime.now()
+        
+        db.add(verification)
+        db.commit()
+        db.refresh(verification)
+        return verification
+        
+    def get_verification_detail(self, db: Session, verification_id: int) -> Optional[RealNameVerification]:
+        return db.query(RealNameVerification).options(
+            joinedload(RealNameVerification.user).joinedload(User.profile)
+        ).filter(RealNameVerification.id == verification_id).first()
 
-# 导出单例
-verification_service = VerificationCodeService()
-
+verification_service = VerificationService()

@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from app.config import settings
 from app.core.cache import init_redis
 from app.core.database import engine, Base
@@ -41,6 +42,12 @@ app.add_middleware(
 # 注册路由
 app.include_router(api_router, prefix=settings.API_V1_PREFIX)
 app.include_router(admin_router, prefix="/api/admin")
+
+# 挂载静态文件目录
+import os
+if not os.path.exists(settings.UPLOAD_DIR):
+    os.makedirs(settings.UPLOAD_DIR, exist_ok=True)
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 @app.get("/")
 def root():

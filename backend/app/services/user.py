@@ -12,6 +12,7 @@ import string
 import logging
 import csv
 import io
+from app.utils.image import get_image_url
 from docx import Document
 from docx.shared import Inches, Pt, RGBColor
 from docx.enum.text import WD_ALIGN_PARAGRAPH
@@ -39,7 +40,7 @@ def get_user_detail_info(db: Session, user_id: int) -> Optional[UserDetail]:
         "phone": user.phone,
         "nickname": user.nickname,
         "email": user.email,
-        "avatar_url": user.avatar_url,
+        "avatar_url": get_image_url(user.avatar_url),
         "user_type": user.user_type.value if hasattr(user.user_type, 'value') else user.user_type,
         "status": user.status.value if hasattr(user.status, 'value') else user.status,
         "created_at": user.created_at,
@@ -129,9 +130,9 @@ def get_user_detail_info(db: Session, user_id: int) -> Optional[UserDetail]:
             "is_verified": user.real_name_verification.status == 'approved',
             "verification_status": user.real_name_verification.status,
             "reject_reason": user.real_name_verification.reject_reason,
-            "id_card_front": user.real_name_verification.id_card_front,
-            "id_card_back": user.real_name_verification.id_card_back,
-            "face_photo": user.real_name_verification.face_photo
+            "id_card_front": get_image_url(user.real_name_verification.id_card_front),
+            "id_card_back": get_image_url(user.real_name_verification.id_card_back),
+            "face_photo": get_image_url(user.real_name_verification.face_photo)
         })
     else:
          user_info.update({
@@ -265,7 +266,7 @@ def list_users_for_admin(
             "phone": user.phone,
             "nickname": user.nickname,
             "email": user.email,
-            "avatar_url": user.avatar_url,
+            "avatar_url": get_image_url(user.avatar_url),
             "user_type": user.user_type.value if hasattr(user.user_type, 'value') else user.user_type,
             "status": user.status.value if hasattr(user.status, 'value') else user.status,
             "last_login_at": user.last_login_at,
