@@ -10,6 +10,11 @@ from datetime import datetime, date
 import secrets
 import string
 import logging
+import csv
+import io
+from docx import Document
+from docx.shared import Inches, Pt, RGBColor
+from docx.enum.text import WD_ALIGN_PARAGRAPH
 
 def get_user_by_id(db: Session, user_id: int) -> Optional[User]:
     """
@@ -229,6 +234,17 @@ def list_users_for_admin(
                  .offset((params.page - 1) * params.page_size)\
                  .limit(params.page_size).all()
     
+    # 批量获取识别次数统计，避免 N+1 查询
+    from app.models.recognition import RecognitionRecord
+    user_ids = [u[0].id for u in results]
+    rec_counts = {}
+    if user_ids:
+        rec_stats = db.query(
+            RecognitionRecord.user_id, 
+            func.count(RecognitionRecord.id).label("count")
+        ).filter(RecognitionRecord.user_id.in_(user_ids)).group_by(RecognitionRecord.user_id).all()
+        rec_counts = {rs.user_id: rs.count for rs in rec_stats}
+
     enriched_users = []
     for user, parent_nickname in results:
         roles = []
@@ -259,7 +275,7 @@ def list_users_for_admin(
             "parent_id": user.parent_id,
             "parent_nickname": parent_nickname,
             "is_online": False, # 默认False，下面补全
-            "total_recognition_count": 0, # TODO: 后续关联统计表
+            "total_recognition_count": rec_counts.get(user.id, 0),
             "total_order_amount": 0.0     # TODO: 后续关联订单表
         }
         
@@ -345,3 +361,217 @@ def reset_user_password(db: Session, user_db: User) -> str:
     db.add(user_db)
     db.commit()
     return new_password
+
+def generate_user_csv(users: List[dict]) -> str:
+    """
+    生成用户列表 CSV 字符串 (更新字段集)
+    """
+    output = io.StringIO()
+    # 增加 UTF-8 BOM 以支持 Excel 直接打开不乱码
+    output.write('\ufeff')
+    writer = csv.writer(output)
+    
+    # 写入表头 (根据用户要求的字段顺序)
+    writer.writerow([
+        'ID', '手机号', '昵称', '邮箱', '头像地址', '用户类型', '状态', 
+        '最后登录时间', '最后登录IP', '注册时间', '是否在线', 
+        '封禁原因', '封禁截止', '角色', '是否管理员', 
+        '父账号ID', '父账号昵称', '累计识别次数', '累计消费金额'
+    ])
+    
+    # 写入数据
+    for u in users:
+        # 处理 roles 列表
+        roles_str = ', '.join([r['display_name'] for r in u.get('roles', [])]) if isinstance(u.get('roles'), list) else ''
+        
+        writer.writerow([
+            u.get('id'),
+            u.get('phone') or '',
+            u.get('nickname'),
+            u.get('email') or '',
+            u.get('avatar_url') or '',
+            u.get('user_type'),
+            u.get('status'),
+            u.get('last_login_at').strftime('%Y-%m-%d %H:%M:%S') if u.get('last_login_at') else '',
+            u.get('last_login_ip') or '',
+            u.get('created_at').strftime('%Y-%m-%d %H:%M:%S') if u.get('created_at') else '',
+            '在线' if u.get('is_online') else '离线',
+            u.get('banned_reason') or '',
+            u.get('banned_until').strftime('%Y-%m-%d %H:%M:%S') if u.get('banned_until') else '',
+            roles_str,
+            '是' if u.get('is_admin') else '否',
+            u.get('parent_id') or '',
+            u.get('parent_nickname') or '',
+            u.get('total_recognition_count', 0),
+            u.get('total_order_amount', 0)
+        ])
+    
+    content = output.getvalue()
+    output.close()
+    return content
+
+def generate_user_detail_docx(detail: UserDetail) -> io.BytesIO:
+    """
+    生成用户详情 Word 文档 (深度美化版)
+    """
+    from docx import Document
+    from docx.shared import Inches, Pt, RGBColor
+    from docx.enum.text import WD_ALIGN_PARAGRAPH
+    from docx.oxml.ns import qn
+    from docx.oxml import OxmlElement
+
+    doc = Document()
+    
+    # --- 全局字体设置 ---
+    for style in doc.styles:
+        if hasattr(style, 'font'):
+            style.font.name = '微软雅黑'
+            style._element.rPr.rFonts.set(qn('w:eastAsia'), '微软雅黑')
+
+    # --- 标题装饰 ---
+    title_para = doc.add_paragraph()
+    title_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = title_para.add_run(f'DarkVision-LPR 用户档案报告')
+    run.font.size = Pt(24)
+    run.font.bold = True
+    run.font.color.rgb = RGBColor(44, 62, 80) # 深蓝色
+
+    doc.add_paragraph().add_run(f'USER PROFILE: {detail.nickname.upper()}').bold = True
+    doc.add_paragraph(f'导出时间: {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
+    
+    # 画一条水平线
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.CENTER
+    run = p.add_run('━' * 50)
+    run.font.color.rgb = RGBColor(189, 195, 199)
+
+    def add_section_header(text):
+        h = doc.add_paragraph()
+        run = h.add_run(f'  {text}')
+        run.font.size = Pt(14)
+        run.font.bold = True
+        run.font.color.rgb = RGBColor(255, 255, 255)
+        
+        # 背景颜色 (需要 Oxml 处理)
+        shading_elm = OxmlElement('w:shd')
+        shading_elm.set(qn('w:fill'), '2C3E50') # 深蓝色背景
+        h._element.get_or_add_pPr().append(shading_elm)
+
+    # --- 1. 基础信息卡片 ---
+    add_section_header('账户概览 / ACCOUNT OVERVIEW')
+    
+    table = doc.add_table(rows=0, cols=2)
+    table.alignment = WD_ALIGN_PARAGRAPH.LEFT
+    table.autofit = False
+    table.columns[0].width = Inches(1.5)
+    table.columns[1].width = Inches(4.5)
+
+    def add_row(label, value):
+        row = table.add_row().cells
+        row[0].text = label
+        row[1].text = str(value if value is not None else 'N/A')
+        # 美化标签
+        for p in row[0].paragraphs:
+            p.runs[0].font.bold = True
+            p.runs[0].font.color.rgb = RGBColor(127, 140, 141)
+
+    add_row('用户 ID', f'#{detail.id}')
+    add_row('昵称 (Nickname)', detail.nickname)
+    add_row('手机 (Phone)', detail.phone)
+    add_row('邮箱 (Email)', detail.email)
+    add_row('用户类型', detail.user_type.upper())
+    
+    status_text = '正常 (NORMAL)' if detail.status == 'active' else '封禁 (BANNED)'
+    add_row('当前状态', status_text)
+    
+    # Determine if the user is an admin
+    is_admin = detail.user_type == 'admin' or (hasattr(detail, 'is_admin') and detail.is_admin)
+
+    # --- Conditional Sections based on user type ---
+    if is_admin:
+        doc.add_paragraph() # 空行
+        add_section_header('管理员权限信息 / ADMIN PRIVILEGES')
+        
+        role_labels = [r for r in detail.roles] if detail.roles else ['无特殊角色']
+        p = doc.add_paragraph()
+        p.add_run('当前拥有角色权限: ').bold = True
+        for role in role_labels:
+            p_role = doc.add_paragraph(f'• {role}')
+            p_role.paragraph_format.left_indent = Inches(0.5)
+            
+        doc.add_paragraph()
+        doc.add_paragraph('管理配额: 系统管理员拥有极高配额且不受常规限制。').italic = True
+    else:
+        # --- 2. 状态与配额 (普通用户) ---
+        doc.add_paragraph() # 空行
+        add_section_header('账户状态与配额 / ACCOUNT STATUS & QUOTA')
+        
+        p = doc.add_paragraph()
+        p.add_run('当前状态: ').bold = True
+        status_run = p.add_run(detail.status.upper())
+        if detail.status == 'active':
+            status_run.font.color.rgb = RGBColor(0, 128, 0) # Green
+        elif detail.status == 'banned':
+            status_run.font.color.rgb = RGBColor(255, 0, 0) # Red
+            
+        doc.add_paragraph(f'最后登录时间: {detail.last_login_at.strftime("%Y-%m-%d %H:%M") if detail.last_login_at else "从未登录"}')
+        doc.add_paragraph(f'最后登录 IP: {detail.last_login_ip or "未知"}')
+        
+        doc.add_paragraph('今日识别配额进度:').bold = True
+        quota_desc = f'已使用: {detail.used_quota_today} / 总计: {detail.daily_quota} ({detail.remaining_quota_today} 剩余)'
+        doc.add_paragraph(quota_desc)
+
+        # --- 3. 业务统计 (仅普通用户显示) ---
+        doc.add_paragraph() # 空行
+        add_section_header('服务使用统计 / USAGE STATISTICS')
+        
+        stats_table = doc.add_table(rows=2, cols=2)
+        stats_table.style = 'Table Grid' # Changed from 'Light Shading Accent 1' to match existing style
+        
+        cells = stats_table.rows[0].cells
+        cells[0].text = '累计识别数量'
+        cells[1].text = f'{detail.total_recognition_count} 次'
+        
+        cells = stats_table.rows[1].cells
+        cells[0].text = '今日已用配额'
+        cells[1].text = f'{detail.used_quota_today} / {detail.daily_quota}'
+        
+        # 字体加粗和颜色
+        for row in stats_table.rows:
+            for cell in row.cells:
+                for p_cell in cell.paragraphs: # Renamed p to p_cell to avoid conflict
+                    p_cell.alignment = WD_ALIGN_PARAGRAPH.CENTER
+                    if len(p_cell.runs) > 0:
+                        p_cell.runs[0].font.bold = True
+
+    # --- 4. 实名与认证 ---
+    doc.add_paragraph() # 空行
+    add_section_header('身份识别信息 / IDENTITY INFO')
+    
+    p = doc.add_paragraph()
+    p.add_run('真实姓名: ').bold = True
+    p.add_run(detail.real_name or '未通过实名认证')
+    
+    p = doc.add_paragraph()
+    p.add_run('居住地址: ').bold = True
+    p.add_run(detail.address or '未填写')
+
+    # --- 5. 管理备注 --- (Original section 4, now 5)
+    if detail.status == 'banned':
+        doc.add_paragraph()
+        add_section_header('系统管控详情 / SYSTEM CONTROL')
+        doc.add_paragraph(f'违规原因: {detail.banned_reason or "系统自动封禁"}').runs[0].font.color.rgb = RGBColor(231, 76, 60)
+        doc.add_paragraph(f'封禁截止: {detail.banned_until.strftime("%Y-%m-%d %H:%M") if detail.banned_until else "永久"}')
+
+    # 页脚美化
+    p = doc.add_paragraph()
+    p.alignment = WD_ALIGN_PARAGRAPH.RIGHT
+    run = p.add_run('\n(EOF) DarkVision-LPR 管理系统机密文档')
+    run.font.size = Pt(9)
+    run.font.italic = True
+    run.font.color.rgb = RGBColor(149, 165, 166)
+
+    target = io.BytesIO()
+    doc.save(target)
+    target.seek(0)
+    return target

@@ -482,9 +482,21 @@ async function handleBatchDelete() {
 
 async function handleExport() {
   try {
-    await LprAPI.exportUsers(queryParams)
+    const res = await LprAPI.exportUsers(queryParams)
+    // res is AxiosResponse if responseType is 'blob'
+    const blob = res.data instanceof Blob ? res.data : new Blob([res.data], { type: 'text/csv' })
+    
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `user_list_${new Date().getTime()}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
     ElMessage.success('导出成功')
   } catch (error) {
+    console.error('Export error:', error)
     ElMessage.error('导出失败')
   }
 }

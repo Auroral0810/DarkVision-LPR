@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends, HTTPException, Query, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status, Response
+from fastapi.responses import StreamingResponse
+from datetime import datetime
 from sqlalchemy.orm import Session
 from typing import List, Optional
 
@@ -39,15 +41,55 @@ def create_user(
     user = user_service.admin_create_user(db, user_in)
     return success_response(data=AdminUserListItem.model_validate(user))
 
-@router.get("/export", summary="导出用户列表", response_model=UnifiedResponse)
+@router.get("/export", summary="导出用户列表")
 def export_users(
     params: UserListParams = Depends(),
     db: Session = Depends(get_db),
     current_admin = Depends(get_current_active_admin)
 ):
-    # TODO: 实现真正的 Excel 导出逻辑
-    # 目前仅返回已过滤的数据统计或占位
-    return success_response(message="正在准备导出数据...")
+    """
+    导出当前过滤条件下的所有用户数据到 CSV
+    """
+    # 强制将每页数量设为极大值以一次性导出所有匹配数据
+    params.page = 1
+    params.page_size = 100000
+    
+    users, _ = user_service.list_users_for_admin(db, params)
+    csv_content = user_service.generate_user_csv(users)
+    
+    filename = f"users_export_{datetime.now().strftime('%Y%m%d%H%M')}.csv"
+    
+    return Response(
+        content=csv_content,
+        media_type="text/csv",
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}"
+        }
+    )
+
+@router.get("/{user_id}/export", summary="导出用户详情报告")
+def get_user_export(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_admin = Depends(get_current_active_admin)
+):
+    """
+    导出用户的 Word 详情报告
+    """
+    user_detail = user_service.get_user_detail_info(db, user_id)
+    if not user_detail:
+        raise HTTPException(status_code=404, detail="用户不存在")
+    
+    docx_stream = user_service.generate_user_detail_docx(user_detail)
+    filename = f"user_report_{user_id}_{datetime.now().strftime('%Y%m%d')}.docx"
+    
+    return Response(
+        content=docx_stream.getvalue(),
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        headers={
+            "Content-Disposition": f"attachment; filename={filename}"
+        }
+    )
 
 @router.get("/{user_id}", summary="获取用户详情", response_model=UnifiedResponse)
 def get_user_detail(

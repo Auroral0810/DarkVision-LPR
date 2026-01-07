@@ -82,9 +82,9 @@
                 <el-descriptions-item label="居住地址" :span="2">{{ userInfo?.address || '未填写' }}</el-descriptions-item>
               </el-descriptions>
 
-              <el-divider />
-
-              <el-descriptions title="会员详情" :column="2" border>
+              <el-divider v-if="!userInfo?.is_admin" />
+              
+              <el-descriptions title="会员详情" :column="2" border v-if="!userInfo?.is_admin">
                 <el-descriptions-item label="会员等级">
                   <el-tag :type="userInfo?.is_membership_active ? 'warning' : 'info'" effect="dark">
                     {{ userInfo?.membership_type || '普通用户' }}
@@ -100,8 +100,8 @@
             </div>
           </el-tab-pane>
 
-          <!-- 业务数据 -->
-          <el-tab-pane label="业务与统计" name="usage">
+          <!-- 业务数据 (非管理员显示) -->
+          <el-tab-pane label="业务与统计" name="usage" v-if="!userInfo?.is_admin">
             <div class="tab-content">
               <div class="usage-grid">
                 <el-card shadow="never" class="usage-card">
@@ -198,6 +198,7 @@
         </el-tabs>
 
         <div class="action-footer">
+          <el-button type="success" plain icon="Download" @click="handleExportReport">导出报告</el-button>
           <el-button type="primary" plain icon="Remove" @click="handleForceLogout">强制下线</el-button>
           <el-button type="danger" plain icon="Delete" @click="handleDeleteUser">删除账户</el-button>
         </div>
@@ -211,7 +212,7 @@ import { ref, onMounted } from 'vue'
 import LprAPI from '@/api/lpr-api'
 import type { User } from '@/types/lpr'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { User as UserIcon, Management, PieChart } from '@element-plus/icons-vue'
+import { User as UserIcon, Management, PieChart, Download, Remove, Delete } from '@element-plus/icons-vue'
 
 const props = defineProps<{ userId: number }>()
 const userInfo = ref<User | null>(null)
@@ -314,6 +315,28 @@ const handleDeleteUser = () => {
   }).then(() => {
     ElMessage.info('功能开发中...')
   }).catch(() => {})
+}
+
+const handleExportReport = async () => {
+  if (!userInfo.value) return
+  try {
+    const res = await LprAPI.exportUserDetail(userInfo.value.id)
+    // res is AxiosResponse
+    const blob = res.data instanceof Blob ? res.data : new Blob([res.data], { type: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' })
+    
+    const url = window.URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `user_report_${userInfo.value.nickname}_${new Date().getTime()}.docx`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    window.URL.revokeObjectURL(url)
+    ElMessage.success('报告导出成功')
+  } catch (err) {
+    console.error('Export detail error:', err)
+    ElMessage.error('报告导出失败')
+  }
 }
 
 onMounted(() => {

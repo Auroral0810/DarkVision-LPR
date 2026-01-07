@@ -142,6 +142,17 @@ const LprAPI = {
     })
   },
 
+  /**
+   * Export individual user report to docx
+   */
+  exportUserDetail(userId: number) {
+    return request({
+      url: `${LPR_BASE_URL}/users/${userId}/export`,
+      method: 'get',
+      responseType: 'blob'
+    })
+  },
+
   // ==================== Verification Management ====================
 
   /**
