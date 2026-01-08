@@ -15,12 +15,12 @@
     <el-tabs v-model="activeTab" class="mt-4">
       <el-tab-pane label="订单列表" name="orders">
         <el-table :data="orders" border>
-          <el-table-column label="订单号" prop="orderId" width="180" />
-          <el-table-column label="用户" prop="user" />
-          <el-table-column label="产品" prop="product" />
-          <el-table-column label="金额" prop="amount" width="100" />
-          <el-table-column label="时间" prop="time" width="180" />
-          <el-table-column label="状态" width="100">
+          <el-table-column label="订单号" prop="orderId" width="180" sortable />
+          <el-table-column label="用户" prop="user" sortable />
+          <el-table-column label="产品" prop="product" sortable />
+          <el-table-column label="金额" prop="amount" width="100" sortable />
+          <el-table-column label="时间" prop="time" width="180" sortable />
+          <el-table-column label="状态" width="100" sortable>
             <template #default="scope">
               <el-tag :type="getStatusType(scope.row.status)">{{ scope.row.status }}</el-tag>
             </template>

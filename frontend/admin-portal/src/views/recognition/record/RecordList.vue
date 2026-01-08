@@ -32,7 +32,7 @@
 
     <el-card class="table-container" shadow="hover" style="margin-top: 20px">
       <el-table v-loading="loading" :data="recordList">
-        <el-table-column prop="id" label="ID" width="80" align="center" />
+        <el-table-column prop="id" label="ID" width="80" align="center" sortable />
         <el-table-column label="图片" width="120" align="center">
           <template #default="scope">
             <el-image
@@ -44,20 +44,20 @@
             />
           </template>
         </el-table-column>
-        <el-table-column prop="license_plate" label="车牌号" width="120" align="center">
+        <el-table-column prop="license_plate" label="车牌号" width="120" align="center" sortable>
           <template #default="scope">
             <el-tag :type="getPlateTypeTag(scope.row.plate_type)">{{ scope.row.license_plate }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="confidence" label="置信度" width="100" align="center">
+        <el-table-column prop="confidence" label="置信度" width="100" align="center" sortable>
           <template #default="scope">
             {{ (scope.row.confidence * 100).toFixed(2) }}%
           </template>
         </el-table-column>
-        <el-table-column prop="processing_time" label="耗时(ms)" width="100" align="center" />
-        <el-table-column prop="user_id" label="用户ID" width="100" align="center" />
-        <el-table-column prop="model_version" label="模型版本" width="120" align="center" />
-        <el-table-column prop="created_at" label="识别时间" width="180" align="center">
+        <el-table-column prop="processing_time" label="耗时(ms)" width="100" align="center" sortable />
+        <el-table-column prop="user_id" label="用户ID" width="100" align="center" sortable />
+        <el-table-column prop="model_version" label="模型版本" width="120" align="center" sortable />
+        <el-table-column prop="created_at" label="识别时间" width="180" align="center" sortable>
           <template #default="scope">
             {{ formatTime(scope.row.created_at) }}
           </template>

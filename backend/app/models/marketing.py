@@ -46,4 +46,4 @@ class Promotion(Base):
     is_active = Column(Boolean, default=True, comment="是否启用")
     created_at = Column(DateTime, server_default=func.now())
     
-    package = relationship("app.models.payment.Package")
+    package = relationship("app.models.payment.Package", back_populates="promotions")

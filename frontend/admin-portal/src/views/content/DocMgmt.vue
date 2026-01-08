@@ -1,210 +1,133 @@
 <template>
   <div class="app-container">
-    <div class="search-container">
-       <el-select v-model="currDocType" placeholder="文档类型" @change="handleTypeChange" style="width: 200px; margin-right: 10px;">
-          <el-option label="全部" value="" />
-          <el-option label="技术文档" value="tech" />
-          <el-option label="服务协议" value="service_agreement" />
-          <el-option label="隐私政策" value="privacy_policy" />
-       </el-select>
-       <el-button type="primary" icon="Plus" @click="handleAdd">新增文档</el-button>
+    <div class="filter-container">
+      <el-button type="primary" icon="Plus" @click="handleAdd">新增文档</el-button>
     </div>
 
-    <el-card shadow="never" class="mt-20">
-      <el-table v-loading="loading" :data="list" border highlight-current-row>
-        <el-table-column label="ID" prop="id" width="80" align="center" />
-        <el-table-column label="标题" prop="title" />
-        <el-table-column label="类型" width="120" align="center">
-           <template #default="{ row }">
-              <el-tag>{{ formatType(row.doc_type) }}</el-tag>
-           </template>
-        </el-table-column>
-        <el-table-column label="版本" prop="version" width="100" align="center" />
-        <el-table-column label="当前版本" width="100" align="center">
-          <template #default="{ row }">
-            <el-tag :type="row.is_current ? 'success' : 'info'">
-              {{ row.is_current ? '是' : '否' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="创建时间" prop="created_at" width="180">
-          <template #default="{ row }">
-            {{ formatDate(row.created_at) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="200" align="center">
-          <template #default="scope">
-            <el-button type="primary" size="small" link icon="Edit" @click="handleEdit(scope.row)">编辑</el-button>
-            <el-button type="danger" size="small" link icon="Delete" @click="handleDelete(scope.row)">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-    </el-card>
+    <el-table :data="docList" border style="width: 100%; margin-top: 20px;">
+      <el-table-column prop="id" label="ID" width="80" align="center" sortable />
+      <el-table-column prop="title" label="文档标题" min-width="200" sortable />
+      <el-table-column prop="category" label="分类" width="120" align="center" sortable>
+        <template #default="{ row }">
+          <el-tag>{{ categoryMap[row.category] || row.category }}</el-tag>
+        </template>
+      </el-table-column>
+      <el-table-column prop="version" label="版本" width="100" align="center" sortable />
+      <el-table-column prop="updated_at" label="最后更新" width="160" align="center" sortable />
+      <el-table-column label="操作" width="180" align="center" fixed="right">
+        <template #default="{ row }">
+          <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
+          <el-button type="danger" link @click="handleDelete(row)">删除</el-button>
+        </template>
+      </el-table-column>
+    </el-table>
 
-    <el-dialog 
-      v-model="dialog.visible" 
-      :title="dialog.title" 
+    <el-dialog
+      :title="isEdit ? '编辑文档' : '新增文档'"
+      v-model="dialogVisible"
       width="800px"
-      :close-on-click-modal="false"
     >
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="标题" prop="title">
-          <el-input v-model="form.title" placeholder="请输入标题" />
+      <el-form ref="formRef" :model="form" label-width="100px">
+        <el-form-item label="标题" prop="title" required>
+          <el-input v-model="form.title" placeholder="请输入文档标题" />
         </el-form-item>
-        <el-form-item label="类型" prop="doc_type">
-           <el-select v-model="form.doc_type">
-              <el-option label="技术文档" value="tech" />
-              <el-option label="服务协议" value="service_agreement" />
-              <el-option label="隐私政策" value="privacy_policy" />
-           </el-select>
+        <el-form-item label="分类" prop="category" required>
+          <el-select v-model="form.category" placeholder="请选择分类">
+            <el-option label="使用指南" value="guide" />
+            <el-option label="API 文档" value="api" />
+            <el-option label="常见问题" value="faq" />
+            <el-option label="更新日志" value="changelog" />
+          </el-select>
         </el-form-item>
         <el-form-item label="版本号" prop="version">
           <el-input v-model="form.version" placeholder="v1.0" />
         </el-form-item>
-         <el-form-item label="当前版本" prop="is_current">
-          <el-switch v-model="form.is_current" active-text="设为当前生效版本" />
-        </el-form-item>
         <el-form-item label="内容" prop="content">
-          <el-input 
-            v-model="form.content" 
-            type="textarea" 
-            :rows="15" 
-            placeholder="支持 Markdown 格式" 
+          <el-input
+            v-model="form.content"
+            type="textarea"
+            :rows="15"
+            placeholder="请输入文档内容 (Markdown)"
           />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialog.visible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit">确定</el-button>
+        <span class="dialog-footer">
+          <el-button @click="dialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="handleSubmit">保存</el-button>
+        </span>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import ContentAPI, { type Document } from '@/api/content-api'
 import dayjs from 'dayjs'
 
-const loading = ref(false)
-const list = ref<Document[]>([])
-const currDocType = ref('')
+const categoryMap: Record<string, string> = {
+  guide: '使用指南',
+  api: 'API 文档',
+  faq: '常见问题',
+  changelog: '更新日志'
+}
 
-const dialog = reactive({
-  visible: false,
-  title: '',
-  isEdit: false
-})
+const docList = ref([
+  { id: 101, title: '快速开始指南', category: 'guide', version: 'v1.0', content: '# Quick Start...', updated_at: '2025-01-01' },
+  { id: 102, title: '识别接口 API v1', category: 'api', version: 'v1.2', content: '# API Reference...', updated_at: '2025-01-05' }
+])
 
-const formRef = ref()
+const dialogVisible = ref(false)
+const isEdit = ref(false)
 const form = reactive({
-  id: undefined as number | undefined,
+  id: undefined,
   title: '',
-  doc_type: 'tech',
-  content: '',
+  category: '',
   version: '',
-  is_current: false
+  content: ''
 })
-
-const rules = {
-  title: [{ required: true, message: '请输入标题', trigger: 'blur' }],
-  doc_type: [{ required: true, message: '请选择类型', trigger: 'change' }],
-  version: [{ required: true, message: '请输入版本', trigger: 'blur' }],
-  content: [{ required: true, message: '请输入内容', trigger: 'blur' }]
-}
-
-function formatDate(date: string) {
-  return dayjs(date).format('YYYY-MM-DD HH:mm')
-}
-
-function formatType(type: string) {
-  const map: any = {
-    'tech': '技术文档',
-    'service_agreement': '服务协议',
-    'privacy_policy': '隐私政策'
-  }
-  return map[type] || type
-}
-
-async function fetchList() {
-  loading.value = true
-  try {
-    const params = currDocType.value ? { doc_type: currDocType.value } : {}
-    const res = await ContentAPI.getDocuments(params)
-    list.value = res as any
-  } finally {
-    loading.value = false
-  }
-}
-
-function handleTypeChange() {
-  fetchList()
-}
-
-function resetForm() {
-  form.id = undefined
-  form.title = ''
-  form.doc_type = 'tech'
-  form.content = ''
-  form.version = ''
-  form.is_current = false
-}
 
 function handleAdd() {
-  resetForm()
-  dialog.title = '新增文档'
-  dialog.isEdit = false
-  dialog.visible = true
+  isEdit.value = false
+  Object.assign(form, { id: undefined, title: '', category: 'guide', version: '', content: '' })
+  dialogVisible.value = true
 }
 
-function handleEdit(row: Document) {
-  resetForm()
+function handleEdit(row: any) {
+  isEdit.value = true
   Object.assign(form, row)
-  dialog.title = '编辑文档'
-  dialog.isEdit = true
-  dialog.visible = true
+  dialogVisible.value = true
 }
 
-async function handleDelete(row: Document) {
-  await ElMessageBox.confirm(`确认删除文档 "${row.title}" 吗?`, '警告', {
-    type: 'warning'
-  })
-  try {
-    await ContentAPI.deleteDocument(row.id)
+function handleDelete(row: any) {
+  ElMessageBox.confirm('确认删除该文档吗？', '提示', { type: 'warning' }).then(() => {
+    docList.value = docList.value.filter(item => item.id !== row.id)
     ElMessage.success('删除成功')
-    fetchList()
-  } catch (error) {
-    // handled
-  }
+  })
 }
 
-async function handleSubmit() {
-  if (!formRef.value) return
-  await formRef.value.validate()
+function handleSubmit() {
+  if (!form.title) {
+    ElMessage.warning('请输入标题')
+    return
+  }
   
-  try {
-    if (dialog.isEdit && form.id) {
-      await ContentAPI.updateDocument(form.id, form)
-      ElMessage.success('更新成功')
-    } else {
-      await ContentAPI.createDocument(form)
-      ElMessage.success('创建成功')
+  if (isEdit.value) {
+    const index = docList.value.findIndex((item: any) => item.id === form.id)
+    if (index !== -1) {
+      docList.value[index] = { ...form, updated_at: dayjs().format('YYYY-MM-DD') } as any
     }
-    dialog.visible = false
-    fetchList()
-  } catch (error) {
-    ElMessage.error('操作失败')
+    ElMessage.success('更新成功')
+  } else {
+    docList.value.push({ ...form, id: Date.now(), updated_at: dayjs().format('YYYY-MM-DD') } as any)
+    ElMessage.success('创建成功')
   }
+  dialogVisible.value = false
 }
-
-onMounted(() => {
-  fetchList()
-})
 </script>
 
 <style scoped>
-.mt-20 {
-  margin-top: 20px;
-}
+.app-container { padding: 20px; }
+.filter-container { margin-bottom: 20px; }
 </style>

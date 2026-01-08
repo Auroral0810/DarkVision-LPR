@@ -18,6 +18,7 @@ class Package(Base):
     
     features = relationship("PackageFeature", back_populates="package", cascade="all, delete-orphan")
     memberships = relationship("app.models.user.UserMembership", back_populates="package")
+    promotions = relationship("app.models.marketing.Promotion", back_populates="package")
 
 class PackageFeature(Base):
     """套餐功能明细"""

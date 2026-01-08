@@ -21,9 +21,9 @@
 
     <el-card shadow="never">
       <el-table v-loading="loading" :data="dataList" border style="width: 100%">
-        <el-table-column prop="id" label="ID" width="80" align="center" />
+        <el-table-column prop="id" label="ID" width="80" align="center" sortable />
         
-        <el-table-column label="申请人" min-width="180">
+        <el-table-column label="申请人" min-width="180" sortable>
           <template #default="{ row }">
             <div class="user-cell">
                <el-avatar :size="32" :src="row.user.avatar_url">
@@ -37,16 +37,16 @@
           </template>
         </el-table-column>
         
-        <el-table-column prop="real_name" label="真实姓名" width="120" />
-        <el-table-column prop="id_card_number" label="身份证号" width="180" />
+        <el-table-column prop="real_name" label="真实姓名" width="120" sortable />
+        <el-table-column prop="id_card_number" label="身份证号" width="180" sortable />
         
-        <el-table-column label="提交时间" width="170" align="center">
+        <el-table-column label="提交时间" width="170" align="center" sortable>
           <template #default="{ row }">
             {{ formatTime(row.created_at) }}
           </template>
         </el-table-column>
         
-        <el-table-column label="状态" width="100" align="center">
+        <el-table-column label="状态" width="100" align="center" sortable>
           <template #default="{ row }">
             <el-tag :type="getStatusType(row.status)">{{ getStatusText(row.status) }}</el-tag>
           </template>

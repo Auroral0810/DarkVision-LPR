@@ -28,13 +28,6 @@ class PackageUpdate(BaseModel):
     is_active: Optional[bool] = None
     features: Optional[List[FeatureItem]] = None
 
-class PackageOut(PackageBase):
-    id: int
-    created_at: datetime
-    features: List[FeatureItem] = []
-
-    model_config = ConfigDict(from_attributes=True)
-
 class PromotionBase(BaseModel):
     name: str
     package_id: int
@@ -42,9 +35,6 @@ class PromotionBase(BaseModel):
     start_time: datetime
     end_time: datetime
     is_active: bool = True
-
-class PackageFeatureUpdate(BaseModel):
-    features: List[FeatureItem]
 
 class PromotionCreate(PromotionBase):
     pass
@@ -54,3 +44,14 @@ class PromotionOut(PromotionBase):
     created_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+class PackageOut(PackageBase):
+    id: int
+    created_at: datetime
+    features: List[FeatureItem] = []
+    promotions: List[PromotionOut] = []
+
+    model_config = ConfigDict(from_attributes=True)
+
+class PackageFeatureUpdate(BaseModel):
+    features: List[FeatureItem]

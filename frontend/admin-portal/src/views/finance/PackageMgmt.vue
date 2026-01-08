@@ -11,15 +11,15 @@
       <el-tabs v-model="activeTab">
         <el-tab-pane label="套餐列表" name="packages">
           <el-table :data="packages" border stripe v-loading="loading">
-            <el-table-column label="名称" prop="name" align="center" />
-            <el-table-column label="代码" prop="code" align="center" />
-            <el-table-column label="价格" prop="price" align="center">
+            <el-table-column label="名称" prop="name" align="center" sortable />
+            <el-table-column label="代码" prop="code" align="center" sortable />
+            <el-table-column label="价格" prop="price" align="center" sortable>
               <template #default="{ row }">￥{{ row.price }}</template>
             </el-table-column>
-            <el-table-column label="周期(月)" prop="duration_months" align="center">
+            <el-table-column label="周期(月)" prop="duration_months" align="center" sortable>
               <template #default="{ row }">{{ row.duration_months || '永久' }}</template>
             </el-table-column>
-            <el-table-column label="状态" width="100" align="center">
+            <el-table-column label="状态" width="100" align="center" sortable>
                <template #default="{ row }">
                  <el-tag :type="row.is_active ? 'success' : 'info'">{{ row.is_active ? '启用' : '禁用' }}</el-tag>
                </template>
@@ -36,11 +36,11 @@
 
         <el-tab-pane label="当前促销" name="promotions">
            <el-table :data="promotions" border stripe v-loading="loading">
-             <el-table-column label="活动名称" prop="name" align="center" />
-             <el-table-column label="折扣率" prop="discount_rate" align="center" />
-             <el-table-column label="开始时间" prop="start_time" align="center" />
-             <el-table-column label="结束时间" prop="end_time" align="center" />
-             <el-table-column label="状态" align="center">
+             <el-table-column label="活动名称" prop="name" align="center" sortable />
+             <el-table-column label="折扣率" prop="discount_rate" align="center" sortable />
+             <el-table-column label="开始时间" prop="start_time" align="center" sortable />
+             <el-table-column label="结束时间" prop="end_time" align="center" sortable />
+             <el-table-column label="状态" align="center" sortable>
                 <template #default="{ row }">
                   <el-tag :type="row.is_active ? 'success' : 'danger'">{{ row.is_active ? '进行中' : '失效' }}</el-tag>
                 </template>

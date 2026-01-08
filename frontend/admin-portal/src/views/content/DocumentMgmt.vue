@@ -10,22 +10,22 @@
       border
       style="width: 100%; margin-top: 20px;"
     >
-      <el-table-column prop="id" label="ID" width="80" align="center" />
-      <el-table-column prop="title" label="标题" min-width="200" />
-      <el-table-column prop="doc_type" label="类型" width="150" align="center">
+      <el-table-column prop="id" label="ID" width="80" align="center" sortable />
+      <el-table-column prop="title" label="标题" min-width="200" sortable />
+      <el-table-column prop="doc_type" label="类型" width="150" align="center" sortable>
         <template #default="{ row }">
             <el-tag>{{ typeMap[row.doc_type] || row.doc_type }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="version" label="版本" width="100" align="center" />
-      <el-table-column prop="is_current" label="当前版本" width="100" align="center">
+      <el-table-column prop="version" label="版本" width="100" align="center" sortable />
+      <el-table-column prop="is_current" label="当前版本" width="100" align="center" sortable>
         <template #default="{ row }">
           <el-tag :type="row.is_current ? 'success' : 'info'">
             {{ row.is_current ? '是' : '否' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="created_at" label="创建时间" width="160" align="center" />
+      <el-table-column prop="created_at" label="创建时间" width="160" align="center" sortable />
       <el-table-column label="操作" width="180" align="center" fixed="right">
         <template #default="{ row }">
           <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>

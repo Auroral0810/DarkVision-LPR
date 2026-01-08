@@ -7,8 +7,8 @@
       </div>
 
       <el-table v-loading="loading" :data="carousels" border>
-        <el-table-column prop="id" label="ID" width="80" align="center" />
-        <el-table-column prop="title" label="标题" min-width="150" />
+        <el-table-column prop="id" label="ID" width="80" align="center" sortable />
+        <el-table-column prop="title" label="标题" min-width="150" sortable />
         <el-table-column prop="image_url" label="图片" width="180">
           <template #default="{ row }">
             <el-image 
@@ -19,16 +19,16 @@
             />
           </template>
         </el-table-column>
-        <el-table-column prop="link_url" label="跳转链接" min-width="150" />
-        <el-table-column prop="sort_order" label="排序" width="80" align="center" />
-        <el-table-column prop="is_enabled" label="状态" width="100" align="center">
+        <el-table-column prop="link_url" label="跳转链接" min-width="150" sortable />
+        <el-table-column prop="sort_order" label="排序" width="80" align="center" sortable />
+        <el-table-column prop="is_enabled" label="状态" width="100" align="center" sortable>
            <template #default="{ row }">
             <el-tag :type="row.is_enabled ? 'success' : 'info'">
               {{ row.is_enabled ? '启用' : '禁用' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="created_at" label="创建时间" width="180" align="center" />
+        <el-table-column prop="created_at" label="创建时间" width="180" align="center" sortable />
         <el-table-column label="操作" width="150" align="center" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>

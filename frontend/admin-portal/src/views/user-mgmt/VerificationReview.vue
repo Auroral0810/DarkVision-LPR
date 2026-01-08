@@ -8,8 +8,8 @@
       </el-tabs>
 
       <el-table v-loading="loading" :data="pageData">
-        <el-table-column label="用户ID" prop="user_id" width="80" />
-        <el-table-column label="申请时间" prop="created_at" width="160" />
+        <el-table-column label="用户ID" prop="user_id" width="80" sortable />
+        <el-table-column label="申请时间" prop="created_at" width="160" sortable />
         <el-table-column label="身份证照片" width="300">
           <template #default="scope">
             <div style="display: flex; gap: 10px">
@@ -23,14 +23,14 @@
             <el-image v-if="scope.row.face_photo" :src="scope.row.face_photo" style="width: 100px" fit="contain" />
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="100">
+        <el-table-column label="状态" width="100" sortable>
           <template #default="scope">
             <el-tag :type="scope.row.status === 'approved' ? 'success' : scope.row.status === 'rejected' ? 'danger' : ''">
               {{ scope.row.status === 'pending' ? '待审核' : scope.row.status === 'approved' ? '已通过' : '已拒绝' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="拒绝原因" prop="reject_reason" show-overflow-tooltip />
+        <el-table-column label="拒绝原因" prop="reject_reason" show-overflow-tooltip sortable />
         <el-table-column label="操作" width="200" v-if="activeTab === 'pending'">
           <template #default="scope">
             <el-button type="success" link @click="handleReview(scope.row.id, 'approved')">通过</el-button>

@@ -9,15 +9,15 @@
       </template>
 
       <el-table v-loading="loading" :data="modelList" border stripe>
-        <el-table-column prop="version" label="版本号" width="120" align="center" />
-        <el-table-column prop="name" label="模型名称" width="200" align="center" />
-        <el-table-column prop="accuracy" label="准确率" width="120" align="center">
+        <el-table-column prop="version" label="版本号" width="120" align="center" sortable />
+        <el-table-column prop="name" label="模型名称" width="200" align="center" sortable />
+        <el-table-column prop="accuracy" label="准确率" width="120" align="center" sortable>
           <template #default="scope">
             <span v-if="scope.row.accuracy">{{ scope.row.accuracy }}%</span>
             <span v-else>-</span>
           </template>
         </el-table-column>
-        <el-table-column prop="is_active" label="当前线上" width="100" align="center">
+        <el-table-column prop="is_active" label="当前线上" width="100" align="center" sortable>
           <template #default="scope">
             <el-tag :type="scope.row.is_active ? 'success' : 'info'">
               {{ scope.row.is_active ? '是' : '否' }}
@@ -25,7 +25,7 @@
           </template>
         </el-table-column>
         <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip />
-        <el-table-column prop="created_at" label="创建时间" width="180" align="center">
+        <el-table-column prop="created_at" label="创建时间" width="180" align="center" sortable>
           <template #default="scope">
             {{ formatTime(scope.row.created_at) }}
           </template>

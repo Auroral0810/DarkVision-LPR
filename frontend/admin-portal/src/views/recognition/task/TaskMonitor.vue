@@ -30,14 +30,14 @@
 
     <el-card class="table-container" shadow="hover" style="margin-top: 20px">
       <el-table v-loading="loading" :data="taskList">
-        <el-table-column prop="id" label="ID" width="80" align="center" />
-        <el-table-column prop="task_uuid" label="任务UUID" width="180" align="center" show-overflow-tooltip />
-        <el-table-column prop="task_type" label="类型" width="100" align="center">
+        <el-table-column prop="id" label="ID" width="80" align="center" sortable />
+        <el-table-column prop="task_uuid" label="任务UUID" width="180" align="center" show-overflow-tooltip sortable />
+        <el-table-column prop="task_type" label="类型" width="100" align="center" sortable>
           <template #default="scope">
             <el-tag>{{ getTaskTypeText(scope.row.task_type) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="status" label="状态" width="100" align="center">
+        <el-table-column prop="status" label="状态" width="100" align="center" sortable>
           <template #default="scope">
             <el-tag :type="getStatusTag(scope.row.status)">{{ getStatusText(scope.row.status) }}</el-tag>
           </template>
@@ -50,13 +50,13 @@
             />
           </template>
         </el-table-column>
-        <el-table-column prop="success_count" label="成功/总数" width="120" align="center">
+        <el-table-column prop="success_count" label="成功/总数" width="120" align="center" sortable>
           <template #default="scope">
             {{ scope.row.success_count }} / {{ scope.row.total_items }}
           </template>
         </el-table-column>
-        <el-table-column prop="user_id" label="用户ID" width="100" align="center" />
-        <el-table-column prop="created_at" label="创建时间" width="180" align="center">
+        <el-table-column prop="user_id" label="用户ID" width="100" align="center" sortable />
+        <el-table-column prop="created_at" label="创建时间" width="180" align="center" sortable>
           <template #default="scope">
             {{ formatTime(scope.row.created_at) }}
           </template>

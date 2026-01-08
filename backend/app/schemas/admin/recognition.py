@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 from typing import Optional, List
 from datetime import datetime
 from decimal import Decimal
@@ -18,8 +18,7 @@ class RecognitionTaskOut(BaseModel):
     finished_at: Optional[datetime]
     created_at: datetime
     
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class TaskListParams(BaseModel):
     page: int = 1
@@ -43,10 +42,10 @@ class RecognitionRecordOut(BaseModel):
     model_version: Optional[str]
     processing_time: Optional[float]
     processed_at: datetime
-    created_at: datetime
-    
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(
+        from_attributes=True,
+        protected_namespaces=()
+    )
 
 class RecordListParams(BaseModel):
     page: int = 1
@@ -81,10 +80,7 @@ class RecognitionModelOut(BaseModel):
     accuracy: Optional[Decimal]
     description: Optional[str]
     file_path: Optional[str]
-    created_at: datetime
-    
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
 class ModelListParams(BaseModel):
     is_active: Optional[bool] = None

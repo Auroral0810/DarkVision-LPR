@@ -10,23 +10,23 @@
       border
       style="width: 100%; margin-top: 20px;"
     >
-      <el-table-column prop="id" label="ID" width="80" align="center" />
-      <el-table-column prop="title" label="标题" min-width="200" />
-      <el-table-column prop="display_position" label="显示位置" width="120" align="center">
+      <el-table-column prop="id" label="ID" width="80" align="center" sortable />
+      <el-table-column prop="title" label="标题" min-width="200" sortable />
+      <el-table-column prop="display_position" label="显示位置" width="120" align="center" sortable>
         <template #default="{ row }">
           <el-tag>{{ positionMap[row.display_position] || row.display_position }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="is_enabled" label="状态" width="100" align="center">
+      <el-table-column prop="is_enabled" label="状态" width="100" align="center" sortable>
         <template #default="{ row }">
           <el-tag :type="row.is_enabled ? 'success' : 'info'">
             {{ row.is_enabled ? '启用' : '禁用' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="start_time" label="开始时间" width="160" align="center" />
-      <el-table-column prop="end_time" label="结束时间" width="160" align="center" />
-      <el-table-column prop="created_at" label="创建时间" width="160" align="center" />
+      <el-table-column prop="start_time" label="开始时间" width="160" align="center" sortable />
+      <el-table-column prop="end_time" label="结束时间" width="160" align="center" sortable />
+      <el-table-column prop="created_at" label="创建时间" width="160" align="center" sortable />
       <el-table-column label="操作" width="180" align="center" fixed="right">
         <template #default="{ row }">
           <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>

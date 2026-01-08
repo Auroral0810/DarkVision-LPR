@@ -22,19 +22,19 @@
       </div>
 
       <el-table v-loading="loading" :data="list" border stripe>
-        <el-table-column label="订单号" prop="order_no" width="200" align="center" />
-        <el-table-column label="用户" prop="nickname" align="center" />
-        <el-table-column label="产品套餐" prop="package_name" align="center" />
-        <el-table-column label="金额" prop="amount" width="120" align="center">
+        <el-table-column label="订单号" prop="order_no" width="200" align="center" sortable />
+        <el-table-column label="用户" prop="nickname" align="center" sortable />
+        <el-table-column label="产品套餐" prop="package_name" align="center" sortable />
+        <el-table-column label="金额" prop="amount" width="120" align="center" sortable>
           <template #default="{ row }">￥{{ row.amount }}</template>
         </el-table-column>
-        <el-table-column label="支付方式" prop="payment_method" width="120" align="center" />
-        <el-table-column label="状态" prop="status" width="120" align="center">
+        <el-table-column label="支付方式" prop="payment_method" width="120" align="center" sortable />
+        <el-table-column label="状态" prop="status" width="120" align="center" sortable>
           <template #default="{ row }">
             <el-tag :type="getStatusType(row.status)">{{ getStatusLabel(row.status) }}</el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="创建时间" prop="created_at" width="180" align="center" />
+        <el-table-column label="创建时间" prop="created_at" width="180" align="center" sortable />
         <el-table-column label="操作" width="150" align="center">
           <template #default="{ row }">
             <el-button v-if="row.status === 'paid'" type="danger" link @click="handleRefund(row)">退款</el-button>

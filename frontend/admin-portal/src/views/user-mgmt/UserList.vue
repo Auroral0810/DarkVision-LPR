@@ -66,13 +66,13 @@
         @selection-change="handleSelectionChange"
       >
         <el-table-column type="selection" width="50" />
-        <el-table-column label="ID" prop="id" width="80" />
+        <el-table-column label="ID" prop="id" width="80" sortable />
         <el-table-column label="头像" width="80">
           <template #default="scope">
             <el-avatar :src="scope.row.avatar_url || '/default-avatar.png'" :size="40" />
           </template>
         </el-table-column>
-        <el-table-column label="昵称" prop="nickname" min-width="120">
+        <el-table-column label="昵称" prop="nickname" min-width="120" sortable>
           <template #default="scope">
             <div class="nickname-cell" style="display: flex; align-items: center; gap: 8px;">
               <span>{{ scope.row.nickname }}</span>
@@ -80,24 +80,24 @@
             </div>
           </template>
         </el-table-column>
-        <el-table-column label="手机号" prop="phone" width="130" />
-        <el-table-column label="邮箱" prop="email" min-width="180" show-overflow-tooltip />
-        <el-table-column label="用户类型" width="100">
+        <el-table-column label="手机号" prop="phone" width="130" sortable />
+        <el-table-column label="邮箱" prop="email" min-width="180" show-overflow-tooltip sortable />
+        <el-table-column label="用户类型" width="100" sortable>
           <template #default="scope">
             <el-tag :type="getUserTypeColor(scope.row.user_type)">
               {{ getUserTypeLabel(scope.row.user_type) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="80">
+        <el-table-column label="状态" width="80" sortable>
           <template #default="scope">
             <el-tag :type="getStatusColor(scope.row.status)">
               {{ getStatusLabel(scope.row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="注册时间" prop="created_at" width="160" />
-        <el-table-column label="最后登录" prop="last_login_at" width="160" />
+        <el-table-column label="注册时间" prop="created_at" width="160" sortable />
+        <el-table-column label="最后登录" prop="last_login_at" width="160" sortable />
         <el-table-column label="操作" fixed="right" width="300">
           <template #default="scope">
             <el-button type="primary" link size="small" @click="handleViewDetail(scope.row)">

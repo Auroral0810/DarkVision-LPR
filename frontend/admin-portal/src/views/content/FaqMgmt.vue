@@ -8,17 +8,17 @@
         </div>
 
         <el-table v-loading="loading" :data="faqs" border style="width: 100%; margin-top: 20px;">
-          <el-table-column prop="id" label="ID" width="80" align="center" />
-          <el-table-column prop="category.name" label="分类" width="120" align="center">
+          <el-table-column prop="id" label="ID" width="80" align="center" sortable />
+          <el-table-column prop="category.name" label="分类" width="120" align="center" sortable>
              <template #default="{ row }">
                 <el-tag v-if="row.category">{{ row.category.name }}</el-tag>
                 <span v-else>-</span>
              </template>
           </el-table-column>
-          <el-table-column prop="question" label="问题" min-width="200" />
-          <el-table-column prop="view_count" label="浏览" width="80" align="center" />
-          <el-table-column prop="sort_order" label="排序" width="80" align="center" />
-          <el-table-column prop="is_hot" label="热门" width="80" align="center">
+          <el-table-column prop="question" label="问题" min-width="200" sortable />
+          <el-table-column prop="view_count" label="浏览" width="80" align="center" sortable />
+          <el-table-column prop="sort_order" label="排序" width="80" align="center" sortable />
+          <el-table-column prop="is_hot" label="热门" width="80" align="center" sortable>
             <template #default="{ row }">
                <el-tag :type="row.is_hot ? 'danger' : 'info'" size="small">{{ row.is_hot ? 'HOT' : '普通' }}</el-tag>
             </template>
@@ -38,9 +38,9 @@
           <el-button type="primary" icon="Plus" @click="handleAddCat">新增分类</el-button>
         </div>
         <el-table :data="faqCategories" border style="width: 100%; margin-top: 20px;">
-          <el-table-column prop="id" label="ID" width="80" align="center" />
-          <el-table-column prop="name" label="分类名称" />
-          <el-table-column prop="sort_order" label="排序" width="100" align="center" />
+          <el-table-column prop="id" label="ID" width="80" align="center" sortable />
+          <el-table-column prop="name" label="分类名称" sortable />
+          <el-table-column prop="sort_order" label="排序" width="100" align="center" sortable />
           <el-table-column label="操作" width="180" align="center">
             <template #default="{ row }">
               <el-button type="primary" link @click="handleEditCat(row)">编辑</el-button>

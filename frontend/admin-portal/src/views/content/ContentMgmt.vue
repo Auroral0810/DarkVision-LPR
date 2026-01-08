@@ -1,99 +1,114 @@
 <template>
   <div class="app-container">
-    <div class="search-container">
-      <el-button type="primary" icon="Plus" @click="handleAdd">新增轮播图</el-button>
-    </div>
+    <el-tabs v-model="activeTab">
+      <el-tab-pane label="轮播图管理" name="banner">
+        <div class="filter-container">
+          <el-button type="primary" icon="Plus" @click="handleBannerAdd">新增轮播图</el-button>
+        </div>
+        <el-table :data="bannerList" border style="width: 100%; margin-top: 20px;">
+          <el-table-column prop="id" label="ID" width="80" align="center" sortable />
+          <el-table-column prop="title" label="标题" min-width="150" sortable />
+          <el-table-column label="图片" width="180">
+            <template #default="{ row }">
+              <el-image 
+                :src="row.image_url" 
+                :preview-src-list="[row.image_url]"
+                fit="cover"
+                style="width: 150px; height: 80px; border-radius: 4px;"
+              />
+            </template>
+          </el-table-column>
+          <el-table-column prop="link_url" label="跳转链接" min-width="150" sortable />
+          <el-table-column prop="sort_order" label="排序" width="80" align="center" sortable />
+          <el-table-column prop="is_enabled" label="状态" width="100" align="center" sortable>
+             <template #default="{ row }">
+              <el-tag :type="row.is_enabled ? 'success' : 'info'">
+                {{ row.is_enabled ? '启用' : '禁用' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="150" align="center" fixed="right">
+            <template #default="{ row }">
+              <el-button type="primary" link @click="handleBannerEdit(row)">编辑</el-button>
+              <el-button type="danger" link @click="handleBannerDelete(row)">删除</el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </el-tab-pane>
 
-    <el-card shadow="never" class="mt-20">
-      <el-table v-loading="loading" :data="list" border highlight-current-row>
-        <el-table-column label="ID" prop="id" width="80" align="center" />
-        <el-table-column label="标题" prop="title" />
-        <el-table-column label="图片预览" width="200" align="center">
-          <template #default="{ row }">
-            <el-image 
-              style="width: 100px; height: 50px" 
-              :src="row.image_url" 
-              fit="cover" 
-              :preview-src-list="[row.image_url]"
-              preview-teleported
-            />
-          </template>
-        </el-table-column>
-        <el-table-column label="跳转链接" prop="link_url" show-overflow-tooltip />
-        <el-table-column label="排序" prop="sort_order" width="80" align="center" />
-        <el-table-column label="状态" width="100" align="center">
-          <template #default="{ row }">
-            <el-tag :type="row.is_enabled ? 'success' : 'info'">
-              {{ row.is_enabled ? '启用' : '禁用' }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="创建时间" prop="created_at" width="180">
-          <template #default="{ row }">
-             {{ formatDate(row.created_at) }}
-          </template>
-        </el-table-column>
-        <el-table-column label="操作" width="200" align="center">
-          <template #default="scope">
-            <el-button type="primary" size="small" link icon="Edit" @click="handleEdit(scope.row)">编辑</el-button>
-            <el-button type="danger" size="small" link icon="Delete" @click="handleDelete(scope.row)">删除</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-    </el-card>
+      <el-tab-pane label="SEO 配置" name="seo">
+        <el-form label-width="120px" style="max-width: 600px; margin-top: 20px;">
+          <el-form-item label="网站标题">
+            <el-input v-model="seoConfig.title" placeholder="DarkVision - 低光照车牌识别系统" />
+          </el-form-item>
+          <el-form-item label="关键词">
+            <el-input v-model="seoConfig.keywords" placeholder="LPR, 车牌识别, 低光照, AI" />
+          </el-form-item>
+          <el-form-item label="描述">
+            <el-input v-model="seoConfig.description" type="textarea" :rows="4" placeholder="网站描述..." />
+          </el-form-item>
+          <el-form-item>
+            <el-button type="primary" @click="handleSaveSeo">保存配置</el-button>
+          </el-form-item>
+        </el-form>
+      </el-tab-pane>
+    </el-tabs>
 
-    <!-- Dialog -->
-    <el-dialog 
-      v-model="dialog.visible" 
-      :title="dialog.title" 
+    <!-- Banner Dialog -->
+    <el-dialog
+      :title="isEdit ? '编辑轮播图' : '新增轮播图'"
+      v-model="dialogVisible"
       width="500px"
-      :close-on-click-modal="false"
     >
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
-        <el-form-item label="标题" prop="title">
-          <el-input v-model="form.title" placeholder="请输入标题" />
+      <el-form ref="bannerFormRef" :model="bannerForm" label-width="100px">
+        <el-form-item label="标题" prop="title" required>
+          <el-input v-model="bannerForm.title" placeholder="请输入标题" />
         </el-form-item>
-        <el-form-item label="图片地址" prop="image_url">
-          <el-input v-model="form.image_url" placeholder="请输入图片URL">
-             <!-- Future: Add upload component -->
-          </el-input>
+        <el-form-item label="图片链接" prop="image_url" required>
+          <el-input v-model="bannerForm.image_url" placeholder="请输入图片URL" />
         </el-form-item>
         <el-form-item label="跳转链接" prop="link_url">
-          <el-input v-model="form.link_url" placeholder="请输入跳转链接" />
+          <el-input v-model="bannerForm.link_url" placeholder="请输入跳转URL (可选)" />
         </el-form-item>
         <el-form-item label="排序" prop="sort_order">
-          <el-input-number v-model="form.sort_order" :min="0" />
+          <el-input-number v-model="bannerForm.sort_order" :min="0" />
         </el-form-item>
-        <el-form-item label="状态" prop="is_enabled">
-          <el-switch v-model="form.is_enabled" active-text="启用" inactive-text="禁用" />
+        <el-form-item label="是否启用" prop="is_enabled">
+           <el-switch v-model="bannerForm.is_enabled" />
         </el-form-item>
       </el-form>
       <template #footer>
-        <el-button @click="dialog.visible = false">取消</el-button>
-        <el-button type="primary" @click="handleSubmit">确定</el-button>
+        <span class="dialog-footer">
+          <el-button @click="dialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="handleBannerSubmit">确定</el-button>
+        </span>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import ContentAPI, { type Carousel } from '@/api/content-api'
-import dayjs from 'dayjs'
 
-const loading = ref(false)
-const list = ref<Carousel[]>([])
+const activeTab = ref('banner')
+const dialogVisible = ref(false)
+const isEdit = ref(false)
 
-const dialog = reactive({
-  visible: false,
-  title: '',
-  isEdit: false
+// Mock Data
+const bannerList = ref([
+  { id: 1, title: '首页Banner 1', image_url: 'https://placehold.co/800x400', link_url: '/product', sort_order: 1, is_enabled: true },
+  { id: 2, title: '活动推广', image_url: 'https://placehold.co/800x400', link_url: '/activity', sort_order: 2, is_enabled: false }
+])
+
+const seoConfig = reactive({
+  title: 'DarkVision - 低光照车牌识别系统',
+  keywords: 'LPR, 车牌识别, 低光照, AI, 深度学习',
+  description: 'DarkVision LPR 是一款专为低光照环境设计的车牌识别系统，采用最新的 YOLOv12 模型，提供高精度的识别服务。'
 })
 
-const formRef = ref()
-const form = reactive({
-  id: undefined as number | undefined,
+const bannerForm = reactive({
+  id: undefined,
   title: '',
   image_url: '',
   link_url: '',
@@ -101,90 +116,45 @@ const form = reactive({
   is_enabled: true
 })
 
-const rules = {
-  title: [{ required: true, message: '请输入标题', trigger: 'blur' }],
-  image_url: [{ required: true, message: '请输入图片地址', trigger: 'blur' }]
+function handleBannerAdd() {
+  isEdit.value = false
+  Object.assign(bannerForm, { id: undefined, title: '', image_url: '', link_url: '', sort_order: 0, is_enabled: true })
+  dialogVisible.value = true
 }
 
-function formatDate(date: string) {
-  return dayjs(date).format('YYYY-MM-DD HH:mm')
+function handleBannerEdit(row: any) {
+  isEdit.value = true
+  Object.assign(bannerForm, row)
+  dialogVisible.value = true
 }
 
-async function fetchList() {
-  loading.value = true
-  try {
-    const res = await ContentAPI.getCarousels()
-    list.value = res as any
-  } catch (error) {
-    console.error(error)
-  } finally {
-    loading.value = false
-  }
-}
-
-function resetForm() {
-  form.id = undefined
-  form.title = ''
-  form.image_url = ''
-  form.link_url = ''
-  form.sort_order = 0
-  form.is_enabled = true
-}
-
-function handleAdd() {
-  resetForm()
-  dialog.title = '新增轮播图'
-  dialog.isEdit = false
-  dialog.visible = true
-}
-
-function handleEdit(row: Carousel) {
-  resetForm()
-  Object.assign(form, row)
-  dialog.title = '编辑轮播图'
-  dialog.isEdit = true
-  dialog.visible = true
-}
-
-async function handleDelete(row: Carousel) {
-  await ElMessageBox.confirm(`确认删除轮播图 "${row.title}" 吗?`, '警告', {
-    type: 'warning'
-  })
-  try {
-    await ContentAPI.deleteCarousel(row.id)
+function handleBannerDelete(row: any) {
+  ElMessageBox.confirm('确认删除该轮播图吗？', '提示', { type: 'warning' }).then(() => {
+    bannerList.value = bannerList.value.filter(item => item.id !== row.id)
     ElMessage.success('删除成功')
-    fetchList()
-  } catch (error) {
-    // handled
-  }
+  })
 }
 
-async function handleSubmit() {
-  if (!formRef.value) return
-  await formRef.value.validate()
-  
-  try {
-    if (dialog.isEdit && form.id) {
-      await ContentAPI.updateCarousel(form.id, form)
-      ElMessage.success('更新成功')
-    } else {
-      await ContentAPI.createCarousel(form)
-      ElMessage.success('创建成功')
+function handleBannerSubmit() {
+  if (isEdit.value) {
+    const index = bannerList.value.findIndex((item: any) => item.id === bannerForm.id)
+    if (index !== -1) {
+      bannerList.value[index] = { ...bannerForm } as any
     }
-    dialog.visible = false
-    fetchList()
-  } catch (error) {
-    ElMessage.error('操作失败')
+    ElMessage.success('更新成功')
+  } else {
+    bannerList.value.push({ ...bannerForm, id: Date.now() } as any)
+    ElMessage.success('创建成功')
   }
+  dialogVisible.value = false
 }
 
-onMounted(() => {
-  fetchList()
-})
+function handleSaveSeo() {
+  ElMessage.success('SEO 配置已保存')
+}
 </script>
 
 <style scoped>
-.mt-20 {
-  margin-top: 20px;
-}
+.app-container { padding: 20px; }
+.filter-container { margin-bottom: 20px; }
 </style>
