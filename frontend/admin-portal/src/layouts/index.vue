@@ -4,6 +4,9 @@
 
     <!-- 设置面板 - 独立于布局组件 -->
     <Settings v-if="isShowSettings" />
+
+    <!-- AI 智能助手 -->
+    <AiAssistant />
   </div>
 </template>
 
@@ -14,6 +17,7 @@ import LeftLayout from "@/layouts/modes/left/index.vue";
 import TopLayout from "@/layouts/modes/top/index.vue";
 import MixLayout from "@/layouts/modes/mix/index.vue";
 import Settings from "./components/Settings/index.vue";
+import AiAssistant from "@/components/AiAssistant/index.vue";
 import { LayoutMode } from "@/enums/settings/layout-enum";
 import { defaultSettings } from "@/settings";
 
