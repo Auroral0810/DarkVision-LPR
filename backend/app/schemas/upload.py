@@ -8,7 +8,6 @@ class RecognizeByUrlRequest(BaseModel):
 class ImageUploadResponse(BaseModel):
     """图片上传响应"""
     url: str
-    signed_url: Optional[str] = None  # 带签名的临时访问URL，用于前端显示
     filename: str
     size: int
     content_type: str

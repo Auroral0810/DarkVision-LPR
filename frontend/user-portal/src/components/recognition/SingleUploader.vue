@@ -198,10 +198,10 @@ const processFile = async (file: File) => {
     // 保存原始OSS URL用于识别
     imageUrl.value = res.data.url
     // 如果有签名URL，用于预览显示
-    if (res.data.signed_url) {
-      previewUrl.value = res.data.signed_url
+    if (res.data.url) {
+      previewUrl.value = res.data.url
+      emit('success', res.data.url)
     }
-    ElMessage.success('图片上传成功')
   } catch (error) {
     console.error(error)
     ElMessage.error('上传失败')

@@ -45,7 +45,7 @@ async def get_recognition_history(
     from app.schemas.history import RecognitionHistoryItem
     history_items = [RecognitionHistoryItem.model_validate(item) for item in items]
     
-    # 为每个item的图片URL生成签名
+    # 处理图片URL（确保本地路径带前缀，OSS直接返回）
     for item in history_items:
         if hasattr(item, 'original_image_url') and item.original_image_url:
             item.original_image_url = get_image_url(item.original_image_url)

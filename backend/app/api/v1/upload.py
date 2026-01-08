@@ -13,7 +13,7 @@ async def upload_image(file: UploadFile = File(...)):
     
     - 接收前端上传的图片文件
     - 将图片上传到OSS
-    - 返回OSS的URL和文件信息（带签名的临时访问URL）
+    - 返回OSS的URL和文件信息
     - 此接口仅负责上传，不做车牌识别
     """
     # 验证文件类型
@@ -36,14 +36,9 @@ async def upload_image(file: UploadFile = File(...)):
         # 上传到OSS
         oss_url = oss_uploader.upload_file(file_content, object_key)
         
-        # 生成带签名的临时访问URL（24小时有效）
-        # 这样前端可以直接访问显示图片
-        signed_url = oss_uploader.generate_presigned_url(object_key, expires=86400)
-        
         # 构造响应数据（转换为字典）
         response_data = {
-            "url": oss_url,  # 原始OSS URL，用于后端识别
-            "signed_url": signed_url,  # 签名URL，用于前端显示
+            "url": oss_url,  # 原始OSS URL，用于后端显示和识别
             "filename": file.filename,
             "size": file_size,
             "content_type": file.content_type

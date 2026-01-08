@@ -1164,9 +1164,9 @@ const handleAvatarUpload = async (file: File) => {
     if (res.code === 20000 && res.data) {
       // 保存原始OSS URL（用于后端保存）
       originalAvatarUrl.value = res.data.url
-      // 使用签名URL用于立即显示
-      userStore.userInfo.avatar_url = res.data.signed_url || res.data.url
-      ElMessage.success('头像上传成功，请点击"保存修改"以保存更改')
+      // 使用原始URL用于立即显示
+      userStore.userInfo.avatar_url = res.data.url
+      ElMessage.success('头像上传成功')
     } else {
       ElMessage.error(res.message || '头像上传失败')
     }
@@ -1201,17 +1201,16 @@ const handleIdCardUpload = async (file: File, type: 'front' | 'back' | 'face') =
     const res: any = await uploadImage(file)
     if (res.code === 20000 && res.data) {
       const url = res.data.url
-      const signedUrl = res.data.signed_url || url
       
       if (type === 'front') {
         verifyForm.idCardFront = url
-        verifyPreview.idCardFront = signedUrl
+        verifyPreview.idCardFront = url
       } else if (type === 'back') {
         verifyForm.idCardBack = url
-        verifyPreview.idCardBack = signedUrl
+        verifyPreview.idCardBack = url
       } else {
         verifyForm.facePhoto = url
-        verifyPreview.facePhoto = signedUrl
+        verifyPreview.facePhoto = url
       }
       ElMessage.success('上传成功')
     } else {
@@ -1256,7 +1255,7 @@ const handleSaveProfile = async () => {
         if (res.code === 20000 && res.data) {
           // 更新store中的用户信息
           userStore.userInfo.nickname = profileForm.nickname
-          // 后端返回的是签名URL，直接使用
+          // 后端返回的是公网URL，直接使用
           userStore.userInfo.avatar_url = res.data.avatar_url || userStore.userInfo.avatar_url
           userStore.userProfile.gender = profileForm.gender as any
           userStore.userProfile.birthday = profileForm.birthday || null
