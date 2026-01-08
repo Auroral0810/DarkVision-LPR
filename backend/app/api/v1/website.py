@@ -25,3 +25,27 @@ async def get_latest_news(db: Session = Depends(get_db)):
     data = [AnnouncementResponse.model_validate(n).model_dump(mode='json') for n in news]
     return success_response(data=data)
 
+@router.get("/website/pricing", summary="获取套餐价格表", response_model=UnifiedResponse)
+def get_pricing_plans(db: Session = Depends(get_db)):
+    """
+    获取公开的套餐及权益详情
+    """
+    from app.services.payment import payment_service
+    packages = payment_service.get_public_packages(db)
+    
+    data = []
+    for pkg in packages:
+        # 将 features 列表转换为字典 {key: value}
+        features_map = {f.feature_key: f.feature_value for f in pkg.features}
+        
+        data.append({
+            "id": pkg.id,
+            "name": pkg.name,
+            "code": pkg.code,
+            "price": float(pkg.price),
+            "duration_months": pkg.duration_months,
+            "description": pkg.description,
+            "features": features_map
+        })
+        
+    return success_response(data=data)

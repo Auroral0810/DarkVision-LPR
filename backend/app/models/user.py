@@ -70,7 +70,9 @@ class UserMembership(Base):
     
     id = Column(BigInteger, primary_key=True, index=True)
     user_id = Column(BigInteger, ForeignKey("users.id"), nullable=False)
-    membership_type = Column(Enum("free", "vip_monthly", "vip_yearly", "enterprise_custom"), nullable=False)
+    # membership_type 字段已废弃，改为关联 packages 表
+    # membership_type = Column(Enum("free", "vip_monthly", "vip_yearly", "enterprise_custom"), nullable=False)
+    package_id = Column(BigInteger, ForeignKey("packages.id"), nullable=False, default=1) # Default to free package ID 1
     start_date = Column(DateTime, nullable=False)
     expire_date = Column(DateTime, nullable=True, comment="永久为NULL")
     is_active = Column(BigInteger, nullable=False, default=1)
@@ -78,6 +80,14 @@ class UserMembership(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     
     user = relationship("User", back_populates="membership")
+    package = relationship("app.models.payment.Package", back_populates="memberships")
+    
+    @property
+    def membership_type(self):
+        """兼容旧代码：返回套餐代码"""
+        if self.package:
+            return self.package.code
+        return "free"
 
 
 class SubAccount(Base):

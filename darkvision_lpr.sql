@@ -285,7 +285,7 @@ CREATE TABLE `operation_logs` (
   PRIMARY KEY (`id`),
   KEY `idx_admin_action` (`admin_id`,`action`),
   KEY `ix_operation_logs_admin_id` (`admin_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='管理员操作日志';
+) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='管理员操作日志';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -329,7 +329,7 @@ CREATE TABLE `package_features` (
   PRIMARY KEY (`id`),
   KEY `package_id` (`package_id`),
   CONSTRAINT `package_features_ibfk_1` FOREIGN KEY (`package_id`) REFERENCES `packages` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=30 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='套餐功能明细（用于对比表）';
+) ENGINE=InnoDB AUTO_INCREMENT=237 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='套餐功能明细（用于对比表）';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -349,7 +349,7 @@ CREATE TABLE `packages` (
   `is_active` tinyint(1) DEFAULT '1',
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='套餐定义';
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='套餐定义';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -373,7 +373,7 @@ CREATE TABLE `page_view_logs` (
   KEY `ix_page_view_logs_id` (`id`),
   KEY `ix_page_view_logs_user_id` (`user_id`),
   CONSTRAINT `page_view_logs_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=412 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=543 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -542,7 +542,7 @@ CREATE TABLE `recognition_results` (
   KEY `idx_processed_at` (`processed_at`),
   CONSTRAINT `recognition_results_ibfk_1` FOREIGN KEY (`task_id`) REFERENCES `recognition_tasks` (`id`) ON DELETE SET NULL,
   CONSTRAINT `recognition_results_ibfk_2` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=49 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='识别结果';
+) ENGINE=InnoDB AUTO_INCREMENT=52 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='识别结果';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -593,7 +593,7 @@ CREATE TABLE `recognition_tasks` (
   KEY `idx_user_status` (`user_id`,`status`),
   KEY `idx_task_uuid` (`task_uuid`),
   CONSTRAINT `recognition_tasks_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
-) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='识别任务主表';
+) ENGINE=InnoDB AUTO_INCREMENT=35 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='识别任务主表';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -689,7 +689,7 @@ CREATE TABLE `system_configs` (
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `config_key` (`config_key`)
-) ENGINE=InnoDB AUTO_INCREMENT=11 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='系统全局配置（限额、SEO、SMTP等）';
+) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='系统全局配置（限额、SEO、SMTP等）';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -708,7 +708,7 @@ CREATE TABLE `system_ip_rules` (
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uniq_ip` (`ip_address`)
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='系统IP规则表(黑白名单)';
+) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='系统IP规则表(黑白名单)';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -779,7 +779,7 @@ DROP TABLE IF EXISTS `user_memberships`;
 CREATE TABLE `user_memberships` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `user_id` bigint NOT NULL,
-  `membership_type` enum('free','vip_monthly','vip_yearly','enterprise_custom') NOT NULL,
+  `package_id` bigint NOT NULL,
   `start_date` datetime NOT NULL,
   `expire_date` datetime DEFAULT NULL COMMENT '永久会员为NULL',
   `is_active` tinyint(1) NOT NULL DEFAULT '1',
@@ -787,6 +787,8 @@ CREATE TABLE `user_memberships` (
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uniq_user_active` (`user_id`,`is_active`),
+  KEY `idx_package_id` (`package_id`),
+  CONSTRAINT `fk_user_memberships_package` FOREIGN KEY (`package_id`) REFERENCES `packages` (`id`) ON DELETE RESTRICT ON UPDATE CASCADE,
   CONSTRAINT `user_memberships_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=8 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='会员状态';
 /*!40101 SET character_set_client = @saved_cs_client */;
@@ -898,4 +900,4 @@ CREATE TABLE `visit_statistics` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-01-08 15:29:24
+-- Dump completed on 2026-01-08 23:55:19

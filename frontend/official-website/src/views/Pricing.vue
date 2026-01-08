@@ -10,75 +10,47 @@
 
     <div class="page-container">
       <div class="pricing-cards">
-        <!-- Free Plan -->
-        <div class="pricing-card">
+        <div 
+          class="pricing-card" 
+          v-for="pkg in packages" 
+          :key="pkg.id"
+          :class="{ featured: pkg.code.includes('vip') }"
+        >
+          <div class="featured-tag" v-if="pkg.code === 'vip_yearly'">推荐 (省33%)</div>
           <div class="card-header">
-            <h2>{{ $t('pricing.free.name') }}</h2>
+            <h2>{{ pkg.name }}</h2>
             <div class="price">
               <span class="currency">¥</span>
-              <span class="amount">0</span>
-              <span class="period">/月</span>
+              <span class="amount">{{ pkg.price == 0 ? (pkg.code === 'enterprise_custom' ? '定制' : '0') : Number(pkg.price) }}</span>
+              <span class="period" v-if="pkg.duration_months">/{{ pkg.duration_months === 12 ? '年' : '月' }}</span>
             </div>
-            <p class="desc">{{ $t('pricing.free.desc') }}</p>
+            <p class="desc">{{ pkg.description }}</p>
           </div>
           <div class="card-body">
             <ul class="features-list">
-              <li><el-icon><Check /></el-icon>每日 20 次免费识别</li>
-              <li><el-icon><Check /></el-icon>单张图片识别 (最大 5MB)</li>
-              <li><el-icon><Check /></el-icon>历史记录保留 7 天</li>
-              <li><el-icon><Check /></el-icon>基础准确率模型</li>
-              <li><el-icon><Check /></el-icon>社区技术支持</li>
+              <!-- 根据关键特性展示，这里手动选取几个重要特性用于卡片展示 -->
+              <li v-if="pkg.features.daily_limit">
+                <el-icon><Check /></el-icon>
+                每日 {{ pkg.features.daily_limit === '0' ? '无限' : pkg.features.daily_limit }} 次识别
+              </li>
+              <li v-if="pkg.features.api_access === 'true'">
+                <el-icon><Check /></el-icon>
+                API 调用支持
+              </li>
+              <li v-if="pkg.features.video_recognition_enabled === 'true'">
+                <el-icon><Check /></el-icon>
+                视频识别支持
+              </li>
+              <li v-if="pkg.features.model_version">
+                 <el-icon><Check /></el-icon>
+                 {{ pkg.features.model_version === 'base' ? '基础精度模型' : '高精度模型 (YOLOv12)' }}
+              </li>
+              <li v-if="pkg.features.cloud_storage_enabled === 'true'">
+                <el-icon><Check /></el-icon>
+                {{ pkg.features.cloud_storage_size_gb === '0' ? '云存储按需' : pkg.features.cloud_storage_size_gb + 'GB 云存储' }}
+              </li>
             </ul>
-            <button class="plan-btn" @click="handleChoose('free')">
-              {{ $t('pricing.choose') }}
-            </button>
-          </div>
-        </div>
-
-        <!-- VIP Plan -->
-        <div class="pricing-card featured">
-          <div class="featured-tag">MOST POPULAR</div>
-          <div class="card-header">
-            <h2>{{ $t('pricing.vip.name') }}</h2>
-            <div class="price">
-              <span class="currency">¥</span>
-              <span class="amount">99</span>
-              <span class="period">/月</span>
-            </div>
-            <p class="desc">{{ $t('pricing.vip.desc') }}</p>
-          </div>
-          <div class="card-body">
-            <ul class="features-list">
-              <li><el-icon><Check /></el-icon>每日 500 次识别 & 5000 次 API 调用</li>
-              <li><el-icon><Check /></el-icon>批量图片识别 (50 张/次)</li>
-              <li><el-icon><Check /></el-icon>视频文件识别 (10 个/月)</li>
-              <li><el-icon><Check /></el-icon>高精度模式 (YOLOv12)</li>
-              <li><el-icon><Check /></el-icon>永久历史记录 & 10GB 云存储</li>
-            </ul>
-            <button class="plan-btn primary" @click="handleChoose('vip')">
-              {{ $t('pricing.choose') }}
-            </button>
-          </div>
-        </div>
-
-        <!-- Enterprise Plan -->
-        <div class="pricing-card">
-          <div class="card-header">
-            <h2>{{ $t('pricing.enterprise.name') }}</h2>
-            <div class="price">
-              <span class="amount">定制</span>
-            </div>
-            <p class="desc">{{ $t('pricing.enterprise.desc') }}</p>
-          </div>
-          <div class="card-body">
-            <ul class="features-list">
-              <li><el-icon><Check /></el-icon>无限次识别 & API 调用</li>
-              <li><el-icon><Check /></el-icon>私有化部署 & 定制化模型训练</li>
-              <li><el-icon><Check /></el-icon>多账户管理 & 团队协作</li>
-              <li><el-icon><Check /></el-icon>SLA 保障 & 专属客户经理</li>
-              <li><el-icon><Check /></el-icon>企业级安全与审计日志</li>
-            </ul>
-            <button class="plan-btn" @click="handleChoose('enterprise')">
+            <button class="plan-btn" :class="{ primary: pkg.code.includes('vip') }" @click="handleChoose(pkg.code)">
               {{ $t('pricing.choose') }}
             </button>
           </div>
@@ -87,7 +59,7 @@
     </div>
 
     <!-- 功能对比表格 -->
-    <div class="comparison-section">
+    <div class="comparison-section" v-if="packages.length > 0">
       <div class="section-container">
         <h2>详细功能对比</h2>
         <div class="table-wrapper">
@@ -95,83 +67,17 @@
             <thead>
               <tr>
                 <th>功能模块</th>
-                <th>普通用户</th>
-                <th class="highlight">VIP用户</th>
-                <th>企业用户</th>
+                <th v-for="pkg in packages" :key="pkg.id" :class="{ highlight: pkg.code.includes('vip') }">
+                  {{ pkg.name }}
+                </th>
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td>单张图片识别</td>
-                <td>20次/日</td>
-                <td class="highlight">500次/日</td>
-                <td>无限</td>
-              </tr>
-              <tr>
-                <td>批量图片识别</td>
-                <td><span class="cross">✕</span></td>
-                <td class="highlight">50张/次</td>
-                <td>1000张/次</td>
-              </tr>
-              <tr>
-                <td>视频识别</td>
-                <td><span class="cross">✕</span></td>
-                <td class="highlight">10个/月</td>
-                <td>无限</td>
-              </tr>
-              <tr>
-                <td>实时摄像头识别</td>
-                <td><span class="cross">✕</span></td>
-                <td class="highlight"><span class="check">✓</span></td>
-                <td><span class="check">✓</span></td>
-              </tr>
-              <tr>
-                <td>历史记录保留</td>
-                <td>7天 (50条)</td>
-                <td class="highlight">永久</td>
-                <td>永久</td>
-              </tr>
-              <tr>
-                <td>高精度模式 (YOLOv12)</td>
-                <td><span class="cross">✕</span></td>
-                <td class="highlight"><span class="check">✓</span></td>
-                <td><span class="check">✓</span></td>
-              </tr>
-              <tr>
-                <td>API 调用</td>
-                <td><span class="cross">✕</span></td>
-                <td class="highlight">5000次/日</td>
-                <td>无限</td>
-              </tr>
-              <tr>
-                <td>云端存储空间</td>
-                <td>0 GB</td>
-                <td class="highlight">10 GB</td>
-                <td>无限</td>
-              </tr>
-              <tr>
-                <td>多账户管理</td>
-                <td><span class="cross">✕</span></td>
-                <td class="highlight"><span class="cross">✕</span></td>
-                <td>50个子账户</td>
-              </tr>
-              <tr>
-                <td>定制化模型</td>
-                <td><span class="cross">✕</span></td>
-                <td class="highlight"><span class="cross">✕</span></td>
-                <td><span class="check">✓</span></td>
-              </tr>
-              <tr>
-                <td>私有化部署</td>
-                <td><span class="cross">✕</span></td>
-                <td class="highlight"><span class="cross">✕</span></td>
-                <td>可选增值服务</td>
-              </tr>
-              <tr>
-                <td>客服支持</td>
-                <td>机器人</td>
-                <td class="highlight">人工优先</td>
-                <td>7×24 专属支持</td>
+              <tr v-for="row in comparisonRows" :key="row.label">
+                <td>{{ row.label }}</td>
+                <td v-for="pkg in packages" :key="pkg.id" :class="{ highlight: pkg.code.includes('vip') }">
+                  <span v-html="formatFeatureValue(row, pkg)"></span>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -182,26 +88,82 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useI18n } from 'vue-i18n'
 import { Check } from '@element-plus/icons-vue'
 import { ElMessage } from 'element-plus'
+import { getPricingPlans } from '../api/website'
 
 const router = useRouter()
 const { t } = useI18n()
 
-const freeFeatures = computed(() => t('pricing.free.features', { returnObjects: true }) as string[])
-const vipFeatures = computed(() => t('pricing.vip.features', { returnObjects: true }) as string[])
-const enterpriseFeatures = computed(() => t('pricing.enterprise.features', { returnObjects: true }) as string[])
+interface Package {
+  id: number
+  name: string
+  code: string
+  price: number
+  duration_months: number | null
+  description: string
+  features: Record<string, string>
+}
 
-const handleChoose = (plan: string) => {
-  if (plan === 'free') {
+const packages = ref<Package[]>([])
+
+const fetchPackages = async () => {
+  try {
+    const res = await getPricingPlans()
+    if (res.code === 20000 && res.data) {
+      packages.value = res.data
+    }
+  } catch (error) {
+    console.error("Failed to fetch pricing plans", error)
+  }
+}
+
+onMounted(() => {
+  fetchPackages()
+})
+
+const handleChoose = (code: string) => {
+  if (code === 'free') {
     router.push('/register')
-  } else {
+  } else if (code === 'enterprise_custom') {
     router.push('/contact')
     ElMessage.info('请联系我们的销售团队获取更多信息')
+  } else {
+    // VIP scenarios
+    router.push({ path: '/register', query: { plan: code } })
   }
+}
+
+// Comparison Table Logic
+interface ComparisonRow {
+  label: string
+  key: string // Primary feature key
+  format?: (pkg: Package) => string
+}
+
+const comparisonRows: ComparisonRow[] = [
+  { label: '每日识别限额', key: 'daily_limit', format: (pkg) => pkg.features.daily_limit === '0' ? '无限' : `${pkg.features.daily_limit}次` },
+  { label: 'API每日限额', key: 'api_daily_limit', format: (pkg) => pkg.features.api_daily_limit === '0' ? (pkg.code === 'free' ? '<span class="cross">✕</span>' : '无限') : `${pkg.features.api_daily_limit}次` },
+  { label: '单张图片识别', key: 'single_image_enabled', format: (pkg) => pkg.features.single_image_enabled === 'true' ? '<span class="check">✓</span>' : '<span class="cross">✕</span>' },
+  { label: '批量图片识别', key: 'batch_upload_enabled', format: (pkg) => pkg.features.batch_upload_enabled === 'true' ? `${pkg.features.batch_upload_max_count}张/次` : '<span class="cross">✕</span>' },
+  { label: '视频识别', key: 'video_recognition_enabled', format: (pkg) => pkg.features.video_recognition_enabled === 'true' ? (pkg.features.video_monthly_limit === '0' ? '无限' : `${pkg.features.video_monthly_limit}个/月`) : '<span class="cross">✕</span>' },
+  { label: '高精度模式 (YOLOv12)', key: 'high_precision_mode', format: (pkg) => pkg.features.high_precision_mode === 'true' ? '<span class="check">✓</span>' : '<span class="cross">✕</span>' },
+  { label: 'API 访问权限', key: 'api_access', format: (pkg) => pkg.features.api_access === 'true' ? '<span class="check">✓</span>' : '<span class="cross">✕</span>' },
+  { label: '云端存储', key: 'cloud_storage_enabled', format: (pkg) => pkg.features.cloud_storage_enabled === 'true' ? (pkg.features.cloud_storage_size_gb === '0' ? '按需' : `${pkg.features.cloud_storage_size_gb}GB`) : '0GB' },
+  { label: '历史记录保留', key: 'history_retention_days', format: (pkg) => pkg.features.history_retention_days === '0' ? '永久' : `${pkg.features.history_retention_days}天` },
+  { label: '多账户管理', key: 'sub_account_enabled', format: (pkg) => pkg.features.sub_account_enabled === 'true' ? `${pkg.features.sub_account_max_count}个` : '<span class="cross">✕</span>' },
+  { label: '私有化部署', key: 'on_premise_deployment', format: (pkg) => pkg.features.on_premise_deployment === 'true' ? '支持' : '<span class="cross">✕</span>' },
+  { label: '客服支持', key: 'priority_support', format: (pkg) => pkg.features.priority_support === 'true' ? (pkg.code.includes('enterprise') ? '7x24专属' : '优先支持') : '社区支持' },
+]
+
+const formatFeatureValue = (row: ComparisonRow, pkg: Package) => {
+  if (row.format) {
+    return row.format(pkg)
+  }
+  return pkg.features[row.key] || '-'
 }
 </script>
 
@@ -209,13 +171,14 @@ const handleChoose = (plan: string) => {
 .pricing-page {
   min-height: 100vh;
   background: #f8fafc;
-  padding-top: 72px; /* Header height */
+  padding-top: 60px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 .page-header {
   background: #0f172a;
   color: white;
-  padding: 80px 24px 120px;
+  padding: 100px 24px 160px;
   text-align: center;
   position: relative;
   overflow: hidden;
@@ -226,7 +189,8 @@ const handleChoose = (plan: string) => {
     left: 0;
     width: 100%;
     height: 100%;
-    background: radial-gradient(circle at 50% 0%, #1e293b 0%, #0f172a 100%);
+    background: radial-gradient(circle at 50% 0%, #3b82f6 0%, #0f172a 60%);
+    opacity: 0.4;
     z-index: 1;
   }
 
@@ -237,62 +201,76 @@ const handleChoose = (plan: string) => {
     margin: 0 auto;
 
     h1 {
-      font-size: 48px;
+      font-size: 56px;
       font-weight: 800;
-      margin-bottom: 16px;
-      letter-spacing: -0.02em;
+      margin-bottom: 24px;
+      letter-spacing: -0.03em;
+      background: linear-gradient(to right, #ffffff, #93c5fd);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
     p {
       font-size: 20px;
-      color: #94a3b8;
+      color: #cbd5e1;
+      font-weight: 400;
+      line-height: 1.6;
     }
   }
 }
 
 .page-container {
-  max-width: 1200px;
-  margin: -80px auto 80px;
-  padding: 0 24px;
+  max-width: 1280px;
+  margin: -100px auto 80px;
+  padding: 0 32px;
   position: relative;
   z-index: 10;
 }
 
 .pricing-cards {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 32px;
-  align-items: start;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 24px;
 }
 
 .pricing-card {
-  background: white;
-  border-radius: 20px;
-  padding: 40px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  border: 1px solid #e2e8f0;
-  transition: all 0.3s ease;
+  flex: 1;
+  min-width: 280px;
+  max-width: 320px;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-radius: 24px;
+  padding: 40px 32px;
+  box-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08); // Softer, deeper shadow
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
+  display: flex;
+  flex-direction: column;
 
   &:hover {
-    transform: translateY(-8px);
-    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+    transform: translateY(-12px);
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.12);
   }
 
   &.featured {
-    border-color: #2563eb;
-    box-shadow: 0 20px 25px -5px rgba(37, 99, 235, 0.1), 0 10px 10px -5px rgba(37, 99, 235, 0.04);
-    transform: scale(1.05);
+    background: #ffffff;
+    border: 2px solid #3b82f6; // Slightly more vibrant blue
+    box-shadow: 0 20px 40px -10px rgba(59, 130, 246, 0.15);
     z-index: 2;
+    transform: scale(1.05);
 
     @media (max-width: 1024px) {
       transform: none;
-      z-index: 1;
+      border-width: 1px;
     }
 
     &:hover {
-      transform: scale(1.05) translateY(-8px);
-      
+      transform: scale(1.05) translateY(-12px);
+      box-shadow: 0 30px 60px -12px rgba(59, 130, 246, 0.25);
+
       @media (max-width: 1024px) {
         transform: translateY(-8px);
       }
@@ -301,26 +279,27 @@ const handleChoose = (plan: string) => {
 
   .featured-tag {
     position: absolute;
-    top: -12px;
+    top: -14px;
     left: 50%;
     transform: translateX(-50%);
-    background: #2563eb;
+    background: linear-gradient(135deg, #3b82f6, #2563eb);
     color: white;
-    padding: 4px 16px;
+    padding: 6px 20px;
     border-radius: 50px;
-    font-size: 12px;
+    font-size: 13px;
     font-weight: 700;
     letter-spacing: 0.05em;
+    box-shadow: 0 4px 6px -1px rgba(59, 130, 246, 0.3);
   }
 
   .card-header {
     text-align: center;
-    margin-bottom: 32px;
+    margin-bottom: 40px;
 
     h2 {
-      font-size: 20px;
-      font-weight: 600;
-      color: #0f172a;
+      font-size: 22px;
+      font-weight: 700;
+      color: #1e293b;
       margin-bottom: 16px;
     }
 
@@ -332,132 +311,168 @@ const handleChoose = (plan: string) => {
       
       .currency {
         font-size: 24px;
-        font-weight: 500;
+        font-weight: 600;
         margin-right: 4px;
+        color: #64748b;
       }
 
       .amount {
-        font-size: 48px;
+        font-size: 56px;
         font-weight: 800;
-        letter-spacing: -0.02em;
+        letter-spacing: -0.04em;
+        line-height: 1;
       }
 
       .period {
         font-size: 16px;
+        font-weight: 500;
         color: #64748b;
-        margin-left: 4px;
+        margin-left: 6px;
       }
     }
 
     .desc {
-      margin-top: 12px;
-      font-size: 14px;
+      margin-top: 16px;
+      font-size: 15px;
       color: #64748b;
+      line-height: 1.5;
     }
   }
 
+  .card-body {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+  }
+
   .features-list {
+    flex: 1;
     list-style: none;
-    margin-bottom: 32px;
+    margin-bottom: 40px;
+    padding: 0;
 
     li {
       display: flex;
-      align-items: center;
+      align-items: start;
       gap: 12px;
       margin-bottom: 16px;
-      color: #334155;
+      color: #475569;
       font-size: 15px;
+      line-height: 1.5;
 
       .el-icon {
-        color: #2563eb;
+        color: #3b82f6;
+        font-size: 18px;
+        margin-top: 2px;
         flex-shrink: 0;
+        background: rgba(59, 130, 246, 0.1);
+        padding: 2px;
+        border-radius: 50%;
       }
     }
   }
 
   .plan-btn {
     width: 100%;
-    padding: 12px;
-    border-radius: 12px;
+    padding: 16px;
+    border-radius: 14px;
     font-weight: 600;
+    font-size: 16px;
     cursor: pointer;
-    transition: all 0.2s;
-    background: white;
-    border: 1px solid #e2e8f0;
-    color: #0f172a;
+    transition: all 0.2s ease;
+    background: transparent;
+    border: 2px solid #e2e8f0;
+    color: #475569;
 
     &:hover {
       background: #f8fafc;
       border-color: #cbd5e1;
+      color: #1e293b;
     }
 
     &.primary {
       background: #2563eb;
       border-color: #2563eb;
       color: white;
+      box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.15);
 
       &:hover {
         background: #1d4ed8;
         border-color: #1d4ed8;
+        box-shadow: 0 10px 15px -3px rgba(37, 99, 235, 0.25);
+        transform: translateY(-2px);
+      }
+      
+      &:active {
+        transform: translateY(0);
       }
     }
   }
 }
 
 .comparison-section {
-  padding: 80px 0;
+  padding: 100px 0;
   background: white;
 
   .section-container {
     max-width: 1000px;
     margin: 0 auto;
-    padding: 0 24px;
+    padding: 0 32px;
 
     h2 {
       text-align: center;
-      font-size: 30px;
-      font-weight: 700;
+      font-size: 36px;
+      font-weight: 800;
       color: #0f172a;
-      margin-bottom: 48px;
+      margin-bottom: 64px;
+      letter-spacing: -0.02em;
     }
   }
 
   .table-wrapper {
     overflow-x: auto;
-    border-radius: 16px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
-    border: 1px solid #e2e8f0;
+    border-radius: 24px;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.05), 0 10px 10px -5px rgba(0, 0, 0, 0.02);
+    border: 1px solid #f1f5f9;
+    background: white;
   }
 
   .comparison-table {
     width: 100%;
-    border-collapse: collapse;
-    background: white;
+    border-collapse: separate;
+    border-spacing: 0;
     
     th, td {
-      padding: 16px 24px;
+      padding: 20px 32px;
       text-align: center;
-      border-bottom: 1px solid #e2e8f0;
-      color: #334155;
+      border-bottom: 1px solid #f1f5f9;
+      color: #475569;
       font-size: 15px;
 
       &:first-child {
         text-align: left;
-        font-weight: 500;
-        color: #0f172a;
-        padding-left: 32px;
-        width: 25%;
+        font-weight: 600;
+        color: #1e293b;
+        position: sticky;
+        left: 0;
+        background: inherit;
+        z-index: 10;
+        border-right: 1px solid #f1f5f9;
+      }
+      
+      &:not(:first-child) {
+        min-width: 160px;
       }
     }
 
     thead {
       th {
         background: #f8fafc;
-        font-weight: 600;
+        font-weight: 700;
         color: #0f172a;
-        font-size: 16px;
-        padding-top: 20px;
-        padding-bottom: 20px;
+        font-size: 18px;
+        padding-top: 32px;
+        padding-bottom: 32px;
         
         &.highlight {
           color: #2563eb;
@@ -473,6 +488,10 @@ const handleChoose = (plan: string) => {
 
       tr:hover td {
         background: #f8fafc;
+        
+        &.highlight {
+           background: #dbeafe;
+        }
       }
       
       .highlight {
@@ -481,19 +500,29 @@ const handleChoose = (plan: string) => {
         color: #1e40af;
       }
 
-      tr:hover .highlight {
-        background: #dbeafe;
-      }
-
       .check {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: #dcfce7;
         color: #16a34a;
+        font-size: 16px; 
         font-weight: bold;
-        font-size: 18px;
       }
 
       .cross {
-        color: #cbd5e1;
-        font-size: 18px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        background: #f1f5f9;
+        color: #94a3b8;
+        font-size: 16px;
       }
     }
   }

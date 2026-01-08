@@ -111,7 +111,7 @@ def register_user(db: Session, user_data: UserRegister) -> User:
     # 创建会员记录（FREE用户默认配置）
     user_membership = UserMembership(
         user_id=new_user.id,
-        membership_type="free",
+        package_id=1,  # 默认对应 Free 套餐 (ID=1)
         start_date=datetime.now(),
         expire_date=None,  # 免费用户无过期时间
         is_active=True,
@@ -945,6 +945,23 @@ def get_user_settings(db: Session, user_id: int) -> UserSettingsOut:
         
     # 4. 会员权益
     membership_type = membership.membership_type if membership and membership.is_active else "free"
+    
+    # 数据一致性修正：如果 User 表是 VIP/企业，但 Member 表是 free 或不存在，
+    # 则根据 UserType 给予默认的高级权益
+    if membership_type == "free" or not membership_type:
+        # 获取 user_type 的字符串值
+        u_type = "free"
+        if user.user_type:
+            if hasattr(user.user_type, 'value'):
+                u_type = user.user_type.value
+            else:
+                u_type = str(user.user_type).lower()
+        
+        if u_type == "vip":
+            membership_type = "vip_monthly"  # 默认为月度VIP权益
+        elif u_type == "enterprise":
+            membership_type = "enterprise_custom"
+        
     
     # 权益映射逻辑
     benefit_map = {
