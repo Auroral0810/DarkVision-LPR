@@ -26,6 +26,9 @@ class MembershipBenefit(BaseModel):
     
     # 描述文本
     description: str = ""
+    
+    # 套餐功能详情
+    package_features: Optional[dict] = Field(default_factory=dict)
 
 class UserSettingsOut(BaseModel):
     """账户设置全量信息"""
@@ -35,6 +38,7 @@ class UserSettingsOut(BaseModel):
     phone: Optional[str] = None
     email: Optional[str] = None
     avatar_url: Optional[str] = None
+    user_type: str = "free"
     gender: str = "unknown"
     birthday: Optional[str] = None
     address: Optional[str] = None

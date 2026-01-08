@@ -124,7 +124,7 @@ def register_user(db: Session, user_data: UserRegister) -> User:
     # 发送欢迎邮件（异步，失败不影响注册）
     if user_data.email:
         try:
-            from app.services.email import email_service
+            from app.servicesx.email import email_service
             email_service.send_welcome_email(user_data.email, user_data.nickname)
         except Exception as e:
             logger.warning(f"Failed to send welcome email: {e}")
@@ -944,12 +944,19 @@ def get_user_settings(db: Session, user_id: int) -> UserSettingsOut:
         ))
         
     # 4. 会员权益
-    membership_type = membership.membership_type if membership and membership.is_active else "free"
+    # 4. 会员权益
+    # 优先从会员关联的套餐获取
+    current_package = None
     
-    # 数据一致性修正：如果 User 表是 VIP/企业，但 Member 表是 free 或不存在，
-    # 则根据 UserType 给予默认的高级权益
-    if membership_type == "free" or not membership_type:
-        # 获取 user_type 的字符串值
+    # 确保 membership 被正确加载 (如果 user.membership 是 null 则跳过)
+    if membership and membership.is_active:
+        # 尝试访问关联的 package
+        if membership.package:
+            current_package = membership.package
+    
+    # 如果没有有效会员，或者会员没有关联套餐（旧数据），根据 user_type 兜底
+    target_code = "free"
+    if not current_package:
         u_type = "free"
         if user.user_type:
             if hasattr(user.user_type, 'value'):
@@ -958,64 +965,53 @@ def get_user_settings(db: Session, user_id: int) -> UserSettingsOut:
                 u_type = str(user.user_type).lower()
         
         if u_type == "vip":
-            membership_type = "vip_monthly"  # 默认为月度VIP权益
+            target_code = "vip_monthly" # 默认VIP视作月度
         elif u_type == "enterprise":
-            membership_type = "enterprise_custom"
+            target_code = "enterprise_custom"
+            
+        # 从数据库查询对应套餐
+        from app.models.payment import Package
+        current_package = db.query(Package).filter(Package.code == target_code).first()
         
+        # 最后的兜底：Free
+        if not current_package:
+             current_package = db.query(Package).filter(Package.code == "free").first()
+             
+    # 构建数据
+    membership_type = "free"
+    membership_name = "普通用户"
+    description = "基础识别服务"
+    features_map = {}
     
-    # 权益映射逻辑
-    benefit_map = {
-        "free": {
-            "name": "普通用户",
-            "quota": 10,
-            "batch": False,
-            "video": False,
-            "api": False,
-            "cloud": False,
-            "desc": "基础识别服务"
-        },
-        "vip_monthly": {
-            "name": "月度VIP",
-            "quota": 100,
-            "batch": True,
-            "video": False,
-            "api": False,
-            "cloud": True,
-            "desc": "支持批量和云端存储"
-        },
-        "vip_yearly": {
-            "name": "年度VIP",
-            "quota": 100,
-            "batch": True,
-            "video": True,
-            "api": False,
-            "cloud": True,
-            "desc": "尊享全功能体验（除API）"
-        },
-        "enterprise_custom": {
-            "name": "企业用户",
-            "quota": 1000,
-            "batch": True,
-            "video": True,
-            "api": True,
-            "cloud": True,
-            "desc": "全功能+API调用支持"
-        }
-    }
-    
-    b_data = benefit_map.get(membership_type, benefit_map["free"])
-    
+    if current_package:
+        membership_type = current_package.code
+        membership_name = current_package.name
+        description = current_package.description or ""
+        # 转换 features
+        for f in current_package.features:
+            features_map[f.feature_key] = f.feature_value
+            
+    # 解析常用开关供前端兼容使用
+    # 注意：features_map 中的值通常是字符串 "true"/"false" 或数字字符串
+    # 默认值参考 free 套餐配置
+    daily_quota = int(features_map.get("daily_limit", 10))
+    batch_enabled = features_map.get("batch_upload_enabled", "false") == "true"
+    video_enabled = features_map.get("video_recognition_enabled", "false") == "true"
+    api_enabled = features_map.get("api_access", "false") == "true"
+    cloud_enabled = features_map.get("cloud_storage_enabled", "false") == "true"
+
     benefits = MembershipBenefit(
         membership_type=membership_type,
-        membership_name=b_data["name"],
-        expire_date=membership.expire_date if membership else None,
+        membership_name=membership_name,
+        expire_date=membership.expire_date if membership and membership.is_active else None,
         is_active=True if membership and membership.is_active else (membership_type == "free"),
-        daily_quota=b_data["quota"],
-        batch_recognition=b_data["batch"],
-        video_recognition=b_data["video"],
-        api_access=b_data["api"],
-        cloud_storage=b_data["cloud"],
-        description=b_data["desc"]
+        daily_quota=daily_quota,
+        batch_recognition=batch_enabled,
+        video_recognition=video_enabled,
+        api_access=api_enabled,
+        cloud_storage=cloud_enabled,
+        description=description,
+        package_features=features_map
     )
     
     return UserSettingsOut(
@@ -1024,6 +1020,7 @@ def get_user_settings(db: Session, user_id: int) -> UserSettingsOut:
         phone=user.phone,
         email=user.email,
         avatar_url=get_image_url(user.avatar_url),
+        user_type=user.user_type.value if hasattr(user.user_type, 'value') else user.user_type,
         gender=profile.gender if profile else "unknown",
         birthday=birthday_str,
         address=profile.address if profile else None,
