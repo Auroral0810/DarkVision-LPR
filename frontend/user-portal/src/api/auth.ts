@@ -73,6 +73,11 @@ export function getCurrentUserInfo(): Promise<UnifiedResponse<any>> {
   return request.get('/auth/me')
 }
 
+// 获取账户设置聚合信息
+export function getUserSettings(): Promise<UnifiedResponse<any>> {
+  return request.get('/auth/settings')
+}
+
 export interface VerificationSubmitRequest {
   real_name: string
   id_card_number: string

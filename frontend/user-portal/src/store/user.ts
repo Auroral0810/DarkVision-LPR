@@ -25,6 +25,11 @@ export interface UserInfo {
   daily_quota: number
   used_quota_today: number
   remaining_quota_today: number
+  // 扩展权益 (聚合接口返回)
+  batch_recognition?: boolean
+  video_recognition?: boolean
+  api_access?: boolean
+  cloud_storage?: boolean
 }
 
 export interface UserProfile {
@@ -40,6 +45,12 @@ export interface Membership {
   start_date: string
   expire_date: string | null
   is_active: boolean
+  // 权益
+  daily_quota: number
+  batch_recognition: boolean
+  video_recognition: boolean
+  api_access: boolean
+  cloud_storage: boolean
 }
 
 export interface Verification {
@@ -68,7 +79,7 @@ export interface RecognitionStats {
 }
 
 export interface ThirdPartyLogin {
-  provider: 'wechat' | 'qq' | 'github'
+  provider: 'wechat' | 'qq' | 'github' | 'google' | 'weibo'
   open_id: string
   union_id: string | null
   bound: boolean
@@ -103,7 +114,12 @@ const defaultMembership: Membership = {
   membership_type: 'free',
   start_date: '2026-01-01 00:00:00',
   expire_date: null,
-  is_active: true
+  is_active: true,
+  daily_quota: 10,
+  batch_recognition: false,
+  video_recognition: false,
+  api_access: false,
+  cloud_storage: false
 }
 
 const defaultVerification: Verification = {
@@ -130,7 +146,9 @@ export const useUserStore = defineStore('user', () => {
   const thirdPartyLogins = ref<ThirdPartyLogin[]>([
     { provider: 'wechat', open_id: '', union_id: null, bound: false },
     { provider: 'qq', open_id: '', union_id: null, bound: false },
-    { provider: 'github', open_id: '', union_id: null, bound: false }
+    { provider: 'github', open_id: '', union_id: null, bound: false },
+    { provider: 'google', open_id: '', union_id: null, bound: false },
+    { provider: 'weibo', open_id: '', union_id: null, bound: false }
   ])
   
   const lang = ref(localStorage.getItem('lang') || 'zh-cn')
@@ -145,8 +163,19 @@ export const useUserStore = defineStore('user', () => {
   const isCompany = computed(() => userInfo.value.role === 'COMPANY')
   const isVerified = computed(() => verification.value.status === 'approved')
 
-  // Quotas based on role
+  // Quotas based on membership (dynamic from API if available)
   const quota = computed(() => {
+    if (membership.value.is_active && membership.value.membership_type !== 'free') {
+        return {
+            daily: membership.value.daily_quota,
+            maxBatch: membership.value.batch_recognition ? (membership.value.membership_type === 'enterprise_custom' ? 1000 : 50) : 1,
+            video: membership.value.video_recognition ? (membership.value.membership_type === 'enterprise_custom' ? Infinity : 10) : 0,
+            api: membership.value.api_access ? Infinity : 0,
+            storage: membership.value.cloud_storage ? (membership.value.membership_type === 'enterprise_custom' ? 1000 : 10) : 0
+        }
+    }
+    
+    // Fallback to role-based logic if no detailed membership data
     switch (userInfo.value.role) {
       case 'FREE':
         return { daily: 20, maxBatch: 1, video: 0, api: 0, storage: 0 }
@@ -311,8 +340,22 @@ export const useUserStore = defineStore('user', () => {
     }
     
     // 更新membership信息
-    if (fullUserInfo?.membership_type) {
+    if (fullUserInfo?.membership_benefits) {
+      const b = fullUserInfo.membership_benefits
       membership.value = {
+        membership_type: b.membership_type as MembershipType,
+        start_date: fullUserInfo.created_at || '2026-01-01 00:00:00',
+        expire_date: b.expire_date ?? null,
+        is_active: b.is_active ?? false,
+        daily_quota: b.daily_quota,
+        batch_recognition: b.batch_recognition,
+        video_recognition: b.video_recognition,
+        api_access: b.api_access,
+        cloud_storage: b.cloud_storage
+      }
+    } else if (fullUserInfo?.membership_type) {
+      membership.value = {
+        ...membership.value,
         membership_type: fullUserInfo.membership_type as MembershipType,
         start_date: fullUserInfo.created_at || '2026-01-01 00:00:00',
         expire_date: fullUserInfo.membership_expire_date ?? null,
@@ -405,7 +448,12 @@ export const useUserStore = defineStore('user', () => {
         membership_type: 'vip_monthly',
         start_date: '2026-01-01 00:00:00',
         expire_date: '2026-02-01 00:00:00',
-        is_active: true
+        is_active: true,
+        daily_quota: 100,
+        batch_recognition: true,
+        video_recognition: false,
+        api_access: false,
+        cloud_storage: true
       }
       verification.value.status = 'approved'
     } else if (role === 'COMPANY') {
@@ -414,7 +462,12 @@ export const useUserStore = defineStore('user', () => {
         membership_type: 'enterprise_custom',
         start_date: '2026-01-01 00:00:00',
         expire_date: null,
-        is_active: true
+        is_active: true,
+        daily_quota: 1000,
+        batch_recognition: true,
+        video_recognition: true,
+        api_access: true,
+        cloud_storage: true
       }
       verification.value.status = 'approved'
     } else {
@@ -423,7 +476,12 @@ export const useUserStore = defineStore('user', () => {
         membership_type: 'free',
         start_date: '2026-01-01 00:00:00',
         expire_date: null,
-        is_active: true
+        is_active: true,
+        daily_quota: 10,
+        batch_recognition: false,
+        video_recognition: false,
+        api_access: false,
+        cloud_storage: false
       }
       verification.value.status = 'pending'
     }

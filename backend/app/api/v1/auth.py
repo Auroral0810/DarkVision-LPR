@@ -23,8 +23,10 @@ from app.services.auth import (
     get_user_by_id,
     logout_user,
     reset_password,
-    log_login_attempt
+    log_login_attempt,
+    get_user_settings
 )
+from app.schemas.settings import UserSettingsOut
 from app.services.verification import verification_service
 from app.core.exceptions import UnauthorizedException, TokenInvalidException, ParameterException
 from app.api.deps import get_current_user as deps_get_current_user
@@ -369,3 +371,17 @@ def reset_password_endpoint(
     reset_password(db, reset_data)
     
     return success(message="密码重置成功，请重新登录")
+
+
+@router.get("/settings", response_model=UnifiedResponse, summary="获取账户设置聚合信息", tags=["认证"])
+def get_settings(
+    current_user: User = Depends(deps_get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    专门用于个人中心/账户设置页面的接口
+    
+    聚合了基本信息、实名状态、第三方登录、会员权益等
+    """
+    settings_data = get_user_settings(db, current_user.id)
+    return success(data=settings_data.model_dump(mode='json'), message="获取成功")

@@ -44,6 +44,7 @@ class User(Base):
     membership = relationship("UserMembership", back_populates="user", uselist=False)
     real_name_verification = relationship("RealNameVerification", back_populates="user", uselist=False, foreign_keys="[RealNameVerification.user_id]")
     admin_roles = relationship("AdminRole", back_populates="user")
+    third_party_logins = relationship("ThirdPartyLogin", back_populates="user")
     
     @property
     def is_verified(self) -> bool:
@@ -108,6 +109,19 @@ class RealNameVerification(Base):
     
     user = relationship("User", back_populates="real_name_verification", foreign_keys=[user_id])
     reviewer = relationship("User", foreign_keys=[reviewed_by])
+
+class ThirdPartyLogin(Base):
+    """第三方登录绑定"""
+    __tablename__ = "third_party_logins"
+    
+    id = Column(BigInteger, primary_key=True, index=True)
+    user_id = Column(BigInteger, ForeignKey("users.id"), nullable=False)
+    provider = Column(Enum("wechat", "qq", "github", "google", "weibo"), nullable=False)
+    open_id = Column(String(255), nullable=False)
+    union_id = Column(String(255), nullable=True)
+    created_at = Column(DateTime, server_default=func.now())
+    
+    user = relationship("User", back_populates="third_party_logins")
 
 class LoginLog(Base):
     """登录日志"""

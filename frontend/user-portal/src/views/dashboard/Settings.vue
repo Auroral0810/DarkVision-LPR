@@ -405,6 +405,8 @@
                 <div class="provider-icon" :class="item.provider">
                   <el-icon v-if="item.provider === 'wechat'"><ChatDotRound /></el-icon>
                   <el-icon v-else-if="item.provider === 'qq'"><User /></el-icon>
+                  <el-icon v-else-if="item.provider === 'github'"><Link /></el-icon>
+                  <el-icon v-else-if="item.provider === 'google'"><Postcard /></el-icon>
                   <el-icon v-else><Link /></el-icon>
                 </div>
                 <div class="provider-details">
@@ -726,7 +728,12 @@ import {
 import { ElMessage, ElMessageBox } from 'element-plus'
 import type { FormInstance, FormRules } from 'element-plus'
 import { uploadImage } from '@/api/recognition'
-import { updateProfile, resetPassword, changePassword, sendSmsCode as sendSmsCodeAPI, sendEmailCode as sendEmailCodeAPI, submitVerification, withdrawVerification } from '@/api/auth'
+import { 
+  updateProfile, resetPassword, changePassword, 
+  sendSmsCode as sendSmsCodeAPI, sendEmailCode as sendEmailCodeAPI, 
+  submitVerification, withdrawVerification,
+  getUserSettings
+} from '@/api/auth'
 
 const userStore = useUserStore()
 const activeTab = ref('profile')
@@ -748,6 +755,9 @@ const uploadingIdBack = ref(false)
 const uploadingFace = ref(false)
 const savingProfile = ref(false)
 const submittingVerify = ref(false)
+
+const settingsData = ref<any>(null)
+const loadingSettings = ref(false)
 const showReverifyForm = ref(false)
 const passwordLoading = ref(false)
 const sendingForgotPasswordCode = ref(false)
@@ -1135,7 +1145,9 @@ const getProviderName = (provider: string) => {
   const map: Record<string, string> = {
     wechat: '微信',
     qq: 'QQ',
-    github: 'GitHub'
+    github: 'GitHub',
+    google: 'Google',
+    weibo: '微博'
   }
   return map[provider] || provider
 }
@@ -1143,6 +1155,37 @@ const getProviderName = (provider: string) => {
 
 const formatQuota = (value: number | typeof Infinity) => {
   return value === Infinity ? '无限' : value.toString()
+}
+
+const fetchSettings = async () => {
+    try {
+        loadingSettings.value = true
+        const res = await getUserSettings()
+        if (res.code === 20000 && res.data) {
+            settingsData.value = res.data
+            
+            // 同步数据到各处
+            // 1. 同步到 Store (如有必要，Store 的 updateUserInfo 也可以处理)
+            // 这里我们直接更新本地的 form 数据
+            
+            profileForm.nickname = res.data.nickname
+            profileForm.gender = res.data.gender
+            profileForm.birthday = res.data.birthday || ''
+            profileForm.detailAddress = res.data.address || ''
+            
+            // 实名认证状态
+            verifyForm.realName = res.data.real_name || ''
+            verifyForm.idCardNumber = res.data.id_card_number || ''
+            
+            // 更新 Store
+            userStore.updateUserInfo(res.data)
+            userStore.thirdPartyLogins = res.data.third_party_bindings
+        }
+    } catch (error) {
+        console.error('Failed to fetch settings:', error)
+    } finally {
+        loadingSettings.value = false
+    }
 }
 
 const handleAvatarUpload = async (file: File) => {
@@ -1558,7 +1601,7 @@ const resetVerifyForm = () => {
 }
 
 onMounted(() => {
-  resetProfileForm()
+  fetchSettings()
   resetVerifyForm()
 })
 

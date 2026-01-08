@@ -11,6 +11,7 @@ from app.schemas.user import (
     RealNameVerificationSubmit
 )
 from app.core.cache import get_redis
+from app.schemas.settings import UserSettingsOut, MembershipBenefit, ThirdPartyBinding
 from app.core.logger import logger
 from app.utils.image import get_image_url
 from app.core.exceptions import (
@@ -896,3 +897,124 @@ def withdraw_real_name_verification(db: Session, user_id: int):
         redis_client.delete(f"user_detail:{user_id}")
     
     return True
+
+
+def get_user_settings(db: Session, user_id: int) -> UserSettingsOut:
+    """
+    获取账户设置页面的聚合信息
+    """
+    from app.models.user import User, UserProfile, RealNameVerification, UserMembership, ThirdPartyLogin
+    
+    user = db.query(User).filter(User.id == user_id).first()
+    if not user:
+        raise UserNotFoundException()
+        
+    profile = user.profile
+    verification = user.real_name_verification
+    membership = user.membership
+    
+    # 1. 基本信息
+    # 生日处理：UserProfile.birthday 是 DateTime 类型，转为 YYYY-MM-DD
+    birthday_str = profile.birthday.strftime("%Y-%m-%d") if profile and profile.birthday else None
+    
+    # 2. 实名认证
+    is_verified = (verification.status == "approved") if verification else False
+    verification_status = verification.status if verification else "none"
+    real_name = profile.real_name if profile and is_verified else None
+    # 身份证号脱敏处理
+    id_card_raw = profile.id_card_number if profile and is_verified else None
+    id_card_masked = None
+    if id_card_raw and len(id_card_raw) >= 10:
+        id_card_masked = id_card_raw[:3] + "***********" + id_card_raw[-4:]
+    
+    # 3. 第三方绑定
+    # 支持的提供商列表
+    all_providers = ["wechat", "qq", "github", "google", "weibo"]
+    bound_logins = {l.provider: l for l in user.third_party_logins}
+    
+    third_party_bindings = []
+    for provider in all_providers:
+        login = bound_logins.get(provider)
+        third_party_bindings.append(ThirdPartyBinding(
+            provider=provider,
+            bound=login is not None,
+            nickname=None, # 如果有昵称可以存这里
+            open_id=login.open_id if login else None,
+            created_at=login.created_at if login else None
+        ))
+        
+    # 4. 会员权益
+    membership_type = membership.membership_type if membership and membership.is_active else "free"
+    
+    # 权益映射逻辑
+    benefit_map = {
+        "free": {
+            "name": "普通用户",
+            "quota": 10,
+            "batch": False,
+            "video": False,
+            "api": False,
+            "cloud": False,
+            "desc": "基础识别服务"
+        },
+        "vip_monthly": {
+            "name": "月度VIP",
+            "quota": 100,
+            "batch": True,
+            "video": False,
+            "api": False,
+            "cloud": True,
+            "desc": "支持批量和云端存储"
+        },
+        "vip_yearly": {
+            "name": "年度VIP",
+            "quota": 100,
+            "batch": True,
+            "video": True,
+            "api": False,
+            "cloud": True,
+            "desc": "尊享全功能体验（除API）"
+        },
+        "enterprise_custom": {
+            "name": "企业用户",
+            "quota": 1000,
+            "batch": True,
+            "video": True,
+            "api": True,
+            "cloud": True,
+            "desc": "全功能+API调用支持"
+        }
+    }
+    
+    b_data = benefit_map.get(membership_type, benefit_map["free"])
+    
+    benefits = MembershipBenefit(
+        membership_type=membership_type,
+        membership_name=b_data["name"],
+        expire_date=membership.expire_date if membership else None,
+        is_active=True if membership and membership.is_active else (membership_type == "free"),
+        daily_quota=b_data["quota"],
+        batch_recognition=b_data["batch"],
+        video_recognition=b_data["video"],
+        api_access=b_data["api"],
+        cloud_storage=b_data["cloud"],
+        description=b_data["desc"]
+    )
+    
+    return UserSettingsOut(
+        id=user.id,
+        nickname=user.nickname,
+        phone=user.phone,
+        email=user.email,
+        avatar_url=get_image_url(user.avatar_url),
+        gender=profile.gender if profile else "unknown",
+        birthday=birthday_str,
+        address=profile.address if profile else None,
+        is_verified=is_verified,
+        verification_status=verification_status,
+        real_name=real_name,
+        id_card_number=id_card_masked,
+        reject_reason=verification.reject_reason if verification else None,
+        third_party_bindings=third_party_bindings,
+        membership_benefits=benefits
+    )
