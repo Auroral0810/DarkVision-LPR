@@ -1,5 +1,8 @@
-from fastapi import APIRouter
-from app.api.v1 import auth, captcha, contact, website, recognition, upload, users, websocket, history, analysis, tracking, logs
+from app.api.v1 import (
+    auth, captcha, contact, website, recognition, upload, 
+    users, websocket, history, analysis, tracking, logs
+)
+from app.api.v1.admin import orders, packages, finance
 
 router = APIRouter()
 
@@ -14,4 +17,9 @@ router.include_router(users.router, prefix="/users", tags=["用户"])
 router.include_router(history.router, prefix="/history", tags=["识别历史"])
 router.include_router(analysis.router, prefix="/analysis", tags=["数据分析"])
 router.include_router(tracking.router, prefix="/tracking", tags=["数据统计"])
-router.include_router(logs.router, prefix="/logs", tags=["数据统计"])
+router.include_router(logs.router, prefix="/logs", tags=["日志"])
+
+# Admin routes
+router.include_router(orders.router, prefix="/admin/orders", tags=["管理-订单"])
+router.include_router(packages.router, prefix="/admin/packages", tags=["管理-套餐"])
+router.include_router(finance.router, prefix="/admin/finance", tags=["管理-财务"])

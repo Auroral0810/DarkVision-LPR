@@ -187,19 +187,19 @@ export const lprRoutes: RouteRecordRaw[] = [
     children: [
       {
         path: 'orders',
-        component: () => import('@/views/finance/FinanceMgmt.vue'),
+        component: () => import('@/views/finance/OrderMgmt.vue'),
         name: 'OrderMgmt',
         meta: { title: '订单管理', icon: 'el-icon-Wallet' }
       },
       {
         path: 'packages',
-        component: Placeholder,
+        component: () => import('@/views/finance/PackageMgmt.vue'),
         name: 'PackageMgmt',
         meta: { title: '套餐管理', icon: 'el-icon-Present' }
       },
       {
         path: 'reports',
-        component: Placeholder,
+        component: () => import('@/views/finance/FinanceReport.vue'),
         name: 'FinanceReport',
         meta: { title: '财务报表', icon: 'el-icon-DataAnalysis' }
       }
