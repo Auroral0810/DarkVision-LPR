@@ -4,25 +4,25 @@
       <el-col :span="6">
         <el-card shadow="hover">
           <div class="kpi-label">今日收入</div>
-          <div class="kpi-value">￥{{ stats.kpis?.today_revenue || 0 }}</div>
+          <div class="kpi-value">￥{{ stats?.kpis?.today_revenue || 0 }}</div>
         </el-card>
       </el-col>
       <el-col :span="6">
         <el-card shadow="hover">
           <div class="kpi-label">本月总额</div>
-          <div class="kpi-value">￥{{ stats.kpis?.month_revenue || 0 }}</div>
+          <div class="kpi-value">￥{{ stats?.kpis?.month_revenue || 0 }}</div>
         </el-card>
       </el-col>
       <el-col :span="6">
         <el-card shadow="hover">
           <div class="kpi-label">待支付订单</div>
-          <div class="kpi-value">{{ stats.kpis?.pending_orders || 0 }}</div>
+          <div class="kpi-value">{{ stats?.kpis?.pending_orders || 0 }}</div>
         </el-card>
       </el-col>
       <el-col :span="6">
         <el-card shadow="hover">
           <div class="kpi-label">退款申请</div>
-          <div class="kpi-value">{{ stats.kpis?.refund_pending || 0 }}</div>
+          <div class="kpi-value">{{ stats?.kpis?.refund_pending || 0 }}</div>
         </el-card>
       </el-col>
     </el-row>
@@ -30,12 +30,12 @@
     <el-row :gutter="20" class="mt-4">
       <el-col :span="16">
         <el-card header="营收走势 (最近30天)">
-          <div id="revenue-chart" style="height: 350px;"></div>
+          <div id="revenue-chart" style="height: 350px; width: 100%;"></div>
         </el-card>
       </el-col>
       <el-col :span="8">
         <el-card header="套餐销售占比">
-          <div id="package-pie" style="height: 350px;"></div>
+          <div id="package-pie" style="height: 350px; width: 100%;"></div>
         </el-card>
       </el-col>
     </el-row>
@@ -44,19 +44,23 @@
 
 <script setup lang="ts">
 import { ref, onMounted, nextTick } from 'vue'
-import axios from 'axios'
+import request from '@/utils/request'
 import * as echarts from 'echarts'
 
 const stats = ref<any>({})
 
 async function fetchStats() {
   try {
-    const res = await axios.get('/api/v1/admin/finance/report')
-    stats.value = res.data.data
-    nextTick(() => {
-      initCharts()
-    })
-  } catch (err) {}
+    const data = await request.get('/api/admin/finance/report')
+    if (data) {
+      stats.value = data
+      nextTick(() => {
+        initCharts()
+      })
+    }
+  } catch (err) {
+    console.error('Fetch finance report failed:', err)
+  }
 }
 
 function initCharts() {

@@ -325,6 +325,8 @@ CREATE TABLE `package_features` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `package_id` bigint NOT NULL,
   `feature_key` varchar(100) NOT NULL COMMENT '如 daily_limit',
+  `feature_display_name` varchar(255) DEFAULT NULL,
+  `feature_description` text,
   `feature_value` varchar(255) NOT NULL,
   PRIMARY KEY (`id`),
   KEY `package_id` (`package_id`),
@@ -373,7 +375,7 @@ CREATE TABLE `page_view_logs` (
   KEY `ix_page_view_logs_id` (`id`),
   KEY `ix_page_view_logs_user_id` (`user_id`),
   CONSTRAINT `page_view_logs_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=567 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=588 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -923,4 +925,4 @@ CREATE TABLE `visit_statistics` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-01-09  1:49:52
+-- Dump completed on 2026-01-09  2:42:05

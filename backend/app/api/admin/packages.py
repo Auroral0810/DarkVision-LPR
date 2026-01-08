@@ -4,7 +4,10 @@ from typing import List
 from app.core.database import get_db
 from app.core.response import UnifiedResponse, success_response, error_response
 from app.services.admin.package_service import package_service
-from app.schemas.admin.package import PackageOut, PackageCreate, PackageUpdate, PromotionOut, PromotionCreate
+from app.schemas.admin.package import (
+    PackageOut, PackageCreate, PackageUpdate, 
+    PromotionOut, PromotionCreate, FeatureItem, PackageFeatureUpdate
+)
 
 router = APIRouter()
 
@@ -34,3 +37,13 @@ def get_promotions(db: Session = Depends(get_db)):
 def create_promotion(promo_data: PromotionCreate, db: Session = Depends(get_db)):
     promo = package_service.create_promotion(db, promo_data)
     return success_response(data={"id": promo.id}, message="活动创建成功")
+
+@router.get("/packages/{package_id}/features", response_model=UnifiedResponse[List[FeatureItem]])
+def get_package_features(package_id: int, db: Session = Depends(get_db)):
+    features = package_service.get_package_features(db, package_id)
+    return success_response(data=features)
+
+@router.put("/packages/{package_id}/features", response_model=UnifiedResponse)
+def update_package_features(package_id: int, feature_data: PackageFeatureUpdate, db: Session = Depends(get_db)):
+    package_service.update_package_features(db, package_id, feature_data.features)
+    return success_response(message="套餐权益更新成功")

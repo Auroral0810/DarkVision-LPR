@@ -27,8 +27,8 @@ class Coupon(Base):
     is_active = Column(Boolean, default=True, comment="是否启用")
     created_at = Column(DateTime, server_default=func.now())
     
-    # 关联使用的订单
-    orders = relationship("app.models.payment.Order", back_populates="coupon")
+    # 关联使用的订单 - 暂时注释，因为 orders 表缺少 coupon_id
+    # orders = relationship("app.models.payment.Order", back_populates="coupon")
 
 class Promotion(Base):
     """限时促销活动"""
@@ -38,7 +38,7 @@ class Promotion(Base):
     name = Column(String(100), nullable=False, comment="活动名称")
     package_id = Column(BigInteger, ForeignKey("packages.id"), nullable=False, comment="关联套餐")
     
-    promotional_price = Column(Numeric(10, 2), nullable=False, comment="促销价格")
+    discount_rate = Column(Numeric(5, 2), nullable=False, comment="折扣率")
     
     start_time = Column(DateTime, nullable=False, comment="开始时间")
     end_time = Column(DateTime, nullable=False, comment="结束时间")

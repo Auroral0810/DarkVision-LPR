@@ -36,10 +36,13 @@ class PackageOut(PackageBase):
 class PromotionBase(BaseModel):
     name: str
     package_id: int
-    promotional_price: Decimal
+    discount_rate: Decimal
     start_time: datetime
     end_time: datetime
     is_active: bool = True
+
+class PackageFeatureUpdate(BaseModel):
+    features: List[FeatureItem]
 
 class PromotionCreate(PromotionBase):
     pass

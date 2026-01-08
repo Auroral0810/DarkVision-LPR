@@ -25,7 +25,7 @@ class PackageFeature(Base):
     
     id = Column(BigInteger, primary_key=True, index=True)
     package_id = Column(BigInteger, ForeignKey("packages.id"), nullable=False, index=True)
-    feature_key = Column(String(50), nullable=False, comment="功能键")
+    feature_key = Column(String(100), nullable=False, comment="功能键")
     feature_value = Column(String(255), nullable=False, comment="功能值")
     
     package = relationship("Package", back_populates="features")
@@ -46,4 +46,4 @@ class Order(Base):
     
     user = relationship("app.models.user.User")
     package = relationship("Package")
-    coupon = relationship("app.models.marketing.Coupon", back_populates="orders", uselist=False)
+    # coupon = relationship("app.models.marketing.Coupon", back_populates="orders", uselist=False)

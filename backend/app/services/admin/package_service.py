@@ -66,7 +66,7 @@ class PackageService:
         new_promo = Promotion(
             name=promo_data.name,
             package_id=promo_data.package_id,
-            promotional_price=promo_data.promotional_price,
+            discount_rate=promo_data.discount_rate,
             start_time=promo_data.start_time,
             end_time=promo_data.end_time,
             is_active=promo_data.is_active
@@ -75,5 +75,21 @@ class PackageService:
         db.commit()
         db.refresh(new_promo)
         return new_promo
+
+    def get_package_features(self, db: Session, package_id: int) -> List[PackageFeature]:
+        return db.query(PackageFeature).filter(PackageFeature.package_id == package_id).all()
+
+    def update_package_features(self, db: Session, package_id: int, feature_data: list) -> List[PackageFeature]:
+        # Delete old features and add new ones
+        db.query(PackageFeature).filter(PackageFeature.package_id == package_id).delete()
+        for f in feature_data:
+            new_f = PackageFeature(
+                package_id=package_id,
+                feature_key=f.feature_key,
+                feature_value=f.feature_value
+            )
+            db.add(new_f)
+        db.commit()
+        return self.get_package_features(db, package_id)
 
 package_service = PackageService()

@@ -85,7 +85,7 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import axios from 'axios' // 假设已配置的基础实例或直接使用
+import request from '@/utils/request'
 
 const list = ref([])
 const total = ref(0)
@@ -106,22 +106,20 @@ const orderForm = ref({
 })
 
 async function fetchData() {
-  loading.ref = true
+  loading.value = true
   try {
     const skip = (listQuery.value.page - 1) * listQuery.value.limit
-    const res = await axios.get('/api/v1/admin/orders/', {
+    const data = await request.get('/api/admin/orders/', {
       params: { 
         skip, 
         limit: listQuery.value.limit,
         status: listQuery.value.status || undefined
       }
     })
-    list.value = res.data.data
-    // total.value = res.data.total // 假设后端返回了总数
+    list.value = data || []
   } catch (err) {
-    ElMessage.error('加载订单失败')
   } finally {
-    loading.ref = false
+    loading.value = false
   }
 }
 
@@ -141,23 +139,21 @@ function handleManualOrder() {
 
 async function submitManualOrder() {
   try {
-    await axios.post('/api/v1/admin/orders/manual', orderForm.value)
+    await request.post('/api/admin/orders/manual', orderForm.value)
     ElMessage.success('订单创建成功')
     dialogVisible.value = false
     fetchData()
   } catch (err) {
-    ElMessage.error('创建失败')
   }
 }
 
 async function handleRefund(row: any) {
   try {
     await ElMessageBox.confirm('确定要为该订单办理退款吗？', '提示', { type: 'warning' })
-    await axios.post(`/api/v1/admin/orders/${row.id}/refund`)
+    await request.post(`/api/admin/orders/${row.id}/refund`)
     ElMessage.success('退款申请已提交')
     fetchData()
   } catch (err) {
-    if (err !== 'cancel') ElMessage.error('退款失败')
   }
 }
 
