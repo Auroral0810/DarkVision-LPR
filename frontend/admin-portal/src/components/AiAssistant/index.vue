@@ -228,12 +228,32 @@ const handleExecute = async () => {
 
 // 路由配置映射表（支持扩展）
 const routeConfig = [
-  { keywords: ["用户", "user", "user list"], path: "/system/user", name: "用户管理" },
-  { keywords: ["角色", "role"], path: "/system/role", name: "角色管理" },
-  { keywords: ["菜单", "menu"], path: "/system/menu", name: "菜单管理" },
-  { keywords: ["部门", "dept"], path: "/system/dept", name: "部门管理" },
-  { keywords: ["字典", "dict"], path: "/system/dict", name: "字典管理" },
-  { keywords: ["日志", "log"], path: "/system/log", name: "系统日志" },
+  { keywords: ["用户", "user", "user list", "人员"], path: "/user/list", name: "用户管理" },
+  { keywords: ["实名", "verification", "auth"], path: "/user/verification", name: "实名认证" },
+  { keywords: ["角色", "role"], path: "/permission/role", name: "角色管理" },
+  { keywords: ["权限", "permission"], path: "/permission/management", name: "权限管理" },
+  { keywords: ["管理员", "admin account"], path: "/permission/admin", name: "管理员账户" },
+  { keywords: ["识别任务", "task monitor", "监控"], path: "/recognition/tasks", name: "任务监控" },
+  { keywords: ["识别记录", "record", "history"], path: "/recognition/records", name: "识别记录" },
+  { keywords: ["识别模型", "model", "algorithm"], path: "/recognition/models", name: "模型管理" },
+  { keywords: ["内容", "content", "site"], path: "/content/site", name: "官网内容" },
+  { keywords: ["文档", "doc", "document"], path: "/content/docs", name: "文档管理" },
+  { keywords: ["公告", "announcement", "notice"], path: "/content/announcement", name: "公告管理" },
+  { keywords: ["FAQ", "question", "help"], path: "/content/faq", name: "FAQ管理" },
+  { keywords: ["订单", "order", "payment"], path: "/finance/orders", name: "订单管理" },
+  { keywords: ["套餐", "package", "plan"], path: "/finance/packages", name: "套餐管理" },
+  { keywords: ["财务", "finance", "report"], path: "/finance/reports", name: "财务报表" },
+  { keywords: ["用户统计", "user stats", "analysis"], path: "/statistics/user", name: "用户统计" },
+  { keywords: ["识别统计", "recognition stats"], path: "/statistics/recognition", name: "识别统计" },
+  { keywords: ["看板", "dashboard", "board"], path: "/statistics/board", name: "业务看板" },
+  { keywords: ["操作日志", "operation log", "oplog"], path: "/log/operation", name: "操作日志" },
+  { keywords: ["系统日志", "system log", "syslog"], path: "/log/system", name: "系统日志" },
+  { keywords: ["安全", "security"], path: "/log/security", name: "安全配置" },
+  { keywords: ["配置", "setting", "config"], path: "/setting/base", name: "基础配置" },
+  { keywords: ["限额", "quota", "limit"], path: "/setting/quotas", name: "限额配置" },
+  { keywords: ["邮件", "短信", "sms", "email"], path: "/setting/email-sms", name: "消息通知" },
+  { keywords: ["存储", "storage", "oss"], path: "/external/storage", name: "存储配置" },
+  { keywords: ["备份", "backup"], path: "/backup/data", name: "数据备份" },
 ];
 
 // 根据函数名推断路由（如 getUserInfo -> /system/user）
