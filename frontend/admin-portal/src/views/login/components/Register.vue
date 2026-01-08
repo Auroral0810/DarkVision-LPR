@@ -26,16 +26,16 @@
             <el-tag size="small" effect="dark" type="danger" round>ROOT</el-tag>
           </div>
           <p class="desc">{{ t("login.superAdminDesc") }}</p>
-          
+            
           <!-- 电话联系方式 -->
           <div class="contact-row" @click="copyPhone('15968588744')">
             <el-icon class="phone-icon"><Iphone /></el-icon>
             <span class="phone-number">159 6858 8744</span>
             <el-icon class="copy-icon"><DocumentCopy /></el-icon>
-          </div>
-        </div>
-      </div>
-
+              </div>
+              </div>
+            </div>
+            
       <!-- 用户管理员卡片 -->
       <div class="admin-card normal-admin">
         <div class="card-left">
@@ -47,22 +47,22 @@
           <div class="admin-header">
             <span class="name">{{ t("login.userAdmin") }}</span>
             <el-tag size="small" effect="plain" type="info" round>ADMIN</el-tag>
-          </div>
+              </div>
           <p class="desc">{{ t("login.userAdminDesc") }}</p>
-        </div>
-      </div>
-    </div>
-
+              </div>
+            </div>
+          </div>
+          
     <!-- 底部按钮 -->
     <div class="action-footer">
       <el-button type="primary" class="login-btn" size="large" round @click="toLogin">
         {{ t("login.backToLogin") }}
       </el-button>
-
+          
       <div class="help-tip">
-        <el-icon><InfoFilled /></el-icon>
-        <span>{{ t("login.adminHelpText") }}</span>
-      </div>
+            <el-icon><InfoFilled /></el-icon>
+            <span>{{ t("login.adminHelpText") }}</span>
+          </div>
     </div>
   </div>
 </template>
@@ -138,11 +138,11 @@ const copyPhone = (phone: string) => {
 
   .title {
     font-size: 20px;
-    font-weight: 600;
-    color: var(--el-text-color-primary);
+      font-weight: 600;
+      color: var(--el-text-color-primary);
     margin: 0 0 8px;
   }
-
+  
   .subtitle {
     font-size: 14px;
     color: var(--el-text-color-secondary);
@@ -246,7 +246,7 @@ const copyPhone = (phone: string) => {
       &:hover {
         background: #fff;
         border-color: var(--el-color-primary-light-5);
-        
+      
         .phone-number, .phone-icon {
           color: var(--el-color-primary);
         }
@@ -270,7 +270,7 @@ const copyPhone = (phone: string) => {
         color: var(--el-text-color-regular);
         letter-spacing: 0.5px;
       }
-
+      
       .copy-icon {
         margin-left: 8px;
         font-size: 12px;
@@ -300,7 +300,7 @@ const copyPhone = (phone: string) => {
       box-shadow: var(--el-box-shadow);
     }
   }
-
+  
   .help-tip {
     display: flex;
     align-items: center;

@@ -286,45 +286,27 @@ export const lprRoutes: RouteRecordRaw[] = [
     children: [
       {
         path: 'base',
-        component: () => import('@/views/config/SystemConfig.vue'),
+        component: () => import('@/views/config/BaseConfig.vue'),
         name: 'BaseConfig',
         meta: { title: '基础配置', icon: 'setting' }
       },
       {
         path: 'params',
-        component: () => import('@/views/config/SystemConfig.vue'),
+        component: () => import('@/views/config/RecognitionConfig.vue'),
         name: 'RecogParams',
-        meta: { title: '识别参数', icon: 'el-icon-Operation' },
-        beforeEnter: (to, from, next) => {
-          if (!to.query.tab) {
-            to.query.tab = 'recognition'
-          }
-          next()
-        }
+        meta: { title: '识别参数', icon: 'el-icon-Operation' }
       },
       {
         path: 'quotas',
-        component: () => import('@/views/config/SystemConfig.vue'),
+        component: () => import('@/views/config/QuotaConfig.vue'),
         name: 'UserQuotas',
-        meta: { title: '限额配置', icon: 'el-icon-Histogram' },
-        beforeEnter: (to, from, next) => {
-          if (!to.query.tab) {
-            to.query.tab = 'quota'
-          }
-          next()
-        }
+        meta: { title: '限额配置', icon: 'el-icon-Histogram' }
       },
       {
         path: 'email-sms',
-        component: () => import('@/views/config/SystemConfig.vue'),
+        component: () => import('@/views/config/NoticeConfig.vue'),
         name: 'EmailSms',
-        meta: { title: '邮件 & 短信', icon: 'el-icon-Postcard' },
-        beforeEnter: (to, from, next) => {
-          if (!to.query.tab) {
-            to.query.tab = 'notice'
-          }
-          next()
-        }
+        meta: { title: '邮件 & 短信', icon: 'el-icon-Postcard' }
       }
     ]
   },
