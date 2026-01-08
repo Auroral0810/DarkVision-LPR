@@ -75,16 +75,6 @@ class VerificationService:
         db.add(verification)
         db.commit()
         db.refresh(verification)
-        
-        # 审核后清除用户缓存，确保用户端刷新后能看到最新认证状态
-        try:
-            from app.services.auth import invalidate_user_cache
-            invalidate_user_cache(verification.user_id)
-        except Exception as e:
-            # 记录错误但不阻塞返回
-            from app.core.logger import logger
-            logger.error(f"Failed to invalidate user cache for user {verification.user_id}: {e}")
-            
         return verification
         
     def get_verification_detail(self, db: Session, verification_id: int) -> Optional[RealNameVerification]:
