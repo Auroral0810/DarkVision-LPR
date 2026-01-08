@@ -9,6 +9,8 @@ class FeatureItem(BaseModel):
     feature_description: Optional[str] = None
     feature_value: str
 
+    model_config = ConfigDict(from_attributes=True)
+
 class PackageBase(BaseModel):
     name: str
     code: str
