@@ -59,3 +59,16 @@ class RecognitionStatistic(Base):
     monthly_count = Column(Integer, default=0)
     video_count = Column(Integer, default=0)
     api_count = Column(Integer, default=0)
+
+class RecognitionModel(Base):
+    """模型版本"""
+    __tablename__ = "recognition_models"
+    
+    id = Column(BigInteger, primary_key=True, index=True)
+    version = Column(String(20), unique=True, nullable=False, comment="版本号")
+    name = Column(String(100), nullable=False, comment="模型名称")
+    is_active = Column(Boolean, default=False, nullable=False, comment="是否当前线上模型")
+    accuracy = Column(DECIMAL(5, 2), nullable=True, comment="识别准确率")
+    description = Column(Text, nullable=True, comment="模型描述")
+    file_path = Column(String(255), nullable=True, comment="模型权重路径")
+    created_at = Column(DateTime, server_default=func.now(), comment="创建时间")

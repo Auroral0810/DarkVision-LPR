@@ -115,19 +115,19 @@ export const lprRoutes: RouteRecordRaw[] = [
     children: [
       {
         path: 'tasks',
-        component: () => import('@/views/recognition/TaskMonitor.vue'),
+        component: () => import('@/views/recognition/task/TaskMonitor.vue'),
         name: 'TaskMonitor',
         meta: { title: '任务监控', icon: 'el-icon-VideoPlay' }
       },
       {
         path: 'records',
-        component: () => import('@/views/recognition/RecordManagement.vue'),
+        component: () => import('@/views/recognition/record/RecordList.vue'),
         name: 'RecordMgmt',
-        meta: { title: '识别记录', icon: 'document' }
+        meta: { title: '识别记录', icon: 'el-icon-Document' }
       },
       {
         path: 'models',
-        component: () => import('@/views/recognition/ModelManagement.vue'),
+        component: () => import('@/views/recognition/model/ModelList.vue'),
         name: 'ModelMgmt',
         meta: { title: '模型管理', icon: 'el-icon-Cpu' }
       }

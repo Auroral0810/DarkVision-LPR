@@ -1,112 +1,109 @@
 import request from '@/utils/request'
-import type {
-  RecognitionTask,
-  RecognitionResult,
-  RecognitionListParams,
-  PageResult
-} from '@/types/lpr'
 
-const RECOGNITION_BASE_URL = '/api/v1/admin/recognition'
-
-/**
- * 识别管理 API
- */
-const RecognitionAPI = {
-  /**
-   * 获取识别任务列表
-   */
-  getTaskList(params: RecognitionListParams) {
-    return request<any, PageResult<RecognitionTask>>({
-      url: `${RECOGNITION_BASE_URL}/tasks`,
-      method: 'get',
-      params
-    })
-  },
-
-  /**
-   * 获取活动任务 (实时监控)
-   */
-  getActiveTasks() {
-    return request<any, RecognitionTask[]>({
-      url: `${RECOGNITION_BASE_URL}/tasks/active`,
-      method: 'get'
-    })
-  },
-
-  /**
-   * 重试失败任务
-   */
-  retryTask(taskId: number) {
-    return request({
-      url: `${RECOGNITION_BASE_URL}/tasks/${taskId}/retry`,
-      method: 'post'
-    })
-  },
-
-  /**
-   * 获取识别结果列表
-   */
-  getRecognitionList(params: RecognitionListParams) {
-    return request<any, PageResult<RecognitionResult>>({
-      url: `${RECOGNITION_BASE_URL}/results`,
-      method: 'get',
-      params
-    })
-  },
-
-  /**
-   * 标记识别结果正确性（质量审核）
-   */
-  auditRecognition(resultId: number, isCorrect: boolean) {
-    return request({
-      url: `${RECOGNITION_BASE_URL}/results/${resultId}/audit`,
-      method: 'post',
-      data: { is_correct: isCorrect }
-    })
-  },
-
-  /**
-   * 批量删除识别结果
-   */
-  batchDeleteRecognitions(resultIds: number[]) {
-    return request({
-      url: `${RECOGNITION_BASE_URL}/results/batch-delete`,
-      method: 'post',
-      data: { result_ids: resultIds }
-    })
-  },
-
-  /**
-   * 导出识别结果
-   */
-  exportRecognitions(params: RecognitionListParams) {
-    return request({
-      url: `${RECOGNITION_BASE_URL}/results/export`,
-      method: 'get',
-      params,
-      responseType: 'blob'
-    })
-  },
-
-  /**
-   * 获取模型列表
-   */
-  getModelList() {
-    return request<any, any[]>({
-      url: `${RECOGNITION_BASE_URL}/models`,
-      method: 'get'
-    })
-  },
-
-  /**
-   * 切换活动模型
-   */
-  switchModel(modelId: number) {
-    return request({
-      url: `${RECOGNITION_BASE_URL}/models/${modelId}/activate`,
-      method: 'post'
-    })
-  }
+export interface RecognitionTask {
+  id: number
+  task_uuid: string
+  user_id: number
+  task_type: string
+  status: string
+  progress: number
+  total_items: number
+  success_count: number
+  failed_count: number
+  started_at: string
+  finished_at: string
+  created_at: string
 }
 
-export default RecognitionAPI
+export interface RecognitionRecord {
+  id: number
+  task_id?: number
+  user_id: number
+  original_image_url: string
+  enhanced_image_url?: string
+  license_plate: string
+  plate_type?: string
+  confidence: number
+  bbox?: any
+  enhance_algorithm?: string
+  model_version?: string
+  processing_time?: number
+  processed_at: string
+  created_at: string
+}
+
+export interface RecognitionModel {
+  id: number
+  version: string
+  name: string
+  is_active: boolean
+  accuracy?: number
+  description?: string
+  file_path?: string
+  created_at: string
+}
+
+const BASE_URL = '/api/admin/recognition'
+
+// --- Tasks ---
+export function getTasks(params: any) {
+  return request({
+    url: `${BASE_URL}/tasks`,
+    method: 'get',
+    params
+  })
+}
+
+export function deleteTask(id: number) {
+  return request({
+    url: `${BASE_URL}/tasks/${id}`,
+    method: 'delete'
+  })
+}
+
+// --- Records ---
+export function getRecords(params: any) {
+  return request({
+    url: `${BASE_URL}/records`,
+    method: 'get',
+    params
+  })
+}
+
+export function deleteRecord(id: number) {
+  return request({
+    url: `${BASE_URL}/records/${id}`,
+    method: 'delete'
+  })
+}
+
+// --- Models ---
+export function getModels() {
+  return request({
+    url: `${BASE_URL}/models`,
+    method: 'get'
+  })
+}
+
+export function createModel(data: any) {
+  return request({
+    url: `${BASE_URL}/models`,
+    method: 'post',
+    data
+  })
+}
+
+export function updateModel(id: number, data: any) {
+  return request({
+    url: `${BASE_URL}/models/${id}`,
+    method: 'put',
+    data
+  })
+}
+
+export function deleteModel(id: number) {
+  return request({
+    url: `${BASE_URL}/models/${id}`,
+    method: 'delete'
+  })
+}
