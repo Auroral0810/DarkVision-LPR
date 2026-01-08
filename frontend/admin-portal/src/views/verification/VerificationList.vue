@@ -26,7 +26,12 @@
         <el-table-column label="申请人" min-width="180">
           <template #default="{ row }">
             <div class="user-cell">
-               <el-avatar :size="32" :src="row.user.avatar_url">
+               <el-avatar 
+                 :size="32" 
+                 :src="row.user.avatar_url" 
+                 style="flex-shrink: 0" 
+                 fit="cover"
+               >
                   {{ row.user.nickname.charAt(0) }}
                </el-avatar>
                <div class="user-info">
