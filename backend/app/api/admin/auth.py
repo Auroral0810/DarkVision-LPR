@@ -118,7 +118,7 @@ def admin_login(
         log_service.create_log(
             db, user.id, "auth", "login", 
             f"Admin login success: {account}", request=request,
-            duration=int((t2 - t1) * 1000), result=json.dumps(log_result, ensure_ascii=False)
+            duration=int((t2 - t1) * 1000), result=log_result
         )
         return success(data=res_data, message="登录成功")
         
@@ -174,7 +174,7 @@ def admin_logout(
     log_service.create_log(
         db, current_user.id, "auth", "logout", 
         f"Admin logout: {current_user.phone}", request=request,
-        duration=int((t2 - t1) * 1000), result=json.dumps(log_result, ensure_ascii=False)
+        duration=int((t2 - t1) * 1000), result=log_result
     )
     
     return success(message="登出成功")

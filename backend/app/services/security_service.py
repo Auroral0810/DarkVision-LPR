@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Session
+from fastapi import HTTPException
 from app.models.system import SystemIpRule
 from app.models.website import SystemConfig
 from app.schemas.admin import system as schemas
@@ -13,6 +14,11 @@ def get_ip_rules(db: Session, rule_type: Optional[str] = None) -> List[SystemIpR
     return query.all()
 
 def add_ip_rule(db: Session, rule_in: schemas.IpRuleCreate) -> SystemIpRule:
+    # 检查IP是否已存在
+    existing = db.query(SystemIpRule).filter(SystemIpRule.ip_address == rule_in.ip_address).first()
+    if existing:
+        raise HTTPException(status_code=400, detail=f"IP {rule_in.ip_address} 已存在于规则列表中")
+        
     rule = SystemIpRule(
         ip_address=rule_in.ip_address,
         type=rule_in.type,

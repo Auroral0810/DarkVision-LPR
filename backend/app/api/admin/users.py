@@ -48,9 +48,9 @@ def create_user(
     log_service.create_log(
         db, current_admin.id, "user", "create", 
         f"Created user {user.phone}", request=request,
-        params=user_in.model_dump_json(),
+        params=user_in,
         duration=int((t2 - t1) * 1000),
-        result=json.dumps(res, ensure_ascii=False)
+        result=res
     )
     return res
 
@@ -133,9 +133,9 @@ def update_user(
     log_service.create_log(
         db, current_admin.id, "user", "update", 
         f"Updated user {db_user.phone}", request=request,
-        params=user_in.model_dump_json(),
+        params=user_in,
         duration=int((t2 - t1) * 1000),
-        result=json.dumps(res, ensure_ascii=False)
+        result=res
     )
     return res
 
@@ -160,9 +160,9 @@ def update_user_type(
     log_service.create_log(
         db, current_admin.id, "user", "update_type", 
         f"Changed user {db_user.phone} type from {old_type} to {type_in.user_type}", 
-        request=request, params=type_in.model_dump_json(),
+        request=request, params=type_in,
         duration=int((t2 - t1) * 1000),
-        result=json.dumps(res, ensure_ascii=False)
+        result=res
     )
     return res
 
@@ -183,9 +183,9 @@ def ban_user(
     log_service.create_log(
         db, current_admin.id, "user", "ban", 
         f"Banned user {db_user.phone} until {req.banned_until}", 
-        request=request, params=req.model_dump_json(),
+        request=request, params=req,
         duration=int((t2 - t1) * 1000),
-        result=json.dumps(res, ensure_ascii=False)
+        result=res
     )
     return res
 
@@ -207,7 +207,7 @@ def unban_user(
         db, current_admin.id, "user", "unban", 
         f"Unbanned user {db_user.phone}", request=request,
         duration=int((t2 - t1) * 1000),
-        result=json.dumps(res, ensure_ascii=False)
+        result=res
     )
     return res
 
@@ -229,7 +229,7 @@ def reset_password(
         db, current_admin.id, "user", "reset_pwd", 
         f"Reset password for user {db_user.phone}", request=request,
         duration=int((t2 - t1) * 1000),
-        result=json.dumps(res, ensure_ascii=False)
+        result=res
     )
     return res
 
@@ -263,7 +263,7 @@ async def force_logout(
         db, current_admin.id, "user", "force_logout", 
         f"Force direct logout for user {db_user.phone if db_user else user_id}", request=request,
         duration=int((t2 - t1) * 1000),
-        result=json.dumps(res, ensure_ascii=False)
+        result=res
     )
     return res
 
@@ -281,8 +281,8 @@ def batch_delete(
     log_service.create_log(
         db, current_admin.id, "user", "batch_delete", 
         f"Batch deleted {count} users", request=request,
-        params=req.model_dump_json(),
+        params=req,
         duration=int((t2 - t1) * 1000),
-        result=json.dumps(res, ensure_ascii=False)
+        result=res
     )
     return res

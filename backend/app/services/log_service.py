@@ -1,8 +1,9 @@
 from sqlalchemy.orm import Session
 from app.models.system import OperationLog
-from typing import Optional
+from typing import Optional, Any
 from datetime import datetime
 from fastapi import Request
+from fastapi.encoders import jsonable_encoder
 import json
 
 def create_log(
@@ -17,8 +18,8 @@ def create_log(
     user_agent: Optional[str] = None,
     status: int = 200,
     duration: Optional[int] = None,
-    result: Optional[str] = None,
-    params: Optional[str] = None,
+    result: Optional[Any] = None,
+    params: Optional[Any] = None,
     request: Optional[Request] = None
 ):
     """记录操作日志"""
@@ -35,6 +36,21 @@ def create_log(
             final_method = request.method if not method else method
             final_path = request.url.path if not path else path
 
+        # 处理序列化
+        final_result = result
+        if result is not None and not isinstance(result, (str, bytes)):
+            try:
+                final_result = json.dumps(jsonable_encoder(result), ensure_ascii=False)
+            except Exception:
+                final_result = str(result)
+        
+        final_params = params
+        if params is not None and not isinstance(params, (str, bytes)):
+            try:
+                final_params = json.dumps(jsonable_encoder(params), ensure_ascii=False)
+            except Exception:
+                final_params = str(params)
+
         log = OperationLog(
             admin_id=admin_id,
             module=module,
@@ -46,8 +62,8 @@ def create_log(
             user_agent=final_ua,
             status=status,
             duration=duration,
-            result=result,
-            params=params
+            result=final_result,
+            params=final_params
         )
         db.add(log)
         db.commit()

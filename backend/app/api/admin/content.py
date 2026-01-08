@@ -36,9 +36,9 @@ def create_carousel(
     log_service.create_log(
         db, admin.id, "content", "create_carousel", 
         f"Created carousel: {item.title}", request=request,
-        params=item_in.model_dump_json(),
+        params=item_in,
         duration=int((t2 - t1) * 1000),
-        result=json.dumps(res, ensure_ascii=False)
+        result=res
     )
     return res
 
@@ -59,9 +59,9 @@ def update_carousel(
     log_service.create_log(
         db, admin.id, "content", "update_carousel", 
         f"Updated carousel: {item.title}", request=request,
-        params=item_in.model_dump_json(),
+        params=item_in,
         duration=int((t2 - t1) * 1000),
-        result=json.dumps(res, ensure_ascii=False)
+        result=res
     )
     return res
 
@@ -82,7 +82,7 @@ def delete_carousel(
         db, admin.id, "content", "delete_carousel", 
         f"Deleted carousel ID: {id}", request=request,
         duration=int((t2 - t1) * 1000),
-        result=json.dumps(res, ensure_ascii=False)
+        result=res
     )
     return res
 
@@ -110,9 +110,9 @@ def create_announcement(
     log_service.create_log(
         db, admin.id, "content", "create_announcement", 
         f"Published announcement: {item.title}", request=request,
-        params=item_in.model_dump_json(),
+        params=item_in,
         duration=int((t2 - t1) * 1000),
-        result=json.dumps(res, ensure_ascii=False)
+        result=res
     )
     return res
 
@@ -133,9 +133,9 @@ def update_announcement(
     log_service.create_log(
         db, admin.id, "content", "update_announcement", 
         f"Updated announcement: {item.title}", request=request,
-        params=item_in.model_dump_json(),
+        params=item_in,
         duration=int((t2 - t1) * 1000),
-        result=json.dumps(res, ensure_ascii=False)
+        result=res
     )
     return res
 
@@ -156,7 +156,7 @@ def delete_announcement(
         db, admin.id, "content", "delete_announcement", 
         f"Deleted announcement ID: {id}", request=request,
         duration=int((t2 - t1) * 1000),
-        result=json.dumps(res, ensure_ascii=False)
+        result=res
     )
     return res
 
@@ -184,9 +184,9 @@ def create_document(
     log_service.create_log(
         db, admin.id, "content", "create_document", 
         f"Created document: {item.title}", request=request,
-        params=item_in.model_dump_json(),
+        params=item_in,
         duration=int((t2 - t1) * 1000),
-        result=json.dumps(res, ensure_ascii=False)
+        result=res
     )
     return res
 
@@ -207,9 +207,9 @@ def update_document(
     log_service.create_log(
         db, admin.id, "content", "update_document", 
         f"Updated document: {item.title}", request=request,
-        params=item_in.model_dump_json(),
+        params=item_in,
         duration=int((t2 - t1) * 1000),
-        result=json.dumps(res, ensure_ascii=False)
+        result=res
     )
     return res
 
@@ -230,7 +230,7 @@ def delete_document(
         db, admin.id, "content", "delete_document", 
         f"Deleted document ID: {id}", request=request,
         duration=int((t2 - t1) * 1000),
-        result=json.dumps(res, ensure_ascii=False)
+        result=res
     )
     return res
 
@@ -257,9 +257,9 @@ def create_faq_category(
     log_service.create_log(
         db, admin.id, "content", "create_faq_category", 
         f"Created FAQ category: {item.name}", request=request,
-        params=item_in.model_dump_json(),
+        params=item_in,
         duration=int((t2 - t1) * 1000),
-        result=json.dumps(res, ensure_ascii=False)
+        result=res
     )
     return res
 
@@ -280,9 +280,9 @@ def update_faq_category(
     log_service.create_log(
         db, admin.id, "content", "update_faq_category", 
         f"Updated FAQ category: {item.name}", request=request,
-        params=item_in.model_dump_json(),
+        params=item_in,
         duration=int((t2 - t1) * 1000),
-        result=json.dumps(res, ensure_ascii=False)
+        result=res
     )
     return res
 
@@ -303,7 +303,7 @@ def delete_faq_category(
         db, admin.id, "content", "delete_faq_category", 
         f"Deleted FAQ category ID: {id}", request=request,
         duration=int((t2 - t1) * 1000),
-        result=json.dumps(res, ensure_ascii=False)
+        result=res
     )
     return res
 
@@ -330,9 +330,9 @@ def create_faq(
     log_service.create_log(
         db, admin.id, "content", "create_faq", 
         f"Created FAQ: {item.question}", request=request,
-        params=item_in.model_dump_json(),
+        params=item_in,
         duration=int((t2 - t1) * 1000),
-        result=json.dumps(res, ensure_ascii=False)
+        result=res
     )
     return res
 
@@ -353,9 +353,9 @@ def update_faq(
     log_service.create_log(
         db, admin.id, "content", "update_faq", 
         f"Updated FAQ: {item.question}", request=request,
-        params=item_in.model_dump_json(),
+        params=item_in,
         duration=int((t2 - t1) * 1000),
-        result=json.dumps(res, ensure_ascii=False)
+        result=res
     )
     return res
 
@@ -376,6 +376,6 @@ def delete_faq(
         db, admin.id, "content", "delete_faq", 
         f"Deleted FAQ ID: {id}", request=request,
         duration=int((t2 - t1) * 1000),
-        result=json.dumps(res, ensure_ascii=False)
+        result=res
     )
     return res

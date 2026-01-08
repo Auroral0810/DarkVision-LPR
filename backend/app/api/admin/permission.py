@@ -47,9 +47,9 @@ def create_permission(
     log_service.create_log(
         db, current_admin.id, "permission", "create", 
         f"Created permission: {perm.name}", request=request,
-        params=perm_in.model_dump_json(),
+        params=perm_in,
         duration=int((t2 - t1) * 1000),
-        result=json.dumps(res, ensure_ascii=False)
+        result=res
     )
     return res
 
@@ -70,9 +70,9 @@ def update_permission(
     log_service.create_log(
         db, current_admin.id, "permission", "update", 
         f"Updated permission: {perm.name}", request=request,
-        params=perm_in.model_dump_json(),
+        params=perm_in,
         duration=int((t2 - t1) * 1000),
-        result=json.dumps(res, ensure_ascii=False)
+        result=res
     )
     return res
 
@@ -93,6 +93,6 @@ def delete_permission(
         db, current_admin.id, "permission", "delete", 
         f"Deleted permission ID: {perm_id}", request=request,
         duration=int((t2 - t1) * 1000),
-        result=json.dumps(res, ensure_ascii=False)
+        result=res
     )
     return res

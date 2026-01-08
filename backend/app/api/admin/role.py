@@ -88,9 +88,9 @@ def create_role(
     log_service.create_log(
         db, current_admin.id, "role", "create", 
         f"Created role: {role.name}", request=request,
-        params=role_in.model_dump_json(),
+        params=role_in,
         duration=int((t2 - t1) * 1000),
-        result=json.dumps(res, ensure_ascii=False)
+        result=res
     )
     return res
 
@@ -111,9 +111,9 @@ def update_role(
     log_service.create_log(
         db, current_admin.id, "role", "update", 
         f"Updated role: {role.name}", request=request,
-        params=role_in.model_dump_json(),
+        params=role_in,
         duration=int((t2 - t1) * 1000),
-        result=json.dumps(res, ensure_ascii=False)
+        result=res
     )
     return res
 
@@ -134,6 +134,6 @@ def delete_role(
         db, current_admin.id, "role", "delete", 
         f"Deleted role ID: {role_id}", request=request,
         duration=int((t2 - t1) * 1000),
-        result=json.dumps(res, ensure_ascii=False)
+        result=res
     )
     return res

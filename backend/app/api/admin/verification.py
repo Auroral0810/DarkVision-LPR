@@ -91,9 +91,9 @@ def audit_verification(
     log_service.create_log(
         db, current_admin.id, "verification", "audit", 
         f"Audited verification ID: {id}, action: {audit_in.action}", 
-        request=request, params=audit_in.model_dump_json(),
+        request=request, params=audit_in,
         duration=int((t2 - t1) * 1000),
-        result=json.dumps(res, ensure_ascii=False)
+        result=res
     )
     
     return res

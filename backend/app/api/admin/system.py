@@ -86,9 +86,9 @@ def add_ip_rule(
     log_service.create_log(
         db, current_admin.id, "system", "add_ip_rule", 
         f"Added IP rule: {rule.ip_address} ({rule.type})", 
-        request=request, params=rule_in.model_dump_json(),
+        request=request, params=rule_in,
         duration=int((t2 - t1) * 1000),
-        result=json.dumps(res, ensure_ascii=False)
+        result=res
     )
     return res
 
@@ -109,7 +109,7 @@ def delete_ip_rule(
         db, current_admin.id, "system", "delete_ip_rule", 
         f"Deleted IP rule ID: {id}", request=request,
         duration=int((t2 - t1) * 1000),
-        result=json.dumps(res, ensure_ascii=False)
+        result=res
     )
     return res
 
@@ -136,8 +136,8 @@ def update_security_config(
     log_service.create_log(
         db, current_admin.id, "system", "update_security_config", 
         f"Updated security configuration", 
-        request=request, params=config_in.model_dump_json(),
+        request=request, params=config_in,
         duration=int((t2 - t1) * 1000),
-        result=json.dumps(res, ensure_ascii=False)
+        result=res
     )
     return res
