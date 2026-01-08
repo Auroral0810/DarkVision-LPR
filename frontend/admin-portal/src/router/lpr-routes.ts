@@ -253,13 +253,13 @@ export const lprRoutes: RouteRecordRaw[] = [
     children: [
       {
         path: 'operation',
-        component: Placeholder,
+        component: () => import('@/views/system/log/OpLog.vue'),
         name: 'OpLog',
         meta: { title: '操作日志', icon: 'el-icon-Document' }
       },
       {
         path: 'system',
-        component: Placeholder,
+        component: () => import('@/views/system/log/SysLog.vue'),
         name: 'SysLog',
         meta: { title: '系统日志', icon: 'el-icon-Warning' }
       },

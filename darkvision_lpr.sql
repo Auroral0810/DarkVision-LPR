@@ -373,7 +373,7 @@ CREATE TABLE `page_view_logs` (
   KEY `ix_page_view_logs_id` (`id`),
   KEY `ix_page_view_logs_user_id` (`user_id`),
   CONSTRAINT `page_view_logs_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=373 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=412 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -693,6 +693,25 @@ CREATE TABLE `system_configs` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `system_ip_rules`
+--
+
+DROP TABLE IF EXISTS `system_ip_rules`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `system_ip_rules` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `ip_address` varchar(45) NOT NULL,
+  `type` enum('allow','deny') NOT NULL DEFAULT 'deny',
+  `remark` varchar(255) DEFAULT NULL,
+  `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `uniq_ip` (`ip_address`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='系统IP规则表(黑白名单)';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `system_logs`
 --
 
@@ -879,4 +898,4 @@ CREATE TABLE `visit_statistics` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-01-08  4:40:23
+-- Dump completed on 2026-01-08 15:29:24

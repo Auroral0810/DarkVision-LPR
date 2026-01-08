@@ -25,3 +25,15 @@ class OperationLog(Base):
 
     # 关系
     admin = relationship("User", foreign_keys=[admin_id])
+
+class SystemIpRule(Base):
+    """系统IP规则表(黑白名单)"""
+    __tablename__ = "system_ip_rules"
+
+    id = Column(BigInteger, primary_key=True, index=True)
+    ip_address = Column(String(45), unique=True, nullable=False, comment="IP地址")
+    type = Column(String(10), nullable=False, default="deny", comment="规则类型: allow/deny")
+    remark = Column(String(255), nullable=True, comment="备注")
+    
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())

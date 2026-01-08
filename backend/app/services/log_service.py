@@ -2,6 +2,8 @@ from sqlalchemy.orm import Session
 from app.models.system import OperationLog
 from typing import Optional
 from datetime import datetime
+from fastapi import Request
+import json
 
 def create_log(
     db: Session,
@@ -16,19 +18,32 @@ def create_log(
     status: int = 200,
     duration: Optional[int] = None,
     result: Optional[str] = None,
-    params: Optional[str] = None
+    params: Optional[str] = None,
+    request: Optional[Request] = None
 ):
     """记录操作日志"""
     try:
+        # 如果提供了 request，自动提取信息
+        final_ip = ip_address
+        final_ua = user_agent
+        final_method = method
+        final_path = path
+
+        if request:
+            final_ip = request.client.host if request.client else ip_address
+            final_ua = request.headers.get("user-agent") if not user_agent else user_agent
+            final_method = request.method if not method else method
+            final_path = request.url.path if not path else path
+
         log = OperationLog(
             admin_id=admin_id,
             module=module,
             action=action,
             description=description,
-            method=method,
-            path=path,
-            ip_address=ip_address,
-            user_agent=user_agent,
+            method=final_method,
+            path=final_path,
+            ip_address=final_ip,
+            user_agent=final_ua,
             status=status,
             duration=duration,
             result=result,
@@ -47,7 +62,9 @@ def list_logs(
     module: Optional[str] = None, 
     admin_id: Optional[int] = None,
     start_time: Optional[datetime] = None,
-    end_time: Optional[datetime] = None
+    end_time: Optional[datetime] = None,
+    order_by: str = "created_at",
+    order_type: str = "desc"
 ):
     query = db.query(OperationLog)
     
@@ -60,7 +77,52 @@ def list_logs(
     if end_time:
         query = query.filter(OperationLog.created_at <= end_time)
         
+    # 动态排序
+    if hasattr(OperationLog, order_by):
+        col = getattr(OperationLog, order_by)
+        if order_type == "asc":
+            query = query.order_by(col.asc())
+        else:
+            query = query.order_by(col.desc())
+    else:
+        query = query.order_by(OperationLog.created_at.desc())
+
     total = query.count()
-    logs = query.order_by(OperationLog.created_at.desc()).offset((page - 1) * page_size).limit(page_size).all()
+    logs = query.offset((page - 1) * page_size).limit(page_size).all()
     
     return logs, total
+
+def get_system_logs(log_type: str = "app", lines: int = 100):
+    """从日志文件读取系统日志"""
+    import os
+    
+    log_dir = "logs"
+    filename = "app.log" if log_type == "app" else "error.log"
+    file_path = os.path.join(log_dir, filename)
+    
+    if not os.path.exists(file_path):
+        return {
+            "content": f"Log file {filename} not found.",
+            "filename": filename,
+            "total_lines": 0
+        }
+        
+    try:
+        with open(file_path, "r", encoding="utf-8") as f:
+            # 读取最后 N 行
+            all_lines = f.readlines()
+            total = len(all_lines)
+            last_lines = all_lines[-lines:] if total > lines else all_lines
+            content = "".join(last_lines)
+            
+            return {
+                "content": content,
+                "filename": filename,
+                "total_lines": total
+            }
+    except Exception as e:
+        return {
+            "content": f"Error reading log file: {str(e)}",
+            "filename": filename,
+            "total_lines": 0
+        }

@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Request
+import time, json
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.response import success, UnifiedResponse
@@ -13,6 +14,7 @@ from app.services.auth import (
     logout_user,
     log_login_attempt
 )
+from app.services import log_service
 from app.services.user import get_admin_detail_info # New import
 from app.services.captcha import captcha_service
 from app.core.exceptions import ParameterException, UnauthorizedException, ResourceNotFoundException
@@ -29,6 +31,7 @@ def admin_login(
     request: Request,
     db: Session = Depends(get_db)
 ):
+    t1 = time.time()
     """
     管理员登录接口（支持手机号或邮箱 + 密码）
     """
@@ -100,14 +103,24 @@ def admin_login(
             from app.core.logger import logger
             logger.error(f"Failed to record admin login stats: {e}")
             
-        return success(
-            data={
-                "access_token": access_token,
-                "token_type": "bearer",
-                "user_info": user_detail.model_dump(mode='json')
-            },
-            message="登录成功"
+        t2 = time.time()
+        res_data = {
+            "access_token": access_token,
+            "token_type": "bearer",
+            "user_info": user_detail.model_dump(mode='json')
+        }
+        log_result = {
+            "code": 20000,
+            "message": "登录成功",
+            "data": res_data
+        }
+        
+        log_service.create_log(
+            db, user.id, "auth", "login", 
+            f"Admin login success: {account}", request=request,
+            duration=int((t2 - t1) * 1000), result=json.dumps(log_result, ensure_ascii=False)
         )
+        return success(data=res_data, message="登录成功")
         
     except (UnauthorizedException, ResourceNotFoundException, ParameterException) as e:
         failure_reason = str(e.detail if hasattr(e, 'detail') else e.message if hasattr(e, 'message') else str(e))
@@ -139,13 +152,29 @@ def get_admin_info(
 
 @router.post("/logout", response_model=UnifiedResponse, summary="管理员登出", tags=["管理员-认证"])
 def admin_logout(
+    request: Request,
     current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
 ):
     """
     管理员登出接口
     
     清除服务器端的token、用户信息缓存和在线状态
     """
+    t1 = time.time()
     logout_user(current_user.id)
+    t2 = time.time()
+    
+    log_result = {
+        "code": 20000,
+        "message": "登出成功",
+        "data": None
+    }
+    
+    log_service.create_log(
+        db, current_user.id, "auth", "logout", 
+        f"Admin logout: {current_user.phone}", request=request,
+        duration=int((t2 - t1) * 1000), result=json.dumps(log_result, ensure_ascii=False)
+    )
     
     return success(message="登出成功")

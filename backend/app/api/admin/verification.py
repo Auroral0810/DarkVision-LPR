@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from sqlalchemy.orm import Session
 from typing import Any
 
@@ -7,6 +7,7 @@ from app.core.response import success_response, UnifiedResponse
 from app.api.deps import get_current_active_admin
 from app.services.verification import verification_service
 from app.utils.image import get_image_url
+from app.services import log_service
 from app.schemas.admin.verification import (
     VerificationListParams, 
     VerificationListItem, 
@@ -48,7 +49,7 @@ def list_verifications(
             "status": v.status,
             "reject_reason": v.reject_reason,
             "created_at": v.created_at,
-            "updated_at": None, # 模型里没起这个名，暂忽略
+            "updated_at": None,
             "reviewed_at": v.reviewed_at,
             "reviewer_id": v.reviewed_by
         }
@@ -65,12 +66,15 @@ def list_verifications(
 def audit_verification(
     id: int,
     audit_in: VerificationAuditRequest,
+    request: Request,
     db: Session = Depends(get_db),
-    current_admin = Depends(get_current_active_admin) # 获取当前管理员ID
+    current_admin = Depends(get_current_active_admin)
 ):
+    import time, json
     if audit_in.action == 'reject' and not audit_in.reject_reason:
         raise HTTPException(status_code=400, detail="驳回必须填写原因")
         
+    t1 = time.time()
     result = verification_service.audit_verification(
         db, 
         verification_id=id, 
@@ -78,8 +82,18 @@ def audit_verification(
         action=audit_in.action, 
         reason=audit_in.reject_reason
     )
+    t2 = time.time()
     
     if not result:
         raise HTTPException(status_code=404, detail="认证记录不存在")
-        
-    return success_response(message="审核完成")
+    
+    res = success_response(message="审核完成")
+    log_service.create_log(
+        db, current_admin.id, "verification", "audit", 
+        f"Audited verification ID: {id}, action: {audit_in.action}", 
+        request=request, params=audit_in.model_dump_json(),
+        duration=int((t2 - t1) * 1000),
+        result=json.dumps(res, ensure_ascii=False)
+    )
+    
+    return res
