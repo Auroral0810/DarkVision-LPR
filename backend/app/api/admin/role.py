@@ -6,9 +6,10 @@ from typing import List
 from app.core.database import get_db
 from app.core.response import success_response, UnifiedResponse
 from app.api.deps import get_current_active_admin
-from app.schemas.admin.role import RoleCreate, RoleUpdate, RoleOut, RoleDetail
-from app.services import role as role_service
+from app.schemas.admin.admin_user import RoleCreate, RoleUpdate, RoleOut
+from app.services.admin.admin_service import admin_service
 from app.services import log_service
+from app.models.role import Role
 
 router = APIRouter()
 
@@ -19,40 +20,44 @@ def get_roles(
     db: Session = Depends(get_db),
     current_admin = Depends(get_current_active_admin)
 ):
-    roles, total = role_service.list_roles(db, skip=(page - 1) * page_size, limit=page_size)
-    list_data = []
+    # Service handles Redis caching and returns either List[Dict] (cached) or List[Role] (db)
+    all_roles = admin_service.get_roles(db)
     
-    # Needs to handle permission IDs extraction if schema requires it, 
-    # but RoleOut defined permission_ids as List[int].
-    # SQLAlchemy model doesn't have `permission_ids` property by default, need to extract.
-    for r in roles:
-        r_out = RoleOut.model_validate(r)
-        # Manually populate permission_ids
-        r_out.permission_ids = [rp.permission_id for rp in r.role_permissions] 
-        list_data.append(r_out)
+    if not all_roles:
+        return success_response(data={"list": [], "total": 0, "page": page, "pageSize": page_size})
+        
+    # Process into list of dicts consistent with schema
+    processed_list = []
+    if isinstance(all_roles[0], dict):
+        processed_list = all_roles
+    else:
+        for r in all_roles:
+            r_out = RoleOut.model_validate(r)
+            r_out.permission_ids = [rp.permission_id for rp in r.role_permissions] 
+            processed_list.append(r_out.model_dump())
+
+    # Pagination
+    total = len(processed_list)
+    start = (page - 1) * page_size
+    end = start + page_size
+    paged_data = processed_list[start:end]
 
     return success_response(data={
-        "list": list_data,
+        "list": paged_data,
         "total": total,
         "page": page,
         "pageSize": page_size
     })
 
-@router.get("/all", summary="获取所有角色(不分页)", response_model=UnifiedResponse)
-def get_all_roles(
-    db: Session = Depends(get_db),
-    current_admin = Depends(get_current_active_admin)
-):
-    roles = role_service.get_all_roles(db)
-    return success_response(data=[RoleOut.model_validate(r) for r in roles])
 
-@router.get("/{role_id}", summary="获取角色详情", response_model=UnifiedResponse)
+@router.get("/{role_id}", summary="获取角色详情", response_model=UnifiedResponse[RoleOut])
 def get_role_detail(
     role_id: int,
     db: Session = Depends(get_db),
     current_admin = Depends(get_current_active_admin)
 ):
-    role = role_service.get_role_by_id(db, role_id)
+    # For detail, we don't usually cache individually in this service yet
+    role = db.query(Role).filter(Role.id == role_id).first()
     if not role:
         raise HTTPException(status_code=404, detail="角色不存在")
     
@@ -82,7 +87,7 @@ def create_role(
     current_admin = Depends(get_current_active_admin)
 ):
     t1 = time.time()
-    role = role_service.create_role(db, role_in)
+    role = admin_service.create_role(db, role_in)
     t2 = time.time()
     res = success_response(data=RoleOut.model_validate(role))
     log_service.create_log(
@@ -103,7 +108,7 @@ def update_role(
     current_admin = Depends(get_current_active_admin)
 ):
     t1 = time.time()
-    role = role_service.update_role(db, role_id, role_in)
+    role = admin_service.update_role(db, role_id, role_in)
     t2 = time.time()
     if not role:
         raise HTTPException(status_code=404, detail="角色不存在")
@@ -125,7 +130,7 @@ def delete_role(
     current_admin = Depends(get_current_active_admin)
 ):
     t1 = time.time()
-    success = role_service.delete_role(db, role_id)
+    success = admin_service.delete_role(db, role_id)
     t2 = time.time()
     if not success:
         raise HTTPException(status_code=404, detail="角色不存在")

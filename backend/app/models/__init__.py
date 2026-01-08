@@ -7,3 +7,4 @@ from .statistics import PageViewLog, VisitStatistics, PageType
 from .recognition import RecognitionTask, RecognitionRecord, RecognitionModel
 from .payment import Package, PackageFeature, Order
 from .marketing import Coupon, Promotion
+from .content import Announcement, Document, Faq, FaqCategory

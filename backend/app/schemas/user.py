@@ -4,6 +4,13 @@ from datetime import datetime
 from app.models.user import UserType, UserStatus
 
 
+# ===== 基础用户Schema =====
+class UserBase(BaseModel):
+    nickname: str
+    phone: Optional[str] = None
+    email: Optional[EmailStr] = None
+    is_active: bool = True
+    
 # ===== 注册相关 =====
 class UserRegister(BaseModel):
     """用户注册（支持手机或邮箱）"""

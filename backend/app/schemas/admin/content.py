@@ -1,39 +1,52 @@
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict, Field
 from typing import Optional, List
 from datetime import datetime
+from enum import Enum
 
-# --- Carousel Schemas ---
+# --- Enums ---
+class DisplayPosition(str, Enum):
+    popup = 'popup'
+    banner = 'banner'
+    message_center = 'message_center'
+
+class DocType(str, Enum):
+    tech = 'tech'
+    service_agreement = 'service_agreement'
+    privacy_policy = 'privacy_policy'
+
+# --- Carousel ---
 class CarouselBase(BaseModel):
-    title: str
-    image_url: str
-    link_url: Optional[str] = None
-    sort_order: Optional[int] = 0
-    is_enabled: Optional[bool] = True
+    title: str = Field(..., max_length=100)
+    image_url: str = Field(..., max_length=255)
+    link_url: Optional[str] = Field(None, max_length=255)
+    sort_order: int = 0
+    is_enabled: bool = True
 
 class CarouselCreate(CarouselBase):
     pass
 
 class CarouselUpdate(BaseModel):
-    title: Optional[str] = None
-    image_url: Optional[str] = None
-    link_url: Optional[str] = None
+    title: Optional[str] = Field(None, max_length=100)
+    image_url: Optional[str] = Field(None, max_length=255)
+    link_url: Optional[str] = Field(None, max_length=255)
     sort_order: Optional[int] = None
     is_enabled: Optional[bool] = None
 
 class CarouselOut(CarouselBase):
     id: int
     created_at: datetime
+
     class Config:
         from_attributes = True
 
-# --- Announcement Schemas ---
+# --- Announcement ---
 class AnnouncementBase(BaseModel):
     title: str
     content: str
-    display_position: str = "top"
+    display_position: DisplayPosition
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
-    is_enabled: Optional[bool] = True
+    is_enabled: bool = True
 
 class AnnouncementCreate(AnnouncementBase):
     pass
@@ -41,7 +54,7 @@ class AnnouncementCreate(AnnouncementBase):
 class AnnouncementUpdate(BaseModel):
     title: Optional[str] = None
     content: Optional[str] = None
-    display_position: Optional[str] = None
+    display_position: Optional[DisplayPosition] = None
     start_time: Optional[datetime] = None
     end_time: Optional[datetime] = None
     is_enabled: Optional[bool] = None
@@ -50,23 +63,22 @@ class AnnouncementOut(AnnouncementBase):
     id: int
     created_by: int
     created_at: datetime
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
-# --- Document Schemas ---
+# --- Document ---
 class DocumentBase(BaseModel):
     title: str
-    doc_type: str # tech, service_agreement, privacy_policy
+    doc_type: DocType
     content: str
     version: str
-    is_current: Optional[bool] = False
+    is_current: bool = False
 
 class DocumentCreate(DocumentBase):
     pass
 
 class DocumentUpdate(BaseModel):
     title: Optional[str] = None
-    doc_type: Optional[str] = None
+    doc_type: Optional[DocType] = None
     content: Optional[str] = None
     version: Optional[str] = None
     is_current: Optional[bool] = None
@@ -75,13 +87,12 @@ class DocumentOut(DocumentBase):
     id: int
     created_by: int
     created_at: datetime
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
-# --- FAQ Schemas ---
+# --- FAQ Category ---
 class FaqCategoryBase(BaseModel):
     name: str
-    sort_order: Optional[int] = 0
+    sort_order: int = 0
 
 class FaqCategoryCreate(FaqCategoryBase):
     pass
@@ -92,15 +103,15 @@ class FaqCategoryUpdate(BaseModel):
 
 class FaqCategoryOut(FaqCategoryBase):
     id: int
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
 
+# --- FAQ ---
 class FaqBase(BaseModel):
     question: str
     answer: str
     category_id: Optional[int] = None
-    sort_order: Optional[int] = 0
-    is_hot: Optional[bool] = False
+    sort_order: int = 0
+    is_hot: bool = False
 
 class FaqCreate(FaqBase):
     pass
@@ -117,5 +128,4 @@ class FaqOut(FaqBase):
     view_count: int
     created_at: datetime
     category: Optional[FaqCategoryOut] = None
-    class Config:
-        from_attributes = True
+    model_config = ConfigDict(from_attributes=True)
