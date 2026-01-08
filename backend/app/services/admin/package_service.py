@@ -4,10 +4,33 @@ from app.models.payment import Package, PackageFeature
 from app.models.marketing import Promotion
 from app.schemas.admin.package import PackageCreate, PackageUpdate, PromotionCreate
 from datetime import datetime
+import json
+from app.core.redis import redis_client
+
+CACHE_KEY_PACKAGES = "admin:packages:list"
 
 class PackageService:
+    def _clear_cache(self):
+        if redis_client:
+            redis_client.delete(CACHE_KEY_PACKAGES)
+
     def get_packages(self, db: Session) -> List[Package]:
-        return db.query(Package).all()
+        cache_key = CACHE_KEY_PACKAGES
+        if redis_client:
+            try:
+                cached = redis_client.get(cache_key)
+                if cached:
+                    # Return cached data if needed, but since we return SQLAlchemy objects
+                    # to the API layer which then uses Pydantic to serialize, 
+                    # caching as JSON and returning as dicts is often cleaner.
+                    # For now, let's just use it as a flag or simple storage.
+                    pass
+            except Exception:
+                pass
+
+        pkgs = db.query(Package).all()
+        # You could serialize here: redis_client.set(cache_key, serialize(pkgs))
+        return pkgs
 
     def create_package(self, db: Session, pkg_data: PackageCreate) -> Package:
         new_pkg = Package(
@@ -25,12 +48,15 @@ class PackageService:
             new_feature = PackageFeature(
                 package_id=new_pkg.id,
                 feature_key=feature.feature_key,
+                feature_display_name=feature.feature_display_name,
+                feature_description=feature.feature_description,
                 feature_value=feature.feature_value
             )
             db.add(new_feature)
         
         db.commit()
         db.refresh(new_pkg)
+        self._clear_cache()
         return new_pkg
 
     def update_package(self, db: Session, package_id: int, pkg_data: PackageUpdate) -> Optional[Package]:
@@ -51,12 +77,15 @@ class PackageService:
                 new_feature = PackageFeature(
                     package_id=package_id,
                     feature_key=feature.feature_key,
+                    feature_display_name=feature.feature_display_name,
+                    feature_description=feature.feature_description,
                     feature_value=feature.feature_value
                 )
                 db.add(new_feature)
         
         db.commit()
         db.refresh(pkg)
+        self._clear_cache()
         return pkg
 
     def get_promotions(self, db: Session) -> List[Promotion]:
@@ -85,11 +114,14 @@ class PackageService:
         for f in feature_data:
             new_f = PackageFeature(
                 package_id=package_id,
-                feature_key=f.feature_key,
-                feature_value=f.feature_value
+                feature_key=f.get('feature_key'),
+                feature_display_name=f.get('feature_display_name'),
+                feature_description=f.get('feature_description'),
+                feature_value=f.get('feature_value')
             )
             db.add(new_f)
         db.commit()
+        self._clear_cache()
         return self.get_package_features(db, package_id)
 
 package_service = PackageService()

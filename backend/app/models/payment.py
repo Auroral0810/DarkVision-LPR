@@ -26,6 +26,8 @@ class PackageFeature(Base):
     id = Column(BigInteger, primary_key=True, index=True)
     package_id = Column(BigInteger, ForeignKey("packages.id"), nullable=False, index=True)
     feature_key = Column(String(100), nullable=False, comment="功能键")
+    feature_display_name = Column(String(255), nullable=True, comment="显示名称")
+    feature_description = Column(Text, nullable=True, comment="详细描述")
     feature_value = Column(String(255), nullable=False, comment="功能值")
     
     package = relationship("Package", back_populates="features")

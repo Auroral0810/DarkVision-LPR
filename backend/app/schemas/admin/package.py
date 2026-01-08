@@ -5,6 +5,8 @@ from decimal import Decimal
 
 class FeatureItem(BaseModel):
     feature_key: str
+    feature_display_name: Optional[str] = None
+    feature_description: Optional[str] = None
     feature_value: str
 
 class PackageBase(BaseModel):

@@ -82,16 +82,24 @@
     <el-drawer v-model="featureDrawerVisible" :title="`权益明细 - ${currentPackage?.name}`" size="500px">
       <el-form label-position="top">
         <el-table :data="featureList" border stripe size="small">
-          <el-table-column label="功能点" prop="feature_key" width="180">
+          <el-table-column label="功能点" width="180">
             <template #default="{ row }">
-              <code style="color: #66b1ff">{{ row.feature_key }}</code>
+              <div class="feature-key-col">
+                <div class="display-name">{{ row.feature_display_name || row.feature_key }}</div>
+                <code class="key-code">{{ row.feature_key }}</code>
+              </div>
             </template>
           </el-table-column>
           <el-table-column label="配置值">
             <template #default="{ row }">
-              <el-switch v-if="isBooleanFeature(row)" v-model="row.feature_value" active-value="true" inactive-value="false" />
-              <el-input-number v-else-if="isNumberFeature(row)" v-model="row.feature_value" :min="0" style="width: 100%" />
-              <el-input v-else v-model="row.feature_value" placeholder="请输入值" />
+              <div style="display: flex; align-items: center; gap: 8px;">
+                <el-switch v-if="isBooleanFeature(row)" v-model="row.feature_value" active-value="true" inactive-value="false" />
+                <el-input-number v-else-if="isNumberFeature(row)" v-model="row.feature_value" :min="0" style="flex: 1" />
+                <el-input v-else v-model="row.feature_value" placeholder="请输入值" style="flex: 1" />
+                <el-tooltip v-if="row.feature_description" :content="row.feature_description" placement="top">
+                  <el-icon><InfoFilled /></el-icon>
+                </el-tooltip>
+              </div>
             </template>
           </el-table-column>
         </el-table>
@@ -105,14 +113,17 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { ElMessage } from 'element-plus'
+import { InfoFilled } from '@element-plus/icons-vue'
 import request from '@/utils/request'
+import { usePackageStore } from '@/store'
 
+const packageStore = usePackageStore()
 const activeTab = ref('packages')
-const packages = ref([])
+const packages = computed(() => packageStore.packages)
 const promotions = ref([])
-const loading = ref(false)
+const loading = computed(() => packageStore.loading)
 const pkgDialogVisible = ref(false)
 const isEdit = ref(false)
 
@@ -133,14 +144,7 @@ const currentPackage = ref<any>(null)
 const featureList = ref<any[]>([])
 
 async function fetchPackages() {
-  loading.value = true
-  try {
-    const data = await request.get('/api/admin/packages/packages')
-    packages.value = (data as any) || []
-  } catch (err) {
-  } finally {
-    loading.value = false
-  }
+  await packageStore.fetchPackages()
 }
 
 async function fetchPromotions() {
@@ -164,10 +168,17 @@ function handleEditPackage(row: any) {
 
 async function submitPackage() {
   try {
+    const submitData = {
+      ...pkgForm.value,
+      features: pkgForm.value.features?.map((f: any) => ({
+        ...f,
+        feature_value: String(f.feature_value)
+      }))
+    }
     if (isEdit.value) {
-      await request.put(`/api/admin/packages/packages/${pkgForm.value.id}`, pkgForm.value)
+      await request.put(`/api/admin/packages/packages/${pkgForm.value.id}`, submitData)
     } else {
-      await request.post('/api/admin/packages/packages', pkgForm.value)
+      await request.post('/api/admin/packages/packages', submitData)
     }
     ElMessage.success('操作成功')
     pkgDialogVisible.value = false
@@ -191,8 +202,13 @@ async function submitFeatures() {
   if (!currentPackage.value) return
   featureLoading.value = true
   try {
+    // 关键修复：确保所有 feature_value 都是字符串
+    const formattedFeatures = featureList.value.map(f => ({
+      ...f,
+      feature_value: String(f.feature_value)
+    }))
     await request.put(`/api/admin/packages/packages/${currentPackage.value.id}/features`, {
-      features: featureList.value
+      features: formattedFeatures
     })
     ElMessage.success('权益更新成功')
     featureDrawerVisible.value = false
@@ -224,4 +240,7 @@ onMounted(() => {
 
 <style scoped>
 .card-header { display: flex; justify-content: space-between; align-items: center; }
+.feature-key-col { display: flex; flex-direction: column; }
+.display-name { font-weight: bold; font-size: 13px; }
+.key-code { font-size: 11px; color: #909399; margin-top: 2px; }
 </style>
