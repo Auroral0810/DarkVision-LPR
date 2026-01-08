@@ -32,6 +32,7 @@ class AiCommandRecord(Base):
     execution_time = Column(Float) # 执行耗时(秒)
     
     # 用户确认情况
+    is_dangerous = Column(Boolean, default=False) # 是否高风险操作
     requires_confirmation = Column(Boolean, default=False)
     user_confirmed = Column(Boolean, default=False)
     

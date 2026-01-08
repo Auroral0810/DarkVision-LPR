@@ -146,7 +146,7 @@ class AiCommandApi {
    */
   static parseCommand(data: AiCommandRequest): Promise<AiCommandResponse> {
     return request<any, AiCommandResponse>({
-      url: "/api/v1/ai/command/parse",
+      url: "/api/admin/ai/command/parse",
       method: "post",
       data,
     });
@@ -160,7 +160,7 @@ class AiCommandApi {
    */
   static executeCommand(data: AiExecuteRequest): Promise<any> {
     return request<any, any>({
-      url: "/api/v1/ai/command/execute",
+      url: "/api/admin/ai/command/execute",
       method: "post",
       data,
     });
@@ -171,7 +171,7 @@ class AiCommandApi {
    */
   static getCommandRecordPage(queryParams: AiCommandRecordPageQuery) {
     return request<any, PageResult<AiCommandRecordVO[]>>({
-      url: "/api/v1/ai/command/records",
+      url: "/api/admin/ai/command/records",
       method: "get",
       params: queryParams,
     });
@@ -182,7 +182,7 @@ class AiCommandApi {
    */
   static rollbackCommand(recordId: string) {
     return request({
-      url: `/api/v1/ai/command/rollback/${recordId}`,
+      url: `/api/admin/ai/command/rollback/${recordId}`,
       method: "post",
     });
   }
