@@ -14,22 +14,30 @@ class PackageService:
         if redis_client:
             redis_client.delete(CACHE_KEY_PACKAGES)
 
-    def get_packages(self, db: Session) -> List[Package]:
+    def get_packages(self, db: Session):
         cache_key = CACHE_KEY_PACKAGES
         if redis_client:
             try:
                 cached = redis_client.get(cache_key)
                 if cached:
-                    # Return cached data if needed, but since we return SQLAlchemy objects
-                    # to the API layer which then uses Pydantic to serialize, 
-                    # caching as JSON and returning as dicts is often cleaner.
-                    # For now, let's just use it as a flag or simple storage.
-                    pass
-            except Exception:
-                pass
+                    print(f"DEBUG: Redis Cache HIT for {cache_key}")
+                    return json.loads(cached)
+                print(f"DEBUG: Redis Cache MISS for {cache_key}")
+            except Exception as e:
+                print(f"DEBUG: Redis Cache Error: {e}")
 
         pkgs = db.query(Package).all()
-        # You could serialize here: redis_client.set(cache_key, serialize(pkgs))
+        
+        if redis_client and pkgs:
+            try:
+                from app.schemas.admin.package import PackageOut
+                # Serialize to JSON-ready dicts
+                serialized = [PackageOut.model_validate(p).model_dump(mode='json') for p in pkgs]
+                redis_client.setex(cache_key, 3600, json.dumps(serialized))
+                print(f"DEBUG: Redis Cache SET for {cache_key}")
+            except Exception as e:
+                print(f"DEBUG: Redis Cache Set Error: {e}")
+                
         return pkgs
 
     def create_package(self, db: Session, pkg_data: PackageCreate) -> Package:
@@ -114,10 +122,10 @@ class PackageService:
         for f in feature_data:
             new_f = PackageFeature(
                 package_id=package_id,
-                feature_key=f.get('feature_key'),
-                feature_display_name=f.get('feature_display_name'),
-                feature_description=f.get('feature_description'),
-                feature_value=f.get('feature_value')
+                feature_key=f.feature_key,
+                feature_display_name=f.feature_display_name,
+                feature_description=f.feature_description,
+                feature_value=f.feature_value
             )
             db.add(new_f)
         db.commit()
