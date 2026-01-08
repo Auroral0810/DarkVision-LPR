@@ -292,21 +292,39 @@ export const lprRoutes: RouteRecordRaw[] = [
       },
       {
         path: 'params',
-        component: Placeholder,
+        component: () => import('@/views/config/SystemConfig.vue'),
         name: 'RecogParams',
-        meta: { title: '识别参数', icon: 'el-icon-Operation' }
+        meta: { title: '识别参数', icon: 'el-icon-Operation' },
+        beforeEnter: (to, from, next) => {
+          if (!to.query.tab) {
+            to.query.tab = 'recognition'
+          }
+          next()
+        }
       },
       {
         path: 'quotas',
-        component: Placeholder,
+        component: () => import('@/views/config/SystemConfig.vue'),
         name: 'UserQuotas',
-        meta: { title: '限额配置', icon: 'el-icon-Histogram' }
+        meta: { title: '限额配置', icon: 'el-icon-Histogram' },
+        beforeEnter: (to, from, next) => {
+          if (!to.query.tab) {
+            to.query.tab = 'quota'
+          }
+          next()
+        }
       },
       {
         path: 'email-sms',
-        component: Placeholder,
+        component: () => import('@/views/config/SystemConfig.vue'),
         name: 'EmailSms',
-        meta: { title: '邮件 & 短信', icon: 'el-icon-Postcard' }
+        meta: { title: '邮件 & 短信', icon: 'el-icon-Postcard' },
+        beforeEnter: (to, from, next) => {
+          if (!to.query.tab) {
+            to.query.tab = 'notice'
+          }
+          next()
+        }
       }
     ]
   },

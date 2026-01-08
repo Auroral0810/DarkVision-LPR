@@ -10,12 +10,11 @@ from app.schemas.admin.system import (
     OperationLogOut, LogListParams, 
     IpRuleOut, IpRuleCreate, IpRuleUpdate,
     SecurityConfigOut, SecurityConfigUpdate,
-    SystemLogOut, SystemLogParams
+    SystemLogOut, SystemLogParams,
+    SystemConfigOut, SystemConfigBatchUpdate
 )
-from app.services import log_service
-import json
-from app.services import user as user_service
-from app.services import security_service
+from app.services import log_service, security_service
+from app.services.admin.system_service import system_service
 
 router = APIRouter()
 
@@ -141,3 +140,43 @@ def update_security_config(
         result=res
     )
     return res
+
+# --- System Config ---
+@router.get("/configs", summary="获取系统配置", response_model=UnifiedResponse)
+def get_all_configs(
+    db: Session = Depends(get_db),
+    current_admin = Depends(get_current_active_admin)
+):
+    configs = system_service.get_grouped_configs(db)
+    return success_response(data=configs)
+
+@router.put("/configs", summary="批量更新系统配置", response_model=UnifiedResponse)
+def update_configs(
+    configs_in: SystemConfigBatchUpdate,
+    request: Request,
+    db: Session = Depends(get_db),
+    current_admin = Depends(get_current_active_admin)
+):
+    t1 = time.time()
+    success = system_service.update_configs(db, configs_in.configs)
+    t2 = time.time()
+    
+    if not success:
+        raise HTTPException(status_code=500, detail="更新配置失败")
+        
+    res = success_response(message="更新成功")
+    log_service.create_log(
+        db, current_admin.id, "system", "update_configs", 
+        f"Updated system configurations: {list(configs_in.configs.keys())}", 
+        request=request, params=configs_in,
+        duration=int((t2 - t1) * 1000),
+        result=res
+    )
+    return res
+
+@router.get("/configs/public", summary="获取公开配置", response_model=UnifiedResponse)
+def get_public_configs(
+    db: Session = Depends(get_db)
+):
+    configs = system_service.get_public_configs(db)
+    return success_response(data=configs)

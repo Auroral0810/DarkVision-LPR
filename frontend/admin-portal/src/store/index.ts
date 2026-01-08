@@ -15,4 +15,5 @@ export * from "./modules/tags-view-store";
 export * from "./modules/user-store";
 export * from "./modules/dict-store";
 export * from "./modules/package-store";
+export * from "./modules/system-config-store";
 export { store };

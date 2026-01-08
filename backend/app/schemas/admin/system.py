@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Dict
 from datetime import datetime
 
 class OperationLogOut(BaseModel):
@@ -74,3 +74,25 @@ class SystemLogOut(BaseModel):
 class SystemLogParams(BaseModel):
     log_type: str = "app"  # app or error
     lines: int = 100
+
+# --- System Config ---
+class SystemConfigBase(BaseModel):
+    config_key: str
+    config_value: str
+    description: Optional[str] = None
+    is_public: bool = False
+
+class SystemConfigOut(SystemConfigBase):
+    id: int
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class SystemConfigUpdate(BaseModel):
+    config_value: str
+    description: Optional[str] = None
+    is_public: Optional[bool] = None
+
+class SystemConfigBatchUpdate(BaseModel):
+    configs: Dict[str, str] # Key -> Value
