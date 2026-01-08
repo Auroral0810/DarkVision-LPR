@@ -5,11 +5,9 @@
         <!-- 基础配置 -->
         <el-tab-pane label="基础配置" name="base">
           <el-form :model="formData.base" label-width="140px" style="max-width: 800px">
-            <el-form-item label="官网标题">
+            <el-divider content-position="left">网站信息</el-divider>
+            <el-form-item label="项目标题">
               <el-input v-model="formData.base['seo_title']" placeholder="例如: DarkVision-LPR - 高精度车牌识别系统" />
-            </el-form-item>
-            <el-form-item label="OSS 域名">
-              <el-input v-model="formData.base['oss_domain']" placeholder="例如: https://oss.example.com" />
             </el-form-item>
             <el-form-item label="服务可用性">
               <el-input v-model="formData.base['service_availability']" placeholder="例如: 99.9%" />
@@ -17,6 +15,29 @@
             <el-form-item label="企业客户数">
               <el-input v-model="formData.base['enterprise_clients']" placeholder="例如: 500+" />
             </el-form-item>
+
+            <el-divider content-position="left">阿里云 OSS 存储</el-divider>
+            <el-form-item label="OSS 域名">
+              <el-input v-model="formData.base['oss_url']" placeholder="例如: https://lucky-yyf.oss-cn-beijing.aliyuncs.com" />
+            </el-form-item>
+            <el-form-item label="OSS Endpoint">
+              <el-input v-model="formData.base['oss_endpoint']" placeholder="例如: oss-cn-beijing.aliyuncs.com" />
+            </el-form-item>
+            <el-form-item label="OSS Bucket">
+              <el-input v-model="formData.base['oss_bucket_name']" />
+            </el-form-item>
+            <el-form-item label="OSS AccessKey">
+              <el-input v-model="formData.base['oss_access_key_id']" />
+            </el-form-item>
+            <el-form-item label="OSS SecretKey">
+              <el-input v-model="formData.base['oss_access_key_secret']" type="password" show-password />
+            </el-form-item>
+
+            <el-divider content-position="left">实名认证 (阿里云市场)</el-divider>
+            <el-form-item label="Market AppCode">
+              <el-input v-model="formData.base['aliyun_market_appcode']" />
+            </el-form-item>
+            
             <el-form-item>
               <el-button type="primary" @click="handleSave('base')">保存基础设置</el-button>
             </el-form-item>
@@ -69,24 +90,40 @@
           <el-form :model="formData.notice" label-width="140px" style="max-width: 800px">
             <el-divider content-position="left">SMTP 邮件服务</el-divider>
             <el-form-item label="SMTP 主机">
-              <el-input v-model="formData.notice['smtp_host']" placeholder="例如: smtp.example.com" />
+              <el-input v-model="formData.notice['mail_host']" placeholder="例如: smtp.163.com" />
             </el-form-item>
             <el-form-item label="SMTP 端口">
-              <el-input v-model="formData.notice['smtp_port']" placeholder="例如: 587" />
+              <el-input v-model="formData.notice['mail_port']" placeholder="例如: 465" />
             </el-form-item>
             <el-form-item label="SMTP 用户">
-              <el-input v-model="formData.notice['smtp_user']" />
+              <el-input v-model="formData.notice['mail_username']" />
             </el-form-item>
             <el-form-item label="SMTP 密码">
-              <el-input v-model="formData.notice['smtp_pass']" type="password" show-password />
+              <el-input v-model="formData.notice['mail_password']" type="password" show-password />
+            </el-form-item>
+            <el-form-item label="发件邮箱">
+              <el-input v-model="formData.notice['mail_from']" />
+            </el-form-item>
+            <el-form-item label="发件人名称">
+              <el-input v-model="formData.notice['mail_from_name']" />
+            </el-form-item>
+            <el-form-item label="安全选项">
+              <el-checkbox v-model="formData.notice['mail_use_ssl']" label="使用 SSL" />
+              <el-checkbox v-model="formData.notice['mail_use_tls']" label="使用 TLS" />
             </el-form-item>
 
             <el-divider content-position="left">短信服务 (SMS)</el-divider>
-            <el-form-item label="SMS AppID">
-              <el-input v-model="formData.notice['sms_appid']" />
+            <el-form-item label="服务提供商">
+              <el-input v-model="formData.notice['sms_provider']" disabled />
             </el-form-item>
-            <el-form-item label="SMS Secret">
-              <el-input v-model="formData.notice['sms_secret']" type="password" show-password />
+            <el-form-item label="SMS 用户">
+              <el-input v-model="formData.notice['sms_user']" />
+            </el-form-item>
+            <el-form-item label="SMS 密钥">
+              <el-input v-model="formData.notice['sms_password']" type="password" show-password />
+            </el-form-item>
+            <el-form-item label="短信签名">
+              <el-input v-model="formData.notice['sms_sign_name']" />
             </el-form-item>
             <el-form-item>
               <el-button type="primary" @click="handleSave('notice')">保存通讯配置</el-button>
@@ -131,6 +168,9 @@ const initFormData = () => {
   formData.base = { ...configs.value.base }
   formData.quota = { ...configs.value.quota }
   formData.notice = { ...configs.value.notice }
+  // 转换布尔值字符串
+  if (formData.notice.mail_use_ssl) formData.notice.mail_use_ssl = formData.notice.mail_use_ssl === 'true'
+  if (formData.notice.mail_use_tls) formData.notice.mail_use_tls = formData.notice.mail_use_tls === 'true'
   
   // 识别参数可能作为单独 key 存储在 recognition 分组下，或者作为一个 recognition.params JSON
   if (configs.value.recognition) {
