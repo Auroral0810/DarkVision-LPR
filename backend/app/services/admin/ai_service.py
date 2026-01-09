@@ -133,7 +133,55 @@ class AiService:
             explanation = "准备为您修改用户密码"
             functions.append(FunctionCallSchema(
                 name="updateUserPassword",
-                arguments={"username": "test", "newPassword": "..."}
+                arguments={"username": "test", "newPassword": "123456(示例)"}
+            ))
+            record.is_dangerous = True
+            
+        # --- Heuristic Rules for Full CRUD Support (Demo Mode) ---
+        elif "创建用户" in cmd or "添加用户" in cmd:
+            # 简单提取：创建用户 手机号 13800000000 密码 123456
+            explanation = "准备为您创建新用户"
+            # 模拟参数提取
+            functions.append(FunctionCallSchema(
+                name="createUser",
+                arguments={"phone": "13800000000", "password": "password123", "nickname": "AI创建用户"}
+            ))
+            record.is_dangerous = True
+
+        elif "发布公告" in cmd:
+            explanation = "准备发布新公告"
+            functions.append(FunctionCallSchema(
+                name="createAnnouncement",
+                arguments={"title": "AI 自动发布公告", "content": "这是一条由 AI 助手发布的测试公告", "type": "info"}
+            ))
+            
+        elif "封禁" in cmd or "禁用" in cmd:
+            explanation = "准备封禁用户"
+            functions.append(FunctionCallSchema(
+                name="banUser",
+                arguments={"user_id": 1, "reason": "违规操作(AI检测)", "duration_days": 3}
+            ))
+            record.is_dangerous = True
+            
+        elif "黑名单" in cmd and "ip" in cmd:
+            explanation = "准备添加 IP 黑名单"
+            functions.append(FunctionCallSchema(
+                name="addIpRule",
+                arguments={"ip": "192.168.1.100", "type": "deny", "remark": "AI 自动拦截"}
+            ))
+            
+        elif "创建角色" in cmd:
+            explanation = "准备创建新角色"
+            functions.append(FunctionCallSchema(
+                name="createRole",
+                arguments={"name": "新角色", "description": "AI 创建的角色", "permission_ids": []}
+            ))
+
+        elif "创建套餐" in cmd:
+            explanation = "准备创建新套餐"
+            functions.append(FunctionCallSchema(
+                name="createPackage",
+                arguments={"name": "AI特惠包", "code": "ai_pkg_001", "price": 99.9, "duration_months": 1, "description": "AI生成的测试套餐"}
             ))
             record.is_dangerous = True
         else:
@@ -172,19 +220,42 @@ class AiService:
         if request.parse_log_id:
             record = db.query(AiCommandRecord).filter(AiCommandRecord.id == request.parse_log_id).first()
 
-        # 2. 权限校验 (略)
+        # 2. 权限校验 (略 - 在 Dispatcher 或 Service 层处理)
         
         # 3. 动态执行逻辑
         fn_name = request.function_call.name
+        args = request.function_call.arguments
         
-        result_data = {"status": "success", "message": f"成功执行了 {fn_name}"}
+        try:
+            # 使用分发器执行
+            from app.services.admin.ai_functions import AiDispatcher
+            result_payload = await AiDispatcher.dispatch(db, user_id, fn_name, args)
+            
+            result_data = {
+                "status": "success", 
+                "message": result_payload.get("message", "操作执行成功"),
+                "data": result_payload
+            }
+            execute_status = "success"
+            error_msg = None
+            
+        except Exception as e:
+            logger.error(f"AI Execute Error: {e}", exc_info=True)
+            result_data = {"status": "error", "message": str(e)}
+            execute_status = "failed"
+            error_msg = str(e)
         
-        # 更新记录状态
+        # 4. 更新记录状态
         if record:
-            record.execute_status = "success"
-            record.execute_result = json.dumps(result_data)
+            record.execute_status = execute_status
+            record.execute_result = json.dumps(result_data, ensure_ascii=False)
             record.execution_time = time.time() - start_time
+            if error_msg:
+                record.execute_error_message = error_msg
             # record.user_confirmed = request.user_confirmed # if passed
             db.commit()
+            
+        if execute_status == "failed":
+            raise Exception(error_msg)
             
         return result_data
