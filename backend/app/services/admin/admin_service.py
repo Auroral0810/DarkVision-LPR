@@ -21,6 +21,26 @@ CACHE_KEY_ADMIN_USERS = "admin:users:list"
 class AdminService:
     def _clear_cache(self, key: str):
         if redis_client: redis_client.delete(key)
+        
+    def _serialize_admin_user(self, u: User) -> Dict[str, Any]:
+        u_out = AdminUserOut.model_validate(u)
+        # is_active mapping
+        u_out.is_active = u.status == "active"
+        # Roles with nested details
+        u_out.roles = []
+        for ar in u.admin_roles:
+            r_out = RoleOut.model_validate(ar.role)
+            r_out.permission_ids = [rp.permission_id for rp in ar.role.role_permissions]
+            u_out.roles.append(r_out)
+        
+        # Profile data
+        if u.profile:
+            u_out.real_name = u.profile.real_name
+            u_out.gender = u.profile.gender
+            u_out.birthday = u.profile.birthday.isoformat() if u.profile.birthday else None
+            u_out.address = u.profile.address
+            
+        return u_out.model_dump(mode='json')
     
     # --- Permissions ---
     def get_permission_tree(self, db: Session) -> List[PermissionOut]:
@@ -168,11 +188,7 @@ class AdminService:
 
         users = db.query(User).filter(User.user_type == UserType.ADMIN).all()
         
-        serialized = []
-        for u in users:
-            u_out = AdminUserOut.model_validate(u)
-            u_out.roles = [RoleOut.model_validate(ar.role) for ar in u.admin_roles]
-            serialized.append(u_out.model_dump(mode='json'))
+        serialized = [self._serialize_admin_user(u) for u in users]
             
         if redis_client and users:
             try:
@@ -191,6 +207,8 @@ class AdminService:
         user = User(
             nickname=data.nickname,
             phone=data.phone,
+            email=data.email,
+            avatar_url=data.avatar_url,
             password_hash=get_password_hash(data.password),
             user_type=UserType.ADMIN,
             status="active"
@@ -198,9 +216,21 @@ class AdminService:
         db.add(user)
         db.flush()
         
-        # Add profile roughly if needed, for real_name
+        # Profile
         from app.models.user import UserProfile
-        profile = UserProfile(user_id=user.id, real_name=data.real_name)
+        from datetime import date
+        bday = None
+        if data.birthday:
+            try: bday = date.fromisoformat(data.birthday)
+            except: pass
+            
+        profile = UserProfile(
+            user_id=user.id, 
+            real_name=data.real_name,
+            gender=data.gender or "unknown",
+            birthday=bday,
+            address=data.address
+        )
         db.add(profile)
         
         # Add roles
@@ -219,11 +249,27 @@ class AdminService:
         
         if data.nickname: user.nickname = data.nickname
         if data.phone: user.phone = data.phone
-        if data.email: user.email = data.email
+        if data.email is not None: user.email = data.email
+        if data.avatar_url is not None: user.avatar_url = data.avatar_url
         if data.password: user.password_hash = get_password_hash(data.password)
         if data.is_active is not None:
              user.status = "active" if data.is_active else "inactive"
              
+        # Profile Update
+        if any([data.real_name is not None, data.gender is not None, data.birthday is not None, data.address is not None]):
+            if not user.profile:
+                from app.models.user import UserProfile
+                user.profile = UserProfile(user_id=id)
+                db.add(user.profile)
+            
+            if data.real_name is not None: user.profile.real_name = data.real_name
+            if data.gender is not None: user.profile.gender = data.gender
+            if data.address is not None: user.profile.address = data.address
+            if data.birthday is not None:
+                from datetime import date
+                try: user.profile.birthday = date.fromisoformat(data.birthday) if data.birthday else None
+                except: pass
+
         if data.role_ids is not None:
             db.query(AdminRole).filter(AdminRole.admin_user_id == id).delete()
             for rid in data.role_ids:

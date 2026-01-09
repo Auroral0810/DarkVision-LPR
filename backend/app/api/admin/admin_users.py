@@ -40,8 +40,7 @@ def create_admin_user(
     t2 = time.time()
     
     # Prep response
-    u_out = AdminUserOut.model_validate(user)
-    u_out.roles = [RoleOut.model_validate(ar.role) for ar in user.admin_roles]
+    u_out = admin_service._serialize_admin_user(user)
     
     res = success_response(data=u_out, message="管理员创建成功")
     log_service.create_log(
@@ -67,8 +66,7 @@ def update_admin_user(
         return error_response(message="管理员不存在")
     t2 = time.time()
     
-    u_out = AdminUserOut.model_validate(user)
-    u_out.roles = [RoleOut.model_validate(ar.role) for ar in user.admin_roles]
+    u_out = admin_service._serialize_admin_user(user)
     
     res = success_response(data=u_out, message="管理员更新成功")
     log_service.create_log(

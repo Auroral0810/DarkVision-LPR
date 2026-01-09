@@ -66,22 +66,45 @@ class AdminUserCreate(BaseModel):
     nickname: str
     phone: str
     password: str
+    email: Optional[str] = None
+    avatar_url: Optional[str] = None
     role_ids: List[int] = []
-    real_name: Optional[str] = None # For profile
+    # Profile fields
+    real_name: Optional[str] = None
+    gender: Optional[str] = "unknown"
+    birthday: Optional[str] = None # YYYY-MM-DD
+    address: Optional[str] = None
 
 class AdminUserUpdate(BaseModel):
     nickname: Optional[str] = None
     phone: Optional[str] = None
     email: Optional[str] = None
-    password: Optional[str] = None # Optional reset
+    avatar_url: Optional[str] = None
+    password: Optional[str] = None
     role_ids: Optional[List[int]] = None
     is_active: Optional[bool] = None
+    # Profile fields
+    real_name: Optional[str] = None
+    gender: Optional[str] = None
+    birthday: Optional[str] = None
+    address: Optional[str] = None
 
-class AdminUserOut(UserBase):
+class AdminUserOut(BaseModel):
     id: int
+    nickname: str
+    phone: Optional[str] = None
+    email: Optional[str] = None
+    avatar_url: Optional[str] = None
     user_type: str
     status: str
+    is_active: bool
     created_at: datetime
     roles: List[RoleOut] = []
+    
+    # Profile data flattened or nested
+    real_name: Optional[str] = None
+    gender: Optional[str] = None
+    birthday: Optional[str] = None
+    address: Optional[str] = None
     
     model_config = ConfigDict(from_attributes=True)

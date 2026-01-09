@@ -8,21 +8,22 @@
       <el-table-column prop="id" label="ID" width="80" align="center" sortable />
       <el-table-column prop="phone" label="手机号/账号" width="150" sortable />
       <el-table-column prop="nickname" label="昵称" width="150" sortable />
-      <el-table-column label="角色" min-width="200">
+      <el-table-column prop="email" label="邮箱" width="180" show-overflow-tooltip sortable />
+      <el-table-column label="角色" min-width="150">
         <template #default="{ row }">
-          <el-tag v-for="role in row.roles" :key="role.id" style="margin-right: 5px;">{{ role.name }}</el-tag>
+          <el-tag v-for="role in row.roles" :key="role.id" size="small" style="margin-right: 5px;">{{ role.name }}</el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="status" label="状态" width="100" align="center" sortable>
+      <el-table-column prop="is_active" label="状态" width="100" align="center" sortable>
         <template #default="{ row }">
-          <el-tag :type="row.status === 'active' ? 'success' : 'danger'">
-            {{ row.status === 'active' ? '正常' : '禁用' }}
+          <el-tag :type="row.is_active ? 'success' : 'danger'">
+            {{ row.is_active ? '正常' : '禁用' }}
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="last_login_at" label="最后登录" width="180" align="center" sortable>
+      <el-table-column prop="created_at" label="创建时间" width="180" align="center" sortable>
         <template #default="{ row }">
-          {{ row.last_login_at ? new Date(row.last_login_at).toLocaleString() : '-' }}
+          {{ row.created_at ? new Date(row.created_at).toLocaleString() : '-' }}
         </template>
       </el-table-column>
       <el-table-column label="操作" width="200" align="center" fixed="right">
@@ -40,31 +41,56 @@
       width="500px"
     >
       <el-form ref="formRef" :model="form" label-width="100px">
-        <el-form-item label="手机号" prop="phone" required>
-          <el-input v-model="form.phone" placeholder="作为登录账号" />
-        </el-form-item>
-        <el-form-item label="昵称" prop="nickname" required>
-          <el-input v-model="form.nickname" placeholder="显示名称" />
-        </el-form-item>
-        <el-form-item label="真实姓名" prop="real_name">
-          <el-input v-model="form.real_name" placeholder="选填" />
-        </el-form-item>
-        <el-form-item label="密码" prop="password" v-if="!isEdit" required>
-          <el-input v-model="form.password" type="password" show-password placeholder="初始密码" />
-        </el-form-item>
-        <el-form-item label="角色" prop="role_ids">
-          <el-select v-model="form.role_ids" multiple placeholder="请选择角色" style="width: 100%">
-            <el-option 
-              v-for="item in roleOptions" 
-              :key="item.id" 
-              :label="item.name" 
-              :value="item.id" 
-            />
-          </el-select>
-        </el-form-item>
-        <el-form-item label="状态" prop="status">
-          <el-switch v-model="form.status" active-value="active" inactive-value="inactive" />
-        </el-form-item>
+        <el-tabs v-model="activeTab">
+          <el-tab-pane label="基本信息" name="basic">
+            <el-form-item label="手机号" prop="phone" required>
+              <el-input v-model="form.phone" placeholder="作为登录账号" />
+            </el-form-item>
+            <el-form-item label="昵称" prop="nickname" required>
+              <el-input v-model="form.nickname" placeholder="显示名称" />
+            </el-form-item>
+            <el-form-item label="邮箱" prop="email">
+              <el-input v-model="form.email" placeholder="电子邮箱" />
+            </el-form-item>
+            <el-form-item label="密码" prop="password" v-if="!isEdit" required>
+              <el-input v-model="form.password" type="password" show-password placeholder="初始密码" />
+            </el-form-item>
+            <el-form-item label="角色" prop="role_ids">
+              <el-select v-model="form.role_ids" multiple placeholder="请选择角色" style="width: 100%">
+                <el-option 
+                  v-for="item in roleOptions" 
+                  :key="item.id" 
+                  :label="item.name" 
+                  :value="item.id" 
+                />
+              </el-select>
+            </el-form-item>
+            <el-form-item label="状态" prop="is_active">
+              <el-switch v-model="form.is_active" active-text="正常" inactive-text="禁用" />
+            </el-form-item>
+          </el-tab-pane>
+          <el-tab-pane label="档案详情" name="profile">
+            <el-form-item label="真实姓名" prop="real_name">
+              <el-input v-model="form.real_name" placeholder="请输入真实姓名" />
+            </el-form-item>
+            <el-form-item label="性别" prop="gender">
+              <el-radio-group v-model="form.gender">
+                <el-radio value="male">男</el-radio>
+                <el-radio value="female">女</el-radio>
+                <el-radio value="unknown">保密</el-radio>
+              </el-radio-group>
+            </el-form-item>
+            <el-form-item label="生日" prop="birthday">
+              <el-date-picker v-model="form.birthday" type="date" value-format="YYYY-MM-DD" placeholder="请选择日期" />
+            </el-form-item>
+            <el-form-item label="头像地址" prop="avatar_url">
+              <el-input v-model="form.avatar_url" placeholder="OSS文件路径或HTTP链接" />
+            </el-form-item>
+            <el-form-item label="联系地址" prop="address">
+              <el-input v-model="form.address" type="textarea" placeholder="详细联系地址" />
+            </el-form-item>
+          </el-tab-pane>
+        </el-tabs>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
@@ -88,14 +114,20 @@ const roleOptions = ref<any[]>([])
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const formRef = ref<any>(null)
+const activeTab = ref('basic')
 const form = reactive({
   id: undefined as number | undefined,
   phone: '',
   nickname: '',
+  email: '',
+  avatar_url: '',
   password: '',
   role_ids: [] as number[],
-  status: 'active',
-  real_name: ''
+  is_active: true,
+  real_name: '',
+  gender: 'unknown',
+  birthday: '',
+  address: ''
 })
 
 async function fetchRoles() {
@@ -126,20 +158,31 @@ onMounted(() => {
 
 function handleAdd() {
   isEdit.value = false
-  Object.assign(form, { id: undefined, phone: '', nickname: '', password: '', role_ids: [], status: 'active', real_name: '' })
+  activeTab.value = 'basic'
+  Object.assign(form, { 
+    id: undefined, phone: '', nickname: '', email: '', avatar_url: '',
+    password: '', role_ids: [], is_active: true, 
+    real_name: '', gender: 'unknown', birthday: '', address: '' 
+  })
   dialogVisible.value = true
 }
 
 function handleEdit(row: any) {
   isEdit.value = true
+  activeTab.value = 'basic'
   Object.assign(form, {
     id: row.id,
     phone: row.phone,
     nickname: row.nickname,
+    email: row.email || '',
+    avatar_url: row.avatar_url || '',
     password: '', 
     role_ids: row.roles.map((r: any) => r.id),
-    status: row.status,
-    real_name: row.profile?.real_name || ''
+    is_active: row.is_active,
+    real_name: row.real_name || '',
+    gender: row.gender || 'unknown',
+    birthday: row.birthday || '',
+    address: row.address || ''
   })
   dialogVisible.value = true
 }
@@ -189,17 +232,28 @@ async function handleSubmit() {
       await LprAPI.updateAdminUser(form.id, {
         nickname: form.nickname,
         phone: form.phone,
+        email: form.email,
+        avatar_url: form.avatar_url,
         role_ids: form.role_ids,
-        is_active: form.status === 'active'
+        is_active: form.is_active,
+        real_name: form.real_name,
+        gender: form.gender,
+        birthday: form.birthday,
+        address: form.address
       })
       ElMessage.success('更新成功')
     } else {
       await LprAPI.createAdminUser({
         nickname: form.nickname,
         phone: form.phone,
+        email: form.email,
         password: form.password,
+        avatar_url: form.avatar_url,
         role_ids: form.role_ids,
-        real_name: form.real_name
+        real_name: form.real_name,
+        gender: form.gender,
+        birthday: form.birthday,
+        address: form.address
       })
       ElMessage.success('创建成功')
     }
