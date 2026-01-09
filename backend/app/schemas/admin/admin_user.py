@@ -97,7 +97,7 @@ class AdminUserOut(BaseModel):
     avatar_url: Optional[str] = None
     user_type: str
     status: str
-    is_active: bool
+    is_active: bool = True
     created_at: datetime
     roles: List[RoleOut] = []
     

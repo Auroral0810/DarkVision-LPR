@@ -6,6 +6,11 @@
 
     <el-table v-loading="loading" :data="adminList" border style="width: 100%; margin-top: 20px;">
       <el-table-column prop="id" label="ID" width="80" align="center" sortable />
+      <el-table-column label="头像" width="80" align="center">
+        <template #default="{ row }">
+          <el-avatar :size="40" :src="row.avatar_url">{{ row.nickname?.charAt(0) }}</el-avatar>
+        </template>
+      </el-table-column>
       <el-table-column prop="phone" label="手机号/账号" width="150" sortable />
       <el-table-column prop="nickname" label="昵称" width="150" sortable />
       <el-table-column prop="email" label="邮箱" width="180" show-overflow-tooltip sortable />

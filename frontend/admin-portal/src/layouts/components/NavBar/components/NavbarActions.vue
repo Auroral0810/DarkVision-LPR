@@ -32,8 +32,10 @@
     <div class="navbar-actions__item">
       <el-dropdown trigger="click">
         <div class="user-profile">
-          <img class="user-profile__avatar" :src="userStore.userInfo.avatar" />
-          <span class="user-profile__name">{{ userStore.userInfo.username }}</span>
+          <el-avatar :size="28" :src="userStore.userInfo.avatar_url">
+            {{ userStore.userInfo.nickname?.charAt(0) }}
+          </el-avatar>
+          <span class="user-profile__name">{{ userStore.userInfo.nickname }}</span>
         </div>
         <template #dropdown>
           <el-dropdown-menu>
