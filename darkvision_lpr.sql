@@ -33,6 +33,46 @@ CREATE TABLE `admin_roles` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Table structure for table `ai_command_records`
+--
+
+DROP TABLE IF EXISTS `ai_command_records`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `ai_command_records` (
+  `id` int NOT NULL AUTO_INCREMENT,
+  `user_id` int NOT NULL,
+  `original_command` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL,
+  `current_route` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `parse_success` tinyint(1) DEFAULT NULL,
+  `provider` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `model` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `explanation` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `function_name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `function_arguments` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `confidence` float DEFAULT NULL,
+  `execute_status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `execute_result` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `execute_error_message` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `execution_time` float DEFAULT NULL,
+  `is_dangerous` tinyint(1) DEFAULT '0',
+  `requires_confirmation` tinyint(1) DEFAULT NULL,
+  `user_confirmed` tinyint(1) DEFAULT NULL,
+  `input_tokens` int DEFAULT NULL,
+  `output_tokens` int DEFAULT NULL,
+  `total_tokens` int DEFAULT NULL,
+  `ip_address` varchar(50) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `user_agent` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci,
+  `create_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `update_time` datetime DEFAULT CURRENT_TIMESTAMP,
+  `remark` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  KEY `ix_ai_command_records_id` (`id`),
+  KEY `ix_ai_command_records_user_id` (`user_id`)
+) ENGINE=InnoDB AUTO_INCREMENT=13 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
 -- Table structure for table `announcements`
 --
 
@@ -53,6 +93,30 @@ CREATE TABLE `announcements` (
   KEY `created_by` (`created_by`),
   CONSTRAINT `announcements_ibfk_1` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB AUTO_INCREMENT=4 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='系统公告';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `backup_records`
+--
+
+DROP TABLE IF EXISTS `backup_records`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `backup_records` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `filename` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '备份文件名',
+  `file_path` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '文件存储路径',
+  `file_size` bigint DEFAULT NULL COMMENT '文件大小(bytes)',
+  `created_by` bigint DEFAULT NULL COMMENT '操作人ID',
+  `created_at` datetime NOT NULL COMMENT '创建时间',
+  `status` varchar(20) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '状态: success/failed',
+  `description` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '备注',
+  `is_deleted` tinyint(1) DEFAULT NULL COMMENT '是否逻辑删除',
+  PRIMARY KEY (`id`),
+  KEY `created_by` (`created_by`),
+  KEY `ix_backup_records_id` (`id`),
+  CONSTRAINT `backup_records_ibfk_1` FOREIGN KEY (`created_by`) REFERENCES `users` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -285,7 +349,7 @@ CREATE TABLE `operation_logs` (
   PRIMARY KEY (`id`),
   KEY `idx_admin_action` (`admin_id`,`action`),
   KEY `ix_operation_logs_admin_id` (`admin_id`)
-) ENGINE=InnoDB AUTO_INCREMENT=28 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='管理员操作日志';
+) ENGINE=InnoDB AUTO_INCREMENT=33 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='管理员操作日志';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -364,18 +428,18 @@ DROP TABLE IF EXISTS `page_view_logs`;
 CREATE TABLE `page_view_logs` (
   `id` bigint NOT NULL AUTO_INCREMENT,
   `user_id` bigint DEFAULT NULL COMMENT '登录用户ID，未登录为NULL',
-  `page_path` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '页面路径',
-  `page_type` varchar(7) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '页面类型',
-  `ip_address` varchar(45) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'IP地址',
-  `user_agent` text COLLATE utf8mb4_unicode_ci COMMENT 'User-Agent',
-  `referer` varchar(500) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '来源页面',
+  `page_path` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '页面路径',
+  `page_type` varchar(7) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '页面类型',
+  `ip_address` varchar(45) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT 'IP地址',
+  `user_agent` text CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci COMMENT 'User-Agent',
+  `referer` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '来源页面',
   `created_at` datetime DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   PRIMARY KEY (`id`),
   KEY `ix_page_view_logs_created_at` (`created_at`),
   KEY `ix_page_view_logs_id` (`id`),
   KEY `ix_page_view_logs_user_id` (`user_id`),
   CONSTRAINT `page_view_logs_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`)
-) ENGINE=InnoDB AUTO_INCREMENT=749 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+) ENGINE=InnoDB AUTO_INCREMENT=969 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -444,7 +508,7 @@ CREATE TABLE `permissions` (
   `updated_at` datetime DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `code` (`code`)
-) ENGINE=InnoDB AUTO_INCREMENT=26 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='权限项';
+) ENGINE=InnoDB AUTO_INCREMENT=31 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='权限项';
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -456,7 +520,7 @@ DROP TABLE IF EXISTS `promotions`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `promotions` (
   `id` bigint NOT NULL AUTO_INCREMENT,
-  `name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '活动名称',
+  `name` varchar(100) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '活动名称',
   `package_id` bigint NOT NULL,
   `discount_rate` decimal(5,2) NOT NULL COMMENT '折扣率',
   `start_time` datetime NOT NULL,
@@ -714,58 +778,8 @@ CREATE TABLE `system_configs` (
   `updated_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `config_key` (`config_key`)
-) ENGINE=InnoDB AUTO_INCREMENT=15 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='系统全局配置（限额、SEO、SMTP等）';
+) ENGINE=InnoDB AUTO_INCREMENT=89 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='系统全局配置（限额、SEO、SMTP等）';
 /*!40101 SET character_set_client = @saved_cs_client */;
-
---
--- Dumping data for table `system_configs`
---
-
-LOCK TABLES `system_configs` WRITE;
-/*!40000 ALTER TABLE `system_configs` DISABLE KEYS */;
-INSERT INTO `system_configs` (`config_key`, `config_value`, `description`, `is_public`) VALUES 
-('base.seo_title', 'DarkVision-LPR', '项目标题', 1),
-('base.service_availability', '99.9%', '服务可用性', 1),
-('base.enterprise_clients', '500+', '企业客户数量', 1),
-('oss.domain', 'https://lucky-yyf.oss-cn-beijing.aliyuncs.com', 'OSS对外访问URL', 1),
-('oss.endpoint', 'oss-cn-beijing.aliyuncs.com', 'OSS Endpoint', 0),
-('oss.bucket', 'lucky-yyf', 'OSS Bucket名称', 0),
-('oss.ak', 'LTAI5tCJAKHv96E4hYuhUEG4', 'OSS AccessKey ID', 0),
-('oss.sk', 'RRxg1dBcF4rqB7uvKxyZm7L1kcdpbl', 'OSS AccessKey Secret', 0),
-('oss.type', 'aliyun', '存储提供商', 0),
-('base.aliyun_market_appcode', '387511e0bc40494ea8f35dc670493eb7', '阿里云市场AppCode', 0),
-('recognition.confidence', '0.8', '默认识别置信度阈值', 0),
-('recognition.modelVersion', 'v2.1.0', '默认模型版本', 0),
-('recognition.maxThreads', '16', '并发识别线程限制', 0),
-('quota.free_daily_limit', '10', '免费用户每日识别限额', 1),
-('quota.vip_monthly_limit', '50', '月卡VIP每日识别限额', 1),
-('quota.vip_yearly_limit', '100', '年卡VIP每日识别限额', 1),
-('notice.mail_host', 'smtp.163.com', 'SMTP服务器地址', 0),
-('notice.mail_port', '465', 'SMTP端口', 0),
-('notice.mail_username', '15968588744@163.com', 'SMTP用户名', 0),
-('notice.mail_password', 'QSwPWYUaYmh32ggs', 'SMTP密码/授权码', 0),
-('notice.mail_from', '15968588744@163.com', '发件人邮箱', 0),
-('notice.mail_from_name', 'DarkVision-LPR', '发件人显示名称', 0),
-('notice.mail_use_ssl', 'true', '使用SSL连接', 0),
-('notice.mail_use_tls', 'false', '使用TLS连接', 0),
-('notice.sms_provider', 'smsbao', '短信服务商', 0),
-('notice.sms_user', 'auroral', '短信宝账号', 0),
-('notice.sms_password', 'c17534a3ae8744608e450e1113d0f93e', '短信宝MD5密码', 0),
-('notice.sms_sign_name', 'DarkVision-LPR', '短信签名', 0),
-('security.login_fail_limit', '5', '登录失败锁定阈值', 0),
-('security.login_lock_duration', '30', '锁定持续时间(分钟)', 0),
-('security.api_rate_limit', '100', 'API限频(次/分)', 0),
-('security.enable_ip_whitelist', 'false', '启用IP白名单', 0),
-('ai.provider', 'openai', 'AI 提供商', 0),
-('ai.api_key', '', 'AI API Key', 0),
-('ai.api_base', '', 'AI API Base URL', 0),
-('ai.model', 'gpt-3.5-turbo', 'AI 模型名称', 0),
-('ai.temperature', '0.7', '随机性', 0),
-('ai.max_tokens', '2000', '最大 Token 数', 0),
-('ai.enable_voice', 'false', '启用语音交互', 1),
-('ai.enable_history', 'true', '启用历史记录', 1);
-/*!40000 ALTER TABLE `system_configs` ENABLE KEYS */;
-UNLOCK TABLES;
 
 --
 -- Table structure for table `system_ip_rules`
@@ -801,6 +815,51 @@ CREATE TABLE `system_logs` (
   `created_at` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB AUTO_INCREMENT=5 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci COMMENT='系统日志';
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `system_tasks`
+--
+
+DROP TABLE IF EXISTS `system_tasks`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `system_tasks` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `name` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '任务名称',
+  `task_code` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '任务代码/ID',
+  `cron_expression` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT 'Cron表达式',
+  `status` int DEFAULT NULL COMMENT '状态: 0=禁用, 1=启用',
+  `remark` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '备注',
+  `last_run_at` datetime DEFAULT NULL COMMENT '最后运行时间',
+  `next_run_at` datetime DEFAULT NULL COMMENT '下次运行时间',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `task_code` (`task_code`),
+  KEY `ix_system_tasks_id` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+/*!40101 SET character_set_client = @saved_cs_client */;
+
+--
+-- Table structure for table `system_versions`
+--
+
+DROP TABLE IF EXISTS `system_versions`;
+/*!40101 SET @saved_cs_client     = @@character_set_client */;
+/*!50503 SET character_set_client = utf8mb4 */;
+CREATE TABLE `system_versions` (
+  `id` bigint NOT NULL AUTO_INCREMENT,
+  `version_number` varchar(50) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '版本号',
+  `title` varchar(100) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '标题',
+  `content` text COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '更新内容',
+  `type` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '类型: system/app/api',
+  `is_force` int DEFAULT NULL COMMENT '是否强制更新: 0=否, 1=是',
+  `download_url` varchar(255) COLLATE utf8mb4_unicode_ci DEFAULT NULL COMMENT '下载地址',
+  `created_at` datetime DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `ix_system_versions_id` (`id`)
+) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
@@ -955,7 +1014,7 @@ DROP TABLE IF EXISTS `visit_statistics`;
 /*!50503 SET character_set_client = utf8mb4 */;
 CREATE TABLE `visit_statistics` (
   `stat_date` date NOT NULL COMMENT '统计日期',
-  `page_type` varchar(7) COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '页面类型',
+  `page_type` varchar(7) CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci NOT NULL COMMENT '页面类型',
   `pv` int DEFAULT NULL COMMENT '页面浏览量',
   `uv` int DEFAULT NULL COMMENT '独立访客数（基于IP）',
   `login_uv` int DEFAULT NULL COMMENT '登录用户数（基于user_id）',
@@ -975,4 +1034,4 @@ CREATE TABLE `visit_statistics` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 /*!40111 SET SQL_NOTES=@OLD_SQL_NOTES */;
 
--- Dump completed on 2026-01-09  4:22:30
+-- Dump completed on 2026-01-09 15:41:40

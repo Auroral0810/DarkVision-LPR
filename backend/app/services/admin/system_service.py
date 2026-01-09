@@ -120,6 +120,7 @@ class SystemService:
             "oss": {},
             "payment": {},
             "login": {},
+            "ai": {},
             "other": {}
         }
         
@@ -143,6 +144,8 @@ class SystemService:
                 groups['payment'][key.split('.', 1)[1]] = val
             elif key.startswith('login.'):
                 groups['login'][key.split('.', 1)[1]] = val
+            elif key.startswith('ai.'):
+                groups['ai'][key.split('.', 1)[1]] = val
             else:
                 # 处理没有前缀的老数据
                 if 'limit' in key:
@@ -155,6 +158,8 @@ class SystemService:
                     groups['base'][key] = val
                 elif 'pay' in key or 'alipay' in key or 'wechat' in key:
                     groups['payment'][key] = val
+                elif 'ai.' in key:
+                    groups['ai'][key.replace('ai.', '')] = val
                 else:
                     groups['other'][key] = val
                     
