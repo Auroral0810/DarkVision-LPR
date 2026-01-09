@@ -85,34 +85,29 @@ class AdminService:
         return True
 
     # --- Roles ---
-    def get_roles(self, db: Session) -> List[Role]:
+    def get_roles(self, db: Session) -> List[Dict[str, Any]]:
         cache_key = CACHE_KEY_ROLES
         if redis_client:
              try:
                 cached = redis_client.get(cache_key)
-                if cached: 
-                    # For roles, we usually need permission_ids too.
-                    # This simple caching might need to ensure RoleOut serialization includes them.
-                    return json.loads(cached)
+                if cached: return json.loads(cached)
              except Exception: pass
 
         roles = db.query(Role).all()
         
+        serialized = []
+        for r in roles:
+            r_out = RoleOut.model_validate(r)
+            # Relationship role_permissions
+            r_out.permission_ids = [rp.permission_id for rp in r.role_permissions]
+            serialized.append(r_out.model_dump(mode='json'))
+        
         if redis_client and roles:
             try:
-                # Custom serialization to include permission_ids
-                serialized = []
-                for r in roles:
-                    r_out = RoleOut.model_validate(r)
-                    # Manually populate permission_ids if not auto-fetched
-                    # SQLAlchemy relationship 'role_permissions'
-                    r_out.permission_ids = [rp.permission_id for rp in r.role_permissions]
-                    serialized.append(r_out.model_dump(mode='json'))
-                
                 redis_client.setex(cache_key, 3600, json.dumps(serialized))
             except Exception: pass
             
-        return roles
+        return serialized
 
     def create_role(self, db: Session, data: RoleCreate) -> Role:
         role = Role(
@@ -163,10 +158,28 @@ class AdminService:
         return True
 
     # --- Admin Users ---
-    def get_admin_users(self, db: Session) -> List[User]:
-        # Filter users with type 'admin'
+    def get_admin_users(self, db: Session) -> List[Dict[str, Any]]:
+        cache_key = CACHE_KEY_ADMIN_USERS
+        if redis_client:
+            try:
+                cached = redis_client.get(cache_key)
+                if cached: return json.loads(cached)
+            except Exception: pass
+
         users = db.query(User).filter(User.user_type == UserType.ADMIN).all()
-        return users
+        
+        serialized = []
+        for u in users:
+            u_out = AdminUserOut.model_validate(u)
+            u_out.roles = [RoleOut.model_validate(ar.role) for ar in u.admin_roles]
+            serialized.append(u_out.model_dump(mode='json'))
+            
+        if redis_client and users:
+            try:
+                redis_client.setex(cache_key, 3600, json.dumps(serialized))
+            except Exception: pass
+            
+        return serialized
 
     def create_admin_user(self, db: Session, data: AdminUserCreate) -> User:
         # Check nickname/phone
@@ -197,6 +210,7 @@ class AdminService:
             
         db.commit()
         db.refresh(user)
+        self._clear_cache(CACHE_KEY_ADMIN_USERS)
         return user
 
     def update_admin_user(self, db: Session, id: int, data: AdminUserUpdate) -> Optional[User]:
@@ -218,6 +232,7 @@ class AdminService:
                 
         db.commit()
         db.refresh(user)
+        self._clear_cache(CACHE_KEY_ADMIN_USERS)
         return user
 
 admin_service = AdminService()
