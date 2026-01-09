@@ -117,6 +117,9 @@ class SystemService:
             "quota": {},
             "notice": {},
             "security": {},
+            "oss": {},
+            "payment": {},
+            "login": {},
             "other": {}
         }
         
@@ -134,14 +137,24 @@ class SystemService:
                 groups['notice'][key.split('.', 1)[1]] = val
             elif key.startswith('security.'):
                 groups['security'][key.split('.', 1)[1]] = val
+            elif key.startswith('oss.'):
+                groups['oss'][key.split('.', 1)[1]] = val
+            elif key.startswith('payment.'):
+                groups['payment'][key.split('.', 1)[1]] = val
+            elif key.startswith('login.'):
+                groups['login'][key.split('.', 1)[1]] = val
             else:
                 # 处理没有前缀的老数据
                 if 'limit' in key:
                     groups['quota'][key] = val
                 elif 'smtp' in key:
                     groups['notice'][key] = val
-                elif 'seo' in key or 'oss' in key or 'availability' in key or 'client' in key:
+                elif 'oss' in key:
+                    groups['oss'][key] = val
+                elif 'seo' in key or 'availability' in key or 'client' in key:
                     groups['base'][key] = val
+                elif 'pay' in key or 'alipay' in key or 'wechat' in key:
+                    groups['payment'][key] = val
                 else:
                     groups['other'][key] = val
                     

@@ -43,44 +43,6 @@
 
             <el-divider />
 
-            <!-- 存储组 -->
-            <div class="config-section">
-              <div class="section-header">
-                <el-icon><Files /></el-icon>
-                <span>阿里云 OSS 存储</span>
-              </div>
-              <el-row :gutter="40">
-                <el-col :span="24">
-                  <el-form-item label="OSS 访问域名">
-                    <el-input v-model="form['oss_url']" placeholder="https://bucket.oss-cn-xxx.aliyuncs.com" />
-                    <div class="help-text">资源对外访问的基础 URL</div>
-                  </el-form-item>
-                </el-col>
-                <el-col :md="12" :sm="24">
-                  <el-form-item label="Endpoint">
-                    <el-input v-model="form['oss_endpoint']" placeholder="oss-cn-beijing.aliyuncs.com" />
-                  </el-form-item>
-                </el-col>
-                <el-col :md="12" :sm="24">
-                  <el-form-item label="Bucket 名称">
-                    <el-input v-model="form['oss_bucket_name']" />
-                  </el-form-item>
-                </el-col>
-                <el-col :md="12" :sm="24">
-                  <el-form-item label="AccessKey ID">
-                    <el-input v-model="form['oss_access_key_id']" />
-                  </el-form-item>
-                </el-col>
-                <el-col :md="12" :sm="24">
-                  <el-form-item label="AccessKey Secret">
-                    <el-input v-model="form['oss_access_key_secret']" type="password" show-password />
-                  </el-form-item>
-                </el-col>
-              </el-row>
-            </div>
-
-            <el-divider />
-
             <!-- 认证组 -->
             <div class="config-section">
               <div class="section-header">

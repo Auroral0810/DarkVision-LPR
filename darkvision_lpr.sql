@@ -718,6 +718,56 @@ CREATE TABLE `system_configs` (
 /*!40101 SET character_set_client = @saved_cs_client */;
 
 --
+-- Dumping data for table `system_configs`
+--
+
+LOCK TABLES `system_configs` WRITE;
+/*!40000 ALTER TABLE `system_configs` DISABLE KEYS */;
+INSERT INTO `system_configs` (`config_key`, `config_value`, `description`, `is_public`) VALUES 
+('base.seo_title', 'DarkVision-LPR', '项目标题', 1),
+('base.service_availability', '99.9%', '服务可用性', 1),
+('base.enterprise_clients', '500+', '企业客户数量', 1),
+('oss.domain', 'https://lucky-yyf.oss-cn-beijing.aliyuncs.com', 'OSS对外访问URL', 1),
+('oss.endpoint', 'oss-cn-beijing.aliyuncs.com', 'OSS Endpoint', 0),
+('oss.bucket', 'lucky-yyf', 'OSS Bucket名称', 0),
+('oss.ak', 'LTAI5tCJAKHv96E4hYuhUEG4', 'OSS AccessKey ID', 0),
+('oss.sk', 'RRxg1dBcF4rqB7uvKxyZm7L1kcdpbl', 'OSS AccessKey Secret', 0),
+('oss.type', 'aliyun', '存储提供商', 0),
+('base.aliyun_market_appcode', '387511e0bc40494ea8f35dc670493eb7', '阿里云市场AppCode', 0),
+('recognition.confidence', '0.8', '默认识别置信度阈值', 0),
+('recognition.modelVersion', 'v2.1.0', '默认模型版本', 0),
+('recognition.maxThreads', '16', '并发识别线程限制', 0),
+('quota.free_daily_limit', '10', '免费用户每日识别限额', 1),
+('quota.vip_monthly_limit', '50', '月卡VIP每日识别限额', 1),
+('quota.vip_yearly_limit', '100', '年卡VIP每日识别限额', 1),
+('notice.mail_host', 'smtp.163.com', 'SMTP服务器地址', 0),
+('notice.mail_port', '465', 'SMTP端口', 0),
+('notice.mail_username', '15968588744@163.com', 'SMTP用户名', 0),
+('notice.mail_password', 'QSwPWYUaYmh32ggs', 'SMTP密码/授权码', 0),
+('notice.mail_from', '15968588744@163.com', '发件人邮箱', 0),
+('notice.mail_from_name', 'DarkVision-LPR', '发件人显示名称', 0),
+('notice.mail_use_ssl', 'true', '使用SSL连接', 0),
+('notice.mail_use_tls', 'false', '使用TLS连接', 0),
+('notice.sms_provider', 'smsbao', '短信服务商', 0),
+('notice.sms_user', 'auroral', '短信宝账号', 0),
+('notice.sms_password', 'c17534a3ae8744608e450e1113d0f93e', '短信宝MD5密码', 0),
+('notice.sms_sign_name', 'DarkVision-LPR', '短信签名', 0),
+('security.login_fail_limit', '5', '登录失败锁定阈值', 0),
+('security.login_lock_duration', '30', '锁定持续时间(分钟)', 0),
+('security.api_rate_limit', '100', 'API限频(次/分)', 0),
+('security.enable_ip_whitelist', 'false', '启用IP白名单', 0),
+('ai.provider', 'openai', 'AI 提供商', 0),
+('ai.api_key', '', 'AI API Key', 0),
+('ai.api_base', '', 'AI API Base URL', 0),
+('ai.model', 'gpt-3.5-turbo', 'AI 模型名称', 0),
+('ai.temperature', '0.7', '随机性', 0),
+('ai.max_tokens', '2000', '最大 Token 数', 0),
+('ai.enable_voice', 'false', '启用语音交互', 1),
+('ai.enable_history', 'true', '启用历史记录', 1);
+/*!40000 ALTER TABLE `system_configs` ENABLE KEYS */;
+UNLOCK TABLES;
+
+--
 -- Table structure for table `system_ip_rules`
 --
 

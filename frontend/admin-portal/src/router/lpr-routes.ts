@@ -325,19 +325,19 @@ export const lprRoutes: RouteRecordRaw[] = [
     children: [
       {
         path: 'storage',
-        component: () => import('@/views/external/ExternalService.vue'),
+        component: () => import('@/views/external/StorageConfig.vue'),
         name: 'StorageConfig',
         meta: { title: '存储配置', icon: 'el-icon-Files' }
       },
       {
         path: 'payment',
-        component: Placeholder,
+        component: () => import('@/views/external/PaymentConfig.vue'),
         name: 'PaymentConfig',
         meta: { title: '支付配置', icon: 'el-icon-CreditCard' }
       },
       {
         path: 'login',
-        component: Placeholder,
+        component: () => import('@/views/external/ThirdLoginConfig.vue'),
         name: 'ThirdLoginConfig',
         meta: { title: '第三方登录', icon: 'el-icon-UserFilled' }
       }
