@@ -4,6 +4,7 @@
 from typing import Any, Optional, Union, Dict, Generic, TypeVar
 from pydantic import BaseModel
 from fastapi.responses import JSONResponse
+from fastapi.encoders import jsonable_encoder
 from app.core.codes import ResponseCode, ResponseMessage, get_http_status
 
 T = TypeVar("T")
@@ -42,11 +43,11 @@ def success(
     """
     return JSONResponse(
         status_code=get_http_status(code),
-        content={
+        content=jsonable_encoder({
             "code": code,
             "message": message or ResponseMessage.get_message(code),
             "data": data
-        }
+        })
     )
 
 
@@ -68,11 +69,11 @@ def error(
     """
     return JSONResponse(
         status_code=get_http_status(code),
-        content={
+        content=jsonable_encoder({
             "code": code,
             "message": message or ResponseMessage.get_message(code),
             "data": data
-        }
+        })
     )
 
 

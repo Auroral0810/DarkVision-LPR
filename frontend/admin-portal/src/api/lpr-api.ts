@@ -339,8 +339,18 @@ const LprAPI = {
    * Get user type distribution
    */
   getUserTypeDistribution() {
-    return request<any, { type: string; count: number }[]>({
+    return request<any, { user_type: string; count: number; percentage: number }[]>({
       url: `${LPR_BASE_URL}/stats/user-distribution`,
+      method: 'get'
+    })
+  },
+
+  /**
+   * Get user activity heatmap
+   */
+  getUserActivityHeatmap() {
+    return request<any, number[][]>({
+      url: `${LPR_BASE_URL}/stats/activity-heatmap`,
       method: 'get'
     })
   },

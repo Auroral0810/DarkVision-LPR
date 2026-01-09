@@ -6,12 +6,12 @@ from typing import List
 class DashboardStats(BaseModel):
     """仪表板统计数据"""
     total_users: int
-    new_users_today: int
-    active_users_today: int
-    total_recognition_count: int
-    recognition_count_today: int
+    today_registrations: int
+    total_recognitions: int
+    today_recognitions: int
     total_revenue: float
-    revenue_today: float
+    today_revenue: float
+    active_users_30d: int
     
     
 class UserTrendData(BaseModel):
