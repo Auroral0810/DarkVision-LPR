@@ -43,20 +43,52 @@ class BackupService:
         return db.query(BackupRecord).get(id)
 
     def create_backup(self, db: Session, creator_id: int, description: str = None) -> BackupRecord:
-        filename = f"backup_{datetime.now().strftime('%Y%m%d_%H%M%S')}.sql"
+        # Change prefix to confirm new code version
+        filename = f"backup_no_records_{datetime.now().strftime('%Y%m%d_%H%M%S')}.sql"
         local_filepath = os.path.join(self.BACKUP_DIR, filename)
         
         # Prepare command
         env = os.environ.copy()
         env['MYSQL_PWD'] = settings.MYSQL_PASSWORD
         
-        cmd = [
-            "mysqldump",
-            "-h", settings.MYSQL_HOST,
-            "-P", str(settings.MYSQL_PORT),
-            "-u", settings.MYSQL_USER,
-            settings.MYSQL_DATABASE
-        ]
+        # Explicitly list tables to dump, excluding backup_records
+        from sqlalchemy import inspect
+        from app.core.database import engine
+        
+        try:
+            inspector = inspect(engine)
+            all_tables = inspector.get_table_names()
+            print(f"DEBUG: All tables found: {all_tables}") # Force stdout
+            logger.info(f"All tables found in DB: {all_tables}")
+            
+            tables_to_dump = []
+            for t in all_tables:
+                # Strict case-insensitive cleanup comparison
+                if "backup_records" in t.lower():
+                    print(f"DEBUG: Skipping table: {t}")
+                    logger.info(f"Skipping backup of table: {t}")
+                    continue
+                tables_to_dump.append(t)
+            
+            print(f"DEBUG: Final tables to dump: {tables_to_dump}")
+            logger.info(f"Final tables to dump: {tables_to_dump}")
+            
+            if not tables_to_dump:
+                raise Exception("No tables found to backup")
+
+            cmd = [
+                "mysqldump",
+                "-h", settings.MYSQL_HOST,
+                "-P", str(settings.MYSQL_PORT),
+                "-u", settings.MYSQL_USER,
+                settings.MYSQL_DATABASE
+            ] + tables_to_dump
+            
+            print(f"DEBUG: Executing command: {' '.join(cmd)}")
+            
+        except Exception as e:
+            logger.error(f"Error preparing table list: {e}")
+            raise HTTPException(status_code=500, detail=f"Failed to prepare backup: {e}")
         
         try:
             # 1. Create local dump
@@ -82,17 +114,11 @@ class BackupService:
                     final_path = oss_url
                     logger.info(f"Uploaded to OSS: {oss_url}")
                     
-                    # Optional: Remove local file if we only want to keep it on OSS
-                    # But keeping latest locally is good for quick restore? 
-                    # For now, let's keep local file as cache, BUT database stores OSS URL as per request.
-                    # If we delete local file, we must ensure restore downloads it.
-                    # Let's delete it to simulate "Cloud Backup" scenario and save space.
+                    # Remove local file to simulate cloud storage, but restore will cache it back
                     os.remove(local_filepath)
                     
                 except Exception as e:
                     logger.error(f"OSS Upload failed: {e}")
-                    # If upload fails, we keep local path in DB? Or fail?
-                    # Let's fallback to local path if upload fails but backup succeeded
                     logger.warning("Falling back to local storage")
 
             record = BackupRecord(
@@ -151,23 +177,6 @@ class BackupService:
              else:
                  raise HTTPException(status_code=404, detail="Local backup file not found")
 
-        # Capture current records to preserve them after restore
-        # Restore overwrites the DB, potentially deleting newer backup records.
-        # We need to restore the *file* records so we don't lose track of available backups.
-        existing_records = [
-            {
-                "filename": r.filename,
-                "file_path": r.file_path,
-                "file_size": r.file_size,
-                "created_by": r.created_by,
-                "created_at": r.created_at,
-                "status": r.status,
-                "description": r.description,
-                "is_deleted": r.is_deleted
-            }
-            for r in db.query(BackupRecord).all()
-        ]
-
         # IMPORTANT: Commit/Close session to release potential locks
         db.commit() 
             
@@ -190,32 +199,6 @@ class BackupService:
             if process.returncode != 0:
                 logger.error(f"Restore stderr: {process.stderr}")
                 raise Exception(f"mysql restore failed: {process.stderr}")
-            
-            # Post-restore: Merge backup records back
-            try:
-                # Refresh session/re-query to check what's in DB now
-                db.expire_all()
-                restored_filenames = {r.filename for r in db.query(BackupRecord).all()}
-                
-                new_records = []
-                for r_data in existing_records:
-                    if r_data["filename"] not in restored_filenames:
-                        # Check if user exists, if not set created_by to None to avoid FK error
-                        if r_data["created_by"]:
-                            from app.models.user import User
-                            user_exists = db.query(User).filter(User.id == r_data["created_by"]).first()
-                            if not user_exists:
-                                r_data["created_by"] = None
-                        
-                        new_records.append(BackupRecord(**r_data))
-                
-                if new_records:
-                    db.add_all(new_records)
-                    db.commit()
-                    logger.info(f"Restored {len(new_records)} missing backup records after DB coverage.")
-                    
-            except Exception as e:
-                logger.error(f"Failed to sync backup records after restore: {e}")
                 
             logger.info("Restore completed successfully")
             return {"message": "Restore successful"}
