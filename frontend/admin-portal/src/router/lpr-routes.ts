@@ -358,19 +358,19 @@ export const lprRoutes: RouteRecordRaw[] = [
     children: [
       {
         path: 'cache',
-        component: Placeholder,
+        component: () => import('@/views/maintenance/CacheMgmt.vue'),
         name: 'CacheMgmt',
         meta: { title: '缓存管理', icon: 'el-icon-Refresh' }
       },
       {
         path: 'tasks',
-        component: Placeholder,
+        component: () => import('@/views/maintenance/TaskScheduling.vue'),
         name: 'TaskScheduler',
         meta: { title: '任务调度', icon: 'el-icon-Timer' }
       },
       {
         path: 'version',
-        component: Placeholder,
+        component: () => import('@/views/maintenance/VersionUpdate.vue'),
         name: 'VersionMgmt',
         meta: { title: '版本更新', icon: 'el-icon-Upload' }
       }

@@ -37,3 +37,33 @@ class SystemIpRule(Base):
     
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+class SystemTask(Base):
+    """系统定时任务表"""
+    __tablename__ = "system_tasks"
+
+    id = Column(BigInteger, primary_key=True, index=True)
+    name = Column(String(100), nullable=False, comment="任务名称")
+    task_code = Column(String(100), unique=True, nullable=False, comment="任务代码/ID")
+    cron_expression = Column(String(100), nullable=False, comment="Cron表达式")
+    status = Column(Integer, default=1, comment="状态: 0=禁用, 1=启用")
+    remark = Column(String(255), nullable=True, comment="备注")
+    last_run_at = Column(DateTime, nullable=True, comment="最后运行时间")
+    next_run_at = Column(DateTime, nullable=True, comment="下次运行时间")
+    
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+class SystemVersion(Base):
+    """系统版本历史表"""
+    __tablename__ = "system_versions"
+
+    id = Column(BigInteger, primary_key=True, index=True)
+    version_number = Column(String(50), nullable=False, comment="版本号")
+    title = Column(String(100), nullable=False, comment="标题")
+    content = Column(Text, nullable=False, comment="更新内容")
+    type = Column(String(20), default="system", comment="类型: system/app/api")
+    is_force = Column(Integer, default=0, comment="是否强制更新: 0=否, 1=是")
+    download_url = Column(String(255), nullable=True, comment="下载地址")
+    
+    created_at = Column(DateTime, server_default=func.now())
