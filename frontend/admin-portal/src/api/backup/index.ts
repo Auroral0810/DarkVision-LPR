@@ -59,18 +59,19 @@ class BackupApi {
     return request({
       url: `/api/admin/backup/${id}/restore`,
       method: 'post',
+      timeout: 120000 // Increase timeout for restore
     });
   }
 
   /**
-   * 下载地址
+   * 下载备份文件 (以Blob形式)
    */
-  static getDownloadUrl(id: number) {
-    // Determine base URL based on environment (dev/prod)
-    // Assuming relative path works via proxy or absolute path env
-    // Here we construct usage of the same base API
-    const baseUrl = import.meta.env.VITE_APP_BASE_API || '/dev-api';
-    return `${baseUrl}/api/admin/backup/${id}/download`;
+  static downloadBackup(id: number) {
+    return request({
+      url: `/api/admin/backup/${id}/download`,
+      method: 'get',
+      responseType: 'blob'
+    });
   }
 }
 

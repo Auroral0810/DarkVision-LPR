@@ -199,9 +199,22 @@ const handleDelete = async (row: BackupRecord) => {
   }
 };
 
-const handleDownload = (row: BackupRecord) => {
-  const url = BackupApi.getDownloadUrl(row.id);
-  window.open(url, '_blank');
+const handleDownload = async (row: BackupRecord) => {
+  try {
+    const res: any = await BackupApi.downloadBackup(row.id);
+    const blob = new Blob([res.data]);
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = row.filename; // Use the filename from the record
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+  } catch (error) {
+    console.error('Download failed:', error);
+    ElMessage.error('文件下载失败');
+  }
 };
 
 const formatSize = (bytes: number) => {

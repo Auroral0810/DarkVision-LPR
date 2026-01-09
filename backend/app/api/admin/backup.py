@@ -1,5 +1,5 @@
 from typing import Any
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Response
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 from app.api import deps
@@ -63,6 +63,9 @@ def restore_backup(
     backup_service.restore_backup(db, id)
     return success_response(message="Database restored successfully")
 
+from fastapi import Response
+# ... imports
+
 @router.get("/{id}/download")
 def download_backup(
     id: int,
@@ -76,7 +79,11 @@ def download_backup(
     if not record:
         raise HTTPException(status_code=404, detail="Backup not found")
         
-    return FileResponse(record.file_path, filename=record.filename, media_type="application/octet-stream")
+    content = backup_service.get_download_content(record)
+    
+    return Response(content, media_type="application/octet-stream", headers={
+        "Content-Disposition": f"attachment; filename={record.filename}"
+    })
 
 @router.delete("/{id}", response_model=UnifiedResponse[Any])
 def delete_backup(
