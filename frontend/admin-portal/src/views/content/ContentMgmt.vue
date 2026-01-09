@@ -5,7 +5,7 @@
         <div class="filter-container">
           <el-button type="primary" icon="Plus" @click="handleBannerAdd">新增轮播图</el-button>
         </div>
-        <el-table :data="bannerList" border style="width: 100%; margin-top: 20px;">
+        <el-table v-loading="loading" :data="bannerList" border style="width: 100%; margin-top: 20px;">
           <el-table-column prop="id" label="ID" width="80" align="center" sortable />
           <el-table-column prop="title" label="标题" min-width="150" sortable />
           <el-table-column label="图片" width="180">
@@ -39,16 +39,16 @@
       <el-tab-pane label="SEO 配置" name="seo">
         <el-form label-width="120px" style="max-width: 600px; margin-top: 20px;">
           <el-form-item label="网站标题">
-            <el-input v-model="seoConfig.title" placeholder="DarkVision - 低光照车牌识别系统" />
+            <el-input :model-value="seoConfig.title" @update:model-value="handleSeoInput('title', $event)" placeholder="DarkVision - 低光照车牌识别系统" />
           </el-form-item>
           <el-form-item label="关键词">
-            <el-input v-model="seoConfig.keywords" placeholder="LPR, 车牌识别, 低光照, AI" />
+            <el-input :model-value="seoConfig.keywords" @update:model-value="handleSeoInput('keywords', $event)" placeholder="LPR, 车牌识别, 低光照, AI" />
           </el-form-item>
           <el-form-item label="描述">
-            <el-input v-model="seoConfig.description" type="textarea" :rows="4" placeholder="网站描述..." />
+            <el-input :model-value="seoConfig.description" @update:model-value="handleSeoInput('description', $event)" type="textarea" :rows="4" placeholder="网站描述..." />
           </el-form-item>
           <el-form-item>
-            <el-button type="primary" @click="handleSaveSeo">保存配置</el-button>
+            <el-button type="primary" :loading="submitLoading" @click="handleSaveSeo">保存配置</el-button>
           </el-form-item>
         </el-form>
       </el-tab-pane>
@@ -80,7 +80,7 @@
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleBannerSubmit">确定</el-button>
+          <el-button type="primary" :loading="submitLoading" @click="handleBannerSubmit">确定</el-button>
         </span>
       </template>
     </el-dialog>
@@ -88,24 +88,28 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
+import { useContentStore } from '@/store/modules/content-store'
+import { useSystemConfigStore } from '@/store/modules/system-config-store'
+import { storeToRefs } from 'pinia'
 import { ElMessage, ElMessageBox } from 'element-plus'
+
+const contentStore = useContentStore()
+const systemConfigStore = useSystemConfigStore()
+
+const { carousels: bannerList, loading } = storeToRefs(contentStore)
+const { configs } = storeToRefs(systemConfigStore)
 
 const activeTab = ref('banner')
 const dialogVisible = ref(false)
 const isEdit = ref(false)
+const submitLoading = ref(false)
 
-// Mock Data
-const bannerList = ref([
-  { id: 1, title: '首页Banner 1', image_url: 'https://placehold.co/800x400', link_url: '/product', sort_order: 1, is_enabled: true },
-  { id: 2, title: '活动推广', image_url: 'https://placehold.co/800x400', link_url: '/activity', sort_order: 2, is_enabled: false }
-])
-
-const seoConfig = reactive({
-  title: 'DarkVision - 低光照车牌识别系统',
-  keywords: 'LPR, 车牌识别, 低光照, AI, 深度学习',
-  description: 'DarkVision LPR 是一款专为低光照环境设计的车牌识别系统，采用最新的 YOLOv12 模型，提供高精度的识别服务。'
-})
+const seoConfig = computed(() => ({
+  title: configs.value.base.seo_title || '',
+  keywords: configs.value.base.seo_keywords || '',
+  description: configs.value.base.seo_description || ''
+}))
 
 const bannerForm = reactive({
   id: undefined,
@@ -124,34 +128,64 @@ function handleBannerAdd() {
 
 function handleBannerEdit(row: any) {
   isEdit.value = true
-  Object.assign(bannerForm, row)
+  Object.assign(bannerForm, { ...row })
   dialogVisible.value = true
 }
 
 function handleBannerDelete(row: any) {
-  ElMessageBox.confirm('确认删除该轮播图吗？', '提示', { type: 'warning' }).then(() => {
-    bannerList.value = bannerList.value.filter(item => item.id !== row.id)
+  ElMessageBox.confirm('确认删除该轮播图吗？', '提示', { type: 'warning' }).then(async () => {
+    await contentStore.deleteCarousel(row.id)
     ElMessage.success('删除成功')
   })
 }
 
-function handleBannerSubmit() {
-  if (isEdit.value) {
-    const index = bannerList.value.findIndex((item: any) => item.id === bannerForm.id)
-    if (index !== -1) {
-      bannerList.value[index] = { ...bannerForm } as any
-    }
-    ElMessage.success('更新成功')
-  } else {
-    bannerList.value.push({ ...bannerForm, id: Date.now() } as any)
-    ElMessage.success('创建成功')
+async function handleBannerSubmit() {
+  if (!bannerForm.title || !bannerForm.image_url) {
+    ElMessage.warning('请填写必填项')
+    return
   }
-  dialogVisible.value = false
+
+  submitLoading.value = true
+  try {
+    if (isEdit.value) {
+      await contentStore.updateCarousel(bannerForm.id!, { ...bannerForm })
+      ElMessage.success('更新成功')
+    } else {
+      await contentStore.createCarousel({ ...bannerForm })
+      ElMessage.success('创建成功')
+    }
+    dialogVisible.value = false
+  } catch (error) {
+    console.error(error)
+  } finally {
+    submitLoading.value = false
+  }
 }
 
-function handleSaveSeo() {
-  ElMessage.success('SEO 配置已保存')
+async function handleSaveSeo() {
+  submitLoading.value = true
+  try {
+    await systemConfigStore.updateConfigs({
+      'base.seo_title': seoConfig.value.title,
+      'base.seo_keywords': seoConfig.value.keywords,
+      'base.seo_description': seoConfig.value.description
+    })
+    ElMessage.success('SEO 配置已保存')
+  } catch (error) {
+    console.error(error)
+  } finally {
+    submitLoading.value = false
+  }
 }
+
+const handleSeoInput = (key: 'title' | 'keywords' | 'description', val: string) => {
+  configs.value.base[`seo_${key}`] = val
+}
+
+onMounted(() => {
+  contentStore.fetchCarousels()
+  systemConfigStore.fetchConfigs()
+})
 </script>
 
 <style scoped>

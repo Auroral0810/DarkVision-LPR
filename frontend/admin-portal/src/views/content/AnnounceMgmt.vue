@@ -66,9 +66,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
+import { useContentStore } from '@/store/modules/content-store'
+import { storeToRefs } from 'pinia'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import dayjs from 'dayjs'
+
+const contentStore = useContentStore()
+const { announcements: announceList, loading } = storeToRefs(contentStore)
 
 const typeMap: Record<string, string> = {
   system: '系统通知',
@@ -76,13 +81,9 @@ const typeMap: Record<string, string> = {
   maintenance: '维护通知'
 }
 
-const announceList = ref([
-  { id: 1, title: '系统升级通知 v1.2', type: 'system', status: 'published', content: '系统将于今晚进行升级...', created_at: '2025-01-08' },
-  { id: 2, title: '春节放假安排', type: 'activity', status: 'draft', content: '春节期间服务安排...', created_at: '2025-01-09' }
-])
-
 const dialogVisible = ref(false)
 const isEdit = ref(false)
+const submitLoading = ref(false)
 const form = reactive({
   id: undefined,
   title: '',
@@ -109,40 +110,56 @@ function handleEdit(row: any) {
 }
 
 function handleDelete(row: any) {
-  ElMessageBox.confirm('确认删除该公告吗？', '提示', { type: 'warning' }).then(() => {
-    announceList.value = announceList.value.filter(item => item.id !== row.id)
+  ElMessageBox.confirm('确认删除该公告吗？', '提示', { type: 'warning' }).then(async () => {
+    await contentStore.deleteAnnouncement(row.id)
     ElMessage.success('删除成功')
   })
 }
 
-function handlePublish(row: any) {
-  row.status = 'published'
-  ElMessage.success('发布成功')
+async function handlePublish(row: any) {
+  try {
+    await contentStore.updateAnnouncement(row.id, { ...row, status: 'published' })
+    ElMessage.success('发布成功')
+  } catch (error) {
+    console.error(error)
+  }
 }
 
-function handleRevoke(row: any) {
-  row.status = 'draft'
-  ElMessage.warning('已撤回')
+async function handleRevoke(row: any) {
+  try {
+    await contentStore.updateAnnouncement(row.id, { ...row, status: 'draft' })
+    ElMessage.warning('已撤回')
+  } catch (error) {
+    console.error(error)
+  }
 }
 
-function handleSubmit() {
+async function handleSubmit() {
   if (!form.title || !form.content) {
     ElMessage.warning('请填写完整信息')
     return
   }
   
-  if (isEdit.value) {
-    const index = announceList.value.findIndex((item: any) => item.id === form.id)
-    if (index !== -1) {
-      announceList.value[index] = { ...form, created_at: announceList.value[index].created_at } as any
+  submitLoading.value = true
+  try {
+    if (isEdit.value) {
+      await contentStore.updateAnnouncement(form.id!, { ...form })
+      ElMessage.success('更新成功')
+    } else {
+      await contentStore.createAnnouncement({ ...form })
+      ElMessage.success('创建成功')
     }
-    ElMessage.success('更新成功')
-  } else {
-    announceList.value.push({ ...form, id: Date.now(), created_at: dayjs().format('YYYY-MM-DD') } as any)
-    ElMessage.success('创建成功')
+    dialogVisible.value = false
+  } catch (error) {
+    console.error(error)
+  } finally {
+    submitLoading.value = false
   }
-  dialogVisible.value = false
 }
+
+onMounted(() => {
+  contentStore.fetchAnnouncements()
+})
 </script>
 
 <style scoped>

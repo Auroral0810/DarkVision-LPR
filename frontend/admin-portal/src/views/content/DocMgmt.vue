@@ -7,9 +7,9 @@
     <el-table :data="docList" border style="width: 100%; margin-top: 20px;">
       <el-table-column prop="id" label="ID" width="80" align="center" sortable />
       <el-table-column prop="title" label="文档标题" min-width="200" sortable />
-      <el-table-column prop="category" label="分类" width="120" align="center" sortable>
+      <el-table-column prop="doc_type" label="分类" width="120" align="center" sortable>
         <template #default="{ row }">
-          <el-tag>{{ categoryMap[row.category] || row.category }}</el-tag>
+          <el-tag>{{ categoryMap[row.doc_type] || row.doc_type }}</el-tag>
         </template>
       </el-table-column>
       <el-table-column prop="version" label="版本" width="100" align="center" sortable />
@@ -31,8 +31,8 @@
         <el-form-item label="标题" prop="title" required>
           <el-input v-model="form.title" placeholder="请输入文档标题" />
         </el-form-item>
-        <el-form-item label="分类" prop="category" required>
-          <el-select v-model="form.category" placeholder="请选择分类">
+        <el-form-item label="分类" prop="doc_type" required>
+          <el-select v-model="form.doc_type" placeholder="请选择分类">
             <el-option label="使用指南" value="guide" />
             <el-option label="API 文档" value="api" />
             <el-option label="常见问题" value="faq" />
@@ -62,9 +62,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
+import { useContentStore } from '@/store/modules/content-store'
+import { storeToRefs } from 'pinia'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import dayjs from 'dayjs'
+
+const contentStore = useContentStore()
+const { documents: docList, loading } = storeToRefs(contentStore)
 
 const categoryMap: Record<string, string> = {
   guide: '使用指南',
@@ -73,58 +78,63 @@ const categoryMap: Record<string, string> = {
   changelog: '更新日志'
 }
 
-const docList = ref([
-  { id: 101, title: '快速开始指南', category: 'guide', version: 'v1.0', content: '# Quick Start...', updated_at: '2025-01-01' },
-  { id: 102, title: '识别接口 API v1', category: 'api', version: 'v1.2', content: '# API Reference...', updated_at: '2025-01-05' }
-])
-
 const dialogVisible = ref(false)
 const isEdit = ref(false)
+const submitLoading = ref(false)
 const form = reactive({
   id: undefined,
   title: '',
-  category: '',
+  doc_type: 'guide',
   version: '',
-  content: ''
+  content: '',
+  is_current: true
 })
 
 function handleAdd() {
   isEdit.value = false
-  Object.assign(form, { id: undefined, title: '', category: 'guide', version: '', content: '' })
+  Object.assign(form, { id: undefined, title: '', doc_type: 'guide', version: '', content: '', is_current: true })
   dialogVisible.value = true
 }
 
 function handleEdit(row: any) {
   isEdit.value = true
-  Object.assign(form, row)
+  Object.assign(form, { ...row })
   dialogVisible.value = true
 }
 
 function handleDelete(row: any) {
-  ElMessageBox.confirm('确认删除该文档吗？', '提示', { type: 'warning' }).then(() => {
-    docList.value = docList.value.filter(item => item.id !== row.id)
+  ElMessageBox.confirm('确认删除该文档吗？', '提示', { type: 'warning' }).then(async () => {
+    await contentStore.deleteDocument(row.id)
     ElMessage.success('删除成功')
   })
 }
 
-function handleSubmit() {
+async function handleSubmit() {
   if (!form.title) {
     ElMessage.warning('请输入标题')
     return
   }
   
-  if (isEdit.value) {
-    const index = docList.value.findIndex((item: any) => item.id === form.id)
-    if (index !== -1) {
-      docList.value[index] = { ...form, updated_at: dayjs().format('YYYY-MM-DD') } as any
+  submitLoading.value = true
+  try {
+    if (isEdit.value) {
+      await contentStore.updateDocument(form.id!, { ...form })
+      ElMessage.success('更新成功')
+    } else {
+      await contentStore.createDocument({ ...form })
+      ElMessage.success('创建成功')
     }
-    ElMessage.success('更新成功')
-  } else {
-    docList.value.push({ ...form, id: Date.now(), updated_at: dayjs().format('YYYY-MM-DD') } as any)
-    ElMessage.success('创建成功')
+    dialogVisible.value = false
+  } catch (error) {
+    console.error(error)
+  } finally {
+    submitLoading.value = false
   }
-  dialogVisible.value = false
 }
+
+onMounted(() => {
+  contentStore.fetchDocuments()
+})
 </script>
 
 <style scoped>
