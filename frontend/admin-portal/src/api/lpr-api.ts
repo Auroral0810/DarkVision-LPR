@@ -363,6 +363,113 @@ const LprAPI = {
       url: `${LPR_BASE_URL}/stats/plate-distribution`,
       method: 'get'
     })
+  },
+
+  // ==================== Permissions & Roles ====================
+  
+  /**
+   * Get permission tree
+   */
+  getPermissionTree() {
+    return request<any, any[]>({
+      url: `${LPR_BASE_URL}/permissions`,
+      method: 'get'
+    })
+  },
+
+  /**
+   * Create/Update/Delete Permissions if needed... 
+   * (usually permissions are preset, but admin-service.py has these endpoints)
+   */
+  createPermission(data: any) {
+    return request({
+      url: `${LPR_BASE_URL}/permissions`,
+      method: 'post',
+      data
+    })
+  },
+
+  updatePermission(permId: number, data: any) {
+    return request({
+      url: `${LPR_BASE_URL}/permissions/${permId}`,
+      method: 'put',
+      data
+    })
+  },
+
+  deletePermission(permId: number) {
+    return request({
+      url: `${LPR_BASE_URL}/permissions/${permId}`,
+      method: 'delete'
+    })
+  },
+
+  /**
+   * Role management
+   */
+  getRoleList() {
+    return request<any, PageResult<any>>({
+      url: `${LPR_BASE_URL}/roles`,
+      method: 'get'
+    })
+  },
+
+  getRoleDetail(roleId: number) {
+    return request<any, any>({
+      url: `${LPR_BASE_URL}/roles/${roleId}`,
+      method: 'get'
+    })
+  },
+
+  createRole(data: any) {
+    return request({
+      url: `${LPR_BASE_URL}/roles`,
+      method: 'post',
+      data
+    })
+  },
+
+  updateRole(roleId: number, data: any) {
+    return request({
+      url: `${LPR_BASE_URL}/roles/${roleId}`,
+      method: 'put',
+      data
+    })
+  },
+
+  deleteRole(roleId: number) {
+    return request({
+      url: `${LPR_BASE_URL}/roles/${roleId}`,
+      method: 'delete'
+    })
+  },
+
+  // ==================== Admin Account Management ====================
+
+  /**
+   * Get admin users
+   */
+  getAdminUserList() {
+    return request<any, any[]>({
+      url: `${LPR_BASE_URL}/admin-users`,
+      method: 'get'
+    })
+  },
+
+  createAdminUser(data: any) {
+    return request({
+      url: `${LPR_BASE_URL}/admin-users`,
+      method: 'post',
+      data
+    })
+  },
+
+  updateAdminUser(userId: number, data: any) {
+    return request({
+      url: `${LPR_BASE_URL}/admin-users/${userId}`,
+      method: 'put',
+      data
+    })
   }
 }
 

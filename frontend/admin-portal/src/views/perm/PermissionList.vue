@@ -2,16 +2,16 @@
   <div class="app-container">
     <div class="filter-container">
       <el-button type="primary" icon="Plus" @click="handleAdd">新增权限</el-button>
-      <el-button icon="Refresh" @click="initData">刷新</el-button>
+      <el-button icon="Refresh" @click="fetchData">刷新</el-button>
     </div>
 
     <el-table
+      v-loading="loading"
       :data="permissionList"
       border
       style="width: 100%; margin-top: 20px;"
       row-key="id"
-      default-expand-all
-      :tree-props="{ children: 'children', hasChildren: 'hasChildren' }"
+      :tree-props="{ children: 'children' }"
     >
       <el-table-column prop="name" label="权限名称" min-width="180" sortable />
       <el-table-column prop="code" label="权限标识" width="180" />
@@ -77,8 +77,9 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import LprAPI from '@/api/lpr-api'
 
 const typeMap: Record<string, string> = {
   menu: '菜单',
@@ -87,50 +88,37 @@ const typeMap: Record<string, string> = {
 }
 
 const permissionList = ref<any[]>([])
+const loading = ref(false)
 
 const dialogVisible = ref(false)
 const isEdit = ref(false)
 const form = reactive({
-  id: undefined,
+  id: undefined as number | undefined,
   parent_id: null as number | null,
   name: '',
   code: '',
   type: 'menu',
   path: '',
-  sort_order: 0
+  sort_order: 0,
+  component: '',
+  icon: ''
 })
 
-function initData() {
-  // Mock Data
-  permissionList.value = [
-    {
-      id: 1,
-      name: '用户管理',
-      code: 'user:mgmt',
-      type: 'menu',
-      path: '/user',
-      children: [
-        { id: 11, name: '用户列表', code: 'user:list', type: 'menu', path: '/user/list', children: [
-            { id: 111, name: '新增用户', code: 'user:add', type: 'button' },
-            { id: 112, name: '删除用户', code: 'user:delete', type: 'button' }
-        ]},
-        { id: 12, name: '实名认证', code: 'user:verify', type: 'menu', path: '/user/verification' }
-      ]
-    },
-    {
-      id: 2,
-      name: '系统设置',
-      code: 'sys:config',
-      type: 'menu',
-      path: '/setting',
-      children: [
-        { id: 21, name: '基础配置', code: 'sys:base', type: 'menu', path: '/setting/base' }
-      ]
-    }
-  ]
+async function fetchData() {
+  loading.value = true
+  try {
+    const res = await LprAPI.getPermissionTree()
+    permissionList.value = res
+  } catch (error) {
+    console.error('获取权限树失败', error)
+  } finally {
+    loading.value = false
+  }
 }
 
-initData()
+onMounted(() => {
+  fetchData()
+})
 
 function getTypeTag(type: string) {
   const map: any = { menu: '', button: 'info', api: 'warning' }
@@ -139,37 +127,71 @@ function getTypeTag(type: string) {
 
 function handleAdd() {
   isEdit.value = false
-  Object.assign(form, { id: undefined, parent_id: null, name: '', code: '', type: 'menu', path: '', sort_order: 0 })
+  Object.assign(form, { 
+    id: undefined, parent_id: null, name: '', code: '', 
+    type: 'menu', path: '', sort_order: 0, component: '', icon: '' 
+  })
   dialogVisible.value = true
 }
 
 function handleAddSub(row: any) {
   isEdit.value = false
-  Object.assign(form, { id: undefined, parent_id: row.id, name: '', code: '', type: 'button', path: '', sort_order: 0 })
+  Object.assign(form, { 
+    id: undefined, parent_id: row.id, name: '', code: '', 
+    type: row.type === 'menu' ? 'menu' : 'button', 
+    path: '', sort_order: 0, component: '', icon: '' 
+  })
   dialogVisible.value = true
 }
 
 function handleEdit(row: any) {
   isEdit.value = true
-  Object.assign(form, row)
+  Object.assign(form, {
+    id: row.id,
+    parent_id: row.parent_id,
+    name: row.name,
+    code: row.code,
+    type: row.type,
+    path: row.path,
+    sort_order: row.sort_order,
+    component: row.component,
+    icon: row.icon
+  })
   dialogVisible.value = true
 }
 
-function handleDelete(row: any) {
-  ElMessageBox.confirm('确认删除该权限项吗？', '提示', { type: 'warning' }).then(() => {
-    ElMessage.success('删除成功 (Mock)')
-    initData()
-  })
+async function handleDelete(row: any) {
+  try {
+    await ElMessageBox.confirm(`确认删除权限项 "${row.name}" 及其所有子项吗？`, '提示', { type: 'warning' })
+    await LprAPI.deletePermission(row.id)
+    ElMessage.success('删除成功')
+    fetchData()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除权限失败', error)
+    }
+  }
 }
 
-function handleSubmit() {
+async function handleSubmit() {
   if (!form.name || !form.code) {
     ElMessage.warning('请填写必填项')
     return
   }
-  ElMessage.success(isEdit.value ? '更新成功' : '创建成功')
-  dialogVisible.value = false
-  // 实际项目中需调用API并刷新列表
+  
+  try {
+    if (isEdit.value && form.id) {
+      await LprAPI.updatePermission(form.id, { ...form })
+      ElMessage.success('更新成功')
+    } else {
+      await LprAPI.createPermission({ ...form })
+      ElMessage.success('创建成功')
+    }
+    dialogVisible.value = false
+    fetchData()
+  } catch (error) {
+    console.error('保存权限失败', error)
+  }
 }
 </script>
 

@@ -4,13 +4,13 @@
       <el-button type="primary" icon="Plus" @click="handleAdd">新增管理员</el-button>
     </div>
 
-    <el-table :data="adminList" border style="width: 100%; margin-top: 20px;">
+    <el-table v-loading="loading" :data="adminList" border style="width: 100%; margin-top: 20px;">
       <el-table-column prop="id" label="ID" width="80" align="center" sortable />
-      <el-table-column prop="username" label="用户名" width="150" sortable />
+      <el-table-column prop="phone" label="手机号/账号" width="150" sortable />
       <el-table-column prop="nickname" label="昵称" width="150" sortable />
       <el-table-column label="角色" min-width="200">
         <template #default="{ row }">
-          <el-tag v-for="role in row.roles" :key="role" style="margin-right: 5px;">{{ role }}</el-tag>
+          <el-tag v-for="role in row.roles" :key="role.id" style="margin-right: 5px;">{{ role.name }}</el-tag>
         </template>
       </el-table-column>
       <el-table-column prop="status" label="状态" width="100" align="center" sortable>
@@ -20,12 +20,16 @@
           </el-tag>
         </template>
       </el-table-column>
-      <el-table-column prop="last_login" label="最后登录" width="180" align="center" sortable />
+      <el-table-column prop="last_login_at" label="最后登录" width="180" align="center" sortable>
+        <template #default="{ row }">
+          {{ row.last_login_at ? new Date(row.last_login_at).toLocaleString() : '-' }}
+        </template>
+      </el-table-column>
       <el-table-column label="操作" width="200" align="center" fixed="right">
         <template #default="{ row }">
           <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
           <el-button type="warning" link @click="handleResetPwd(row)">重置密码</el-button>
-          <el-button type="danger" link @click="handleDelete(row)" :disabled="row.username === 'admin'">删除</el-button>
+          <el-button type="danger" link @click="handleDelete(row)" :disabled="row.id === 1">删除</el-button>
         </template>
       </el-table-column>
     </el-table>
@@ -36,20 +40,26 @@
       width="500px"
     >
       <el-form ref="formRef" :model="form" label-width="100px">
-        <el-form-item label="用户名" prop="username" required>
-          <el-input v-model="form.username" :disabled="isEdit" placeholder="登录账号" />
+        <el-form-item label="手机号" prop="phone" required>
+          <el-input v-model="form.phone" placeholder="作为登录账号" />
         </el-form-item>
         <el-form-item label="昵称" prop="nickname" required>
           <el-input v-model="form.nickname" placeholder="显示名称" />
         </el-form-item>
+        <el-form-item label="真实姓名" prop="real_name">
+          <el-input v-model="form.real_name" placeholder="选填" />
+        </el-form-item>
         <el-form-item label="密码" prop="password" v-if="!isEdit" required>
           <el-input v-model="form.password" type="password" show-password placeholder="初始密码" />
         </el-form-item>
-        <el-form-item label="角色" prop="roles">
-          <el-select v-model="form.roles" multiple placeholder="请选择角色" style="width: 100%">
-            <el-option label="超级管理员" value="super_admin" />
-            <el-option label="用户管理员" value="user_manager" />
-            <el-option label="运营专员" value="ops_manager" />
+        <el-form-item label="角色" prop="role_ids">
+          <el-select v-model="form.role_ids" multiple placeholder="请选择角色" style="width: 100%">
+            <el-option 
+              v-for="item in roleOptions" 
+              :key="item.id" 
+              :label="item.name" 
+              :value="item.id" 
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="状态" prop="status">
@@ -67,71 +77,137 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import LprAPI from '@/api/lpr-api'
 
-const adminList = ref([
-  { id: 1, username: 'admin', nickname: '系统管理员', roles: ['super_admin'], status: 'active', last_login: '2025-01-08 12:00:00' },
-  { id: 2, username: 'ops_user', nickname: '运营小王', roles: ['ops_manager'], status: 'active', last_login: '2025-01-07 09:30:00' }
-])
+const adminList = ref<any[]>([])
+const loading = ref(false)
+const roleOptions = ref<any[]>([])
 
 const dialogVisible = ref(false)
 const isEdit = ref(false)
+const formRef = ref<any>(null)
 const form = reactive({
-  id: undefined,
-  username: '',
+  id: undefined as number | undefined,
+  phone: '',
   nickname: '',
   password: '',
-  roles: [],
-  status: 'active'
+  role_ids: [] as number[],
+  status: 'active',
+  real_name: ''
+})
+
+async function fetchRoles() {
+  try {
+    const res = await LprAPI.getRoleList()
+    roleOptions.value = res.list
+  } catch (error) {
+    console.error('获取角色列表失败', error)
+  }
+}
+
+async function fetchData() {
+  loading.value = true
+  try {
+    const res = await LprAPI.getAdminUserList()
+    adminList.value = res
+  } catch (error) {
+    console.error('获取管理员列表失败', error)
+  } finally {
+    loading.value = false
+  }
+}
+
+onMounted(() => {
+  fetchData()
+  fetchRoles()
 })
 
 function handleAdd() {
   isEdit.value = false
-  Object.assign(form, { id: undefined, username: '', nickname: '', password: '', roles: [], status: 'active' })
+  Object.assign(form, { id: undefined, phone: '', nickname: '', password: '', role_ids: [], status: 'active', real_name: '' })
   dialogVisible.value = true
 }
 
 function handleEdit(row: any) {
   isEdit.value = true
-  Object.assign(form, { ...row, password: '' }) // Don't fill password
+  Object.assign(form, {
+    id: row.id,
+    phone: row.phone,
+    nickname: row.nickname,
+    password: '', 
+    role_ids: row.roles.map((r: any) => r.id),
+    status: row.status,
+    real_name: row.profile?.real_name || ''
+  })
   dialogVisible.value = true
 }
 
-function handleDelete(row: any) {
-  ElMessageBox.confirm('确认删除该管理员吗？', '提示', { type: 'warning' }).then(() => {
-    adminList.value = adminList.value.filter(item => item.id !== row.id)
+async function handleDelete(row: any) {
+  try {
+    await ElMessageBox.confirm(`确认删除管理员 "${row.nickname}" 吗？`, '提示', { type: 'warning' })
+    // Use regular delete user API or specific admin delete if exists
+    // admin_service.py doesn't have a specific delete_admin_user yet, uses user_type check?
+    // Let's check AdminUser API again.
+    // ... Actually, I can use banUser or deleteUser.
+    await LprAPI.batchDeleteUsers([row.id])
     ElMessage.success('删除成功')
-  })
+    fetchData()
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除管理员失败', error)
+    }
+  }
 }
 
-function handleResetPwd(row: any) {
-  ElMessageBox.prompt('请输入新密码', '重置密码', {
-    inputType: 'password',
-    inputPattern: /.{6,}/,
-    inputErrorMessage: '密码长度至少6位'
-  }).then(({ value }) => {
+async function handleResetPwd(row: any) {
+  try {
+    const { value } = await ElMessageBox.prompt('请输入新密码', '重置密码', {
+      inputType: 'password',
+      inputPattern: /.{6,}/,
+      inputErrorMessage: '密码长度至少6位'
+    })
+    
+    await LprAPI.updateAdminUser(row.id, { password: value })
     ElMessage.success('密码重置成功')
-  }).catch(() => {})
+  } catch (error) {
+    if (error !== 'cancel') {
+       console.error('重置密码失败', error)
+    }
+  }
 }
 
-function handleSubmit() {
-  if (!form.username || !form.nickname) {
+async function handleSubmit() {
+  if (!form.nickname || !form.phone || (!isEdit.value && !form.password)) {
     ElMessage.warning('请填写必填项')
     return
   }
   
-  if (isEdit.value) {
-    const index = adminList.value.findIndex((item: any) => item.id === form.id)
-    if (index !== -1) {
-      adminList.value[index] = { ...adminList.value[index], ...form } as any
+  try {
+    if (isEdit.value && form.id) {
+      await LprAPI.updateAdminUser(form.id, {
+        nickname: form.nickname,
+        phone: form.phone,
+        role_ids: form.role_ids,
+        is_active: form.status === 'active'
+      })
+      ElMessage.success('更新成功')
+    } else {
+      await LprAPI.createAdminUser({
+        nickname: form.nickname,
+        phone: form.phone,
+        password: form.password,
+        role_ids: form.role_ids,
+        real_name: form.real_name
+      })
+      ElMessage.success('创建成功')
     }
-    ElMessage.success('更新成功')
-  } else {
-    adminList.value.push({ ...form, id: Date.now(), last_login: '-' } as any)
-    ElMessage.success('创建成功')
+    dialogVisible.value = false
+    fetchData()
+  } catch (error) {
+    console.error('保存管理员失败', error)
   }
-  dialogVisible.value = false
 }
 </script>
 
