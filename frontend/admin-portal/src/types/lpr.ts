@@ -189,9 +189,9 @@ export interface UserTrendData {
 
 export interface RecognitionTrendData {
   date: string
-  total: number
-  success: number
-  failed: number
+  count: number
+  success_count: number
+  fail_count: number
 }
 
 // ==================== System Config Types ====================

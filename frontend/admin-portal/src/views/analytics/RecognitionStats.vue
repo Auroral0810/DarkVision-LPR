@@ -142,14 +142,14 @@ async function fetchTrendData() {
     })
     
     perfTrendOption.xAxis.data = trends.map(t => t.date.slice(5))
-    perfTrendOption.series[0].data = trends.map(t => t.total)
+    perfTrendOption.series[0].data = trends.map(t => t.count)
     perfTrendOption.series[1].data = trends.map(t => {
-      return t.total > 0 ? Math.round((t.success / t.total) * 100) : 100
+      return t.count > 0 ? Math.round((t.success_count / t.count) * 100) : 100
     })
     
     // 汇总 KPI (简单计算)
-    const total = trends.reduce((acc, curr) => acc + curr.total, 0)
-    const success = trends.reduce((acc, curr) => acc + curr.success, 0)
+    const total = trends.reduce((acc, curr) => acc + curr.count, 0)
+    const success = trends.reduce((acc, curr) => acc + curr.success_count, 0)
     recogStats.success_rate = total > 0 ? (success / total) * 100 : 100
   } catch (error) {
     console.error('获取识别趋势失败', error)

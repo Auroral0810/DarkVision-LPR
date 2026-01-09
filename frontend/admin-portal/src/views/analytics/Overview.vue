@@ -215,7 +215,7 @@ async function fetchAllData() {
       end_date: end.toISOString().split('T')[0]
     })
     recogTrendOption.xAxis.data = recogTrends.map(item => item.date.slice(5))
-    recogTrendOption.series[0].data = recogTrends.map(item => item.total)
+    recogTrendOption.series[0].data = recogTrends.map(item => item.count)
 
     // 4. 用户分布
     const userDist = await LprAPI.getUserTypeDistribution()
@@ -259,12 +259,7 @@ onMounted(() => {
   justify-content: space-between;
   align-items: center;
 }
-.kpi-card {
-  display: flex;
-  align-items: center;
-  padding: 10px;
-}
-:deep(.el-card__body) {
+.kpi-card :deep(.el-card__body) {
   width: 100%;
   display: flex;
   align-items: center;

@@ -27,11 +27,14 @@ echarts.use([
   VisualMapComponent,
 ]);
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   options: echarts.EChartsCoreOption;
   width?: string;
   height?: string;
-}>();
+}>(), {
+  width: '100%',
+  height: '300px'
+});
 
 const chartRef = ref<HTMLDivElement | null>(null);
 let chartInstance: echarts.ECharts | null = null;
