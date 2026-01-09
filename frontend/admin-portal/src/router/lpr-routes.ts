@@ -391,13 +391,13 @@ export const lprRoutes: RouteRecordRaw[] = [
     children: [
       {
         path: 'data',
-        component: () => import('@/views/maintenance/Maintenance.vue'),
+        component: () => import('@/views/backup/DataBackup.vue'),
         name: 'DataBackup',
         meta: { title: '数据备份', icon: 'el-icon-DocumentCopy' }
       },
       {
         path: 'recover',
-        component: Placeholder, // 如果复用组件，需注意区分路由参数
+        component: () => import('@/views/backup/DataRecovery.vue'),
         name: 'DataRecover',
         meta: { title: '数据恢复', icon: 'el-icon-RefreshLeft' }
       }

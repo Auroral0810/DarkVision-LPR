@@ -1,4 +1,4 @@
-from app.api.admin import auth, statistics, users, verification, permission, role, system, content, recognition, orders, packages, finance, admin_users, ai
+from app.api.admin import auth, statistics, users, verification, permission, role, system, content, recognition, orders, packages, finance, admin_users, ai, backup
 from fastapi import APIRouter
 admin_router = APIRouter()
 
@@ -16,3 +16,4 @@ admin_router.include_router(content.router, prefix="/content", tags=["管理员-
 admin_router.include_router(permission.router, prefix="/permissions", tags=["管理员-权限管理"])
 admin_router.include_router(role.router, prefix="/roles", tags=["管理员-角色管理"])
 admin_router.include_router(ai.router, prefix="/ai", tags=["管理员-AI助手"])
+admin_router.include_router(backup.router, prefix="/backup", tags=["管理员-备份恢复"])
